@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Attendance.work — Employee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#20242A;
+    --ink-soft:#5B584F;
+    --paper:#F3EEE2;
+    --panel:#FFFFFF;
+    --brass:#B8863E;
+    --brass-dark:#93692C;
+    --forest:#3F6B4D;
+    --rust:#8B4A3C;
+    --line:#DAD3C0;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:var(--paper);
+    font-family:'IBM Plex Sans',sans-serif;
+    color:var(--ink);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .card{
+    width:100%;
+    max-width:420px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:36px 32px;
+    box-shadow:0 1px 0 var(--line);
+  }
+  .brand{
+    font-family:'Zilla Slab',serif;
+    font-weight:600;
+    font-size:14px;
+    letter-spacing:.04em;
+    color:var(--brass-dark);
+    margin:0 0 4px;
+  }
+  h1{
+    font-family:'Zilla Slab',serif;
+    font-weight:600;
+    font-size:26px;
+    margin:0 0 24px;
+    line-height:1.2;
+  }
+  label{
+    display:block;
+    font-size:13px;
+    color:var(--ink-soft);
+    margin:16px 0 6px;
+  }
+  input, select{
+    width:100%;
+    padding:11px 12px;
+    border:1px solid var(--line);
+    border-radius:3px;
+    font-size:15px;
+    font-family:inherit;
+    background:#FCFAF5;
+    color:var(--ink);
+  }
+  input:focus, select:focus{
+    outline:2px solid var(--brass);
+    outline-offset:1px;
+  }
+  button{
+    font-family:'IBM Plex Sans',sans-serif;
+    font-weight:600;
+    font-size:15px;
+    cursor:pointer;
+    border:none;
+    border-radius:3px;
+  }
+  .btn-primary{
+    width:100%;
+    margin-top:24px;
+    padding:13px;
+    background:var(--ink);
+    color:#fff;
+  }
+  .btn-primary:hover{background:#33383F;}
+  .btn-link{
+    background:none;
+    color:var(--brass-dark);
+    padding:4px 0;
+    font-size:14px;
+    text-decoration:underline;
+  }
+  .toggle-row{
+    display:flex;
+    gap:8px;
+    margin-bottom:8px;
+  }
+  .toggle-row button{
+    flex:1;
+    padding:10px;
+    background:#FCFAF5;
+    border:1px solid var(--line);
+    color:var(--ink-soft);
+  }
+  .toggle-row button.active{
+    background:var(--ink);
+    color:#fff;
+    border-color:var(--ink);
+  }
+  .error{
+    color:var(--rust);
+    font-size:13px;
+    margin-top:14px;
+    min-height:16px;
+  }
+  .foot-link{
+    text-align:center;
+    margin-top:18px;
+  }
+
+  /* Clock-in dashboard */
+  .dash{
+    max-width:440px;
+  }
+  .dash .org-name{
+    font-family:'Zilla Slab',serif;
+    font-weight:600;
+    font-size:22px;
+    margin:0;
+  }
+  .dash .who{
+    color:var(--ink-soft);
+    font-size:14px;
+    margin:2px 0 20px;
+  }
+  .clockface{
+    background:var(--ink);
+    color:#F3EEE2;
+    border-radius:4px;
+    padding:22px;
+    text-align:center;
+    margin-bottom:20px;
+  }
+  .clockface .date-row{
+    font-size:13px;
+    letter-spacing:.03em;
+    color:#C7C2B5;
+    margin-bottom:6px;
+  }
+  .clockface .time{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:40px;
+    font-weight:600;
+    letter-spacing:.02em;
+  }
+  .status-pill{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-size:13px;
+    padding:4px 10px;
+    border-radius:20px;
+    margin-top:10px;
+  }
+  .status-pill.online{background:rgba(63,107,77,.18); color:#BFE2CC;}
+  .status-pill.offline{background:rgba(139,74,60,.22); color:#EBC1B6;}
+  .dot{width:7px;height:7px;border-radius:50%;background:currentColor;display:inline-block;}
+  .actions{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+  .actions button{padding:14px;font-size:14px;}
+  .act-launch{background:var(--forest); color:#fff; grid-column:1/-1;}
+  .act-pause{background:var(--brass); color:#fff;}
+  .act-back{background:#FCFAF5; color:var(--ink); border:1px solid var(--line);}
+  .act-offline{background:var(--rust); color:#fff;}
+  .act-online{background:var(--forest); color:#fff;}
+  .hint{
+    font-size:12px;
+    color:var(--ink-soft);
+    text-align:center;
+    margin-top:16px;
+    line-height:1.5;
+  }
+  .hidden{display:none;}
+  .divider{border:none; border-top:1px solid var(--line); margin:20px 0;}
+  .leave-row{display:flex; justify-content:space-between; align-items:center; font-size:13px; padding:8px 0; border-bottom:1px solid var(--line);}
+  .leave-status{font-size:12px; padding:2px 8px; border-radius:12px;}
+  .leave-status.Pending{background:rgba(184,134,62,.18); color:var(--brass-dark);}
+  .leave-status.Approved{background:rgba(63,107,77,.18); color:var(--forest);}
+  .leave-status.Rejected{background:rgba(139,74,60,.18); color:var(--rust);}
+</style>
+</head>
+<body>
+
+<div class="card" id="view-auth">
+  <p class="brand">ATTENDANCE.WORK</p>
+  <h1>Employee sign in</h1>
+  <div class="toggle-row">
+    <button id="tab-login" class="active" onclick="setAuthMode('login')">Log in</button>
+    <button id="tab-register" onclick="setAuthMode('register')">Register</button>
+  </div>
+
+  <label for="orgSelect">Organization</label>
+  <select id="orgSelect"></select>
+
+  <div id="registerExtra" class="hidden">
+    <label for="orgCode">Organization code</label>
+    <input id="orgCode" placeholder="Given to you by your admin">
+    <label for="empName">Your name</label>
+    <input id="empName" placeholder="Full name">
+  </div>
+
+  <label for="empId">Employee ID</label>
+  <input id="empId" placeholder="Choose or enter your ID">
+  <label for="empPass">Password</label>
+  <input id="empPass" type="password">
+
+  <button class="btn-primary" onclick="submitAuth()">Continue</button>
+  <p class="error" id="authError"></p>
+</div>
+
+<div class="card dash hidden" id="view-dash">
+  <h1 class="org-name" id="dashOrgName"></h1>
+  <p class="who" id="dashWho"></p>
+
+  <div class="clockface">
+    <div class="date-row" id="dashDate"></div>
+    <div class="time" id="dashTime"></div>
+    <span class="status-pill" id="statusPill"><span class="dot"></span><span id="statusLabel"></span></span>
+  </div>
+
+  <div class="actions" id="actionsPreClockIn">
+    <button class="act-launch" onclick="doClockIn()">Launch — clock in</button>
+  </div>
+
+  <div class="actions hidden" id="actionsActive">
+    <button class="act-pause" id="pauseBtn" onclick="doPauseToggle()">Pause</button>
+    <button class="act-back" onclick="showAuth()">Back</button>
+    <button class="act-online hidden" id="onlineBtn" onclick="doSetStatus('Online')">Go online</button>
+    <button class="act-offline" id="offlineBtn" onclick="doSetStatus('Offline')">Go offline</button>
+  </div>
+
+  <p class="hint">Going offline for 10 minutes without returning will automatically close today's session.</p>
+
+  <hr class="divider">
+
+  <div id="leaveClosed">
+    <button class="link-btn" onclick="toggleLeaveForm()">Request leave</button>
+  </div>
+  <div class="hidden" id="leaveForm">
+    <label for="leaveStart">From</label>
+    <input id="leaveStart" type="date">
+    <label for="leaveEnd">To</label>
+    <input id="leaveEnd" type="date">
+    <label for="leaveReason">Reason</label>
+    <input id="leaveReason" placeholder="e.g. Family event">
+    <div class="actions" style="margin-top:14px;">
+      <button class="act-back" onclick="toggleLeaveForm()">Cancel</button>
+      <button class="act-online" onclick="submitLeave()">Submit request</button>
+    </div>
+    <p class="error" id="leaveError"></p>
+  </div>
+  <div id="leaveHistory"></div>
+</div>
+
+<script>
+  // ----- Configure this -----
+  const API_URL = 'PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
+  // --------------------------
+
+  let authMode = 'login';
+  let session = null; // { empId, empName, orgId, orgName }
+
+  function api(action, params) {
+    const url = API_URL + '?action=' + action + '&' + new URLSearchParams(params || {}).toString();
+    return fetch(url).then(r => r.json());
+  }
+  function apiPost(action, body) {
+    return fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(Object.assign({ action }, body))
+    }).then(r => r.json());
+  }
+
+  function setAuthMode(mode) {
+    authMode = mode;
+    document.getElementById('tab-login').classList.toggle('active', mode === 'login');
+    document.getElementById('tab-register').classList.toggle('active', mode === 'register');
+    document.getElementById('registerExtra').classList.toggle('hidden', mode !== 'register');
+  }
+
+  function loadOrgs() {
+    api('getOrgs').then(res => {
+      const sel = document.getElementById('orgSelect');
+      sel.innerHTML = '';
+      (res.orgs || []).forEach(o => {
+        const opt = document.createElement('option');
+        opt.value = o.OrgID;
+        opt.textContent = o.OrgName;
+        sel.appendChild(opt);
+      });
+    });
+  }
+
+  function submitAuth() {
+    const orgId = document.getElementById('orgSelect').value;
+    const empId = document.getElementById('empId').value.trim();
+    const password = document.getElementById('empPass').value;
+    const errEl = document.getElementById('authError');
+    errEl.textContent = '';
+    if (!empId || !password) { errEl.textContent = 'Enter an employee ID and password.'; return; }
+
+    if (authMode === 'register') {
+      const empName = document.getElementById('empName').value.trim();
+      const orgCode = document.getElementById('orgCode').value.trim();
+      if (!empName || !orgCode) { errEl.textContent = 'Fill in your name and the organization code.'; return; }
+      apiPost('registerEmployee', { orgId, orgCode, empId, empName, password }).then(res => {
+        if (!res.success) { errEl.textContent = res.error; return; }
+        openDashboard({ empId: res.empId, empName, orgId: res.orgId, orgName: res.orgName });
+      });
+    } else {
+      apiPost('loginEmployee', { empId, password }).then(res => {
+        if (!res.success) { errEl.textContent = res.error; return; }
+        openDashboard(res);
+      });
+    }
+  }
+
+  function openDashboard(data) {
+    session = data;
+    document.getElementById('view-auth').classList.add('hidden');
+    document.getElementById('view-dash').classList.remove('hidden');
+    document.getElementById('dashOrgName').textContent = data.orgName;
+    document.getElementById('dashWho').textContent = (data.empName || data.empId) + ' · ID ' + data.empId;
+    refreshState();
+    loadLeaveHistory();
+  }
+
+  function showAuth() {
+    session = null;
+    document.getElementById('view-dash').classList.add('hidden');
+    document.getElementById('view-auth').classList.remove('hidden');
+  }
+
+  function refreshState() {
+    if (!session) return;
+    api('getEmpState', { empId: session.empId }).then(res => {
+      if (!res.success) return;
+      renderStatus(res.status);
+      const hasOpenLog = res.todaysLog && !res.todaysLog.clockOut;
+      document.getElementById('actionsPreClockIn').classList.toggle('hidden', !!hasOpenLog);
+      document.getElementById('actionsActive').classList.toggle('hidden', !hasOpenLog);
+      if (hasOpenLog) {
+        document.getElementById('pauseBtn').textContent = res.todaysLog.status === 'Paused' ? 'Resume' : 'Pause';
+      }
+    });
+  }
+
+  function renderStatus(status) {
+    const pill = document.getElementById('statusPill');
+    const label = document.getElementById('statusLabel');
+    label.textContent = status;
+    pill.className = 'status-pill ' + (status === 'Online' ? 'online' : 'offline');
+    document.getElementById('onlineBtn').classList.toggle('hidden', status === 'Online');
+    document.getElementById('offlineBtn').classList.toggle('hidden', status === 'Offline');
+  }
+
+  // Resolves to {lat, lng} or {} if location is unavailable/denied — never rejects,
+  // so a permission refusal never blocks the clock-in/out action itself.
+  function getLocation() {
+    return new Promise(resolve => {
+      if (!navigator.geolocation) { resolve({}); return; }
+      navigator.geolocation.getCurrentPosition(
+        pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        () => resolve({}),
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 }
+      );
+    });
+  }
+
+  function toggleLeaveForm() {
+    document.getElementById('leaveForm').classList.toggle('hidden');
+    document.getElementById('leaveClosed').classList.toggle('hidden');
+  }
+
+  function submitLeave() {
+    const startDate = document.getElementById('leaveStart').value;
+    const endDate = document.getElementById('leaveEnd').value;
+    const reason = document.getElementById('leaveReason').value.trim();
+    const errEl = document.getElementById('leaveError');
+    errEl.textContent = '';
+    if (!startDate || !endDate) { errEl.textContent = 'Pick a start and end date.'; return; }
+    apiPost('requestLeave', { empId: session.empId, startDate, endDate, reason }).then(res => {
+      if (!res.success) { errEl.textContent = res.error; return; }
+      document.getElementById('leaveStart').value = '';
+      document.getElementById('leaveEnd').value = '';
+      document.getElementById('leaveReason').value = '';
+      toggleLeaveForm();
+      loadLeaveHistory();
+    });
+  }
+
+  function loadLeaveHistory() {
+    const today = new Date().toISOString().slice(0, 10);
+    api('getEmployeeDetail', { orgId: session.orgId, empId: session.empId, startDate: today, endDate: today }).then(res => {
+      if (!res.success) return;
+      const box = document.getElementById('leaveHistory');
+      box.innerHTML = '';
+      res.leaves.forEach(l => {
+        const row = document.createElement('div');
+        row.className = 'leave-row';
+        row.innerHTML = `<span>${l.startDate} → ${l.endDate}${l.reason ? ' · ' + l.reason : ''}</span>
+          <span class="leave-status ${l.status}">${l.status}</span>`;
+        box.appendChild(row);
+      });
+    });
+  }
+
+  function doClockIn() {
+    getLocation().then(loc => apiPost('clockIn', Object.assign({ empId: session.empId }, loc)))
+      .then(res => { if (res.success) refreshState(); });
+  }
+  function doPauseToggle() {
+    apiPost('pause', { empId: session.empId }).then(res => { if (res.success) refreshState(); });
+  }
+  function doSetStatus(status) {
+    getLocation().then(loc => apiPost('setStatus', Object.assign({ empId: session.empId, status }, loc)))
+      .then(res => { if (res.success) renderStatus(res.status); });
+  }
+
+  function tickClock() {
+    const now = new Date();
+    document.getElementById('dashDate').textContent = now.toLocaleDateString(undefined, { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+    document.getElementById('dashTime').textContent = now.toLocaleTimeString();
+  }
+  setInterval(tickClock, 1000);
+  tickClock();
+  setInterval(refreshState, 15000); // poll so auto-offline-close is reflected
+
+  setAuthMode('login');
+  loadOrgs();
+</script>
+</body>
+</html>
