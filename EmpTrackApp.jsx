@@ -11,7 +11,7 @@ import {
 /* ------------------------------------------------------------------ */
 // Paste your deployed Google Apps Script Web App URL here (ends in /exec).
 // See Code.gs for the backend + deployment steps.
-const API_BASE_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
+const API_BASE_URL = "https://script.google.com/macros/s/AKfycbwA21hf49HUdtVCdZK8RXyxWwHQS4cA0NSFuAZ8DiN8-GLe4soRE9i86eRcyFZ1dL0p/exec";
 
 async function apiCall(action, data = {}) {
   if (!API_BASE_URL || API_BASE_URL.startsWith("PASTE_")) {
