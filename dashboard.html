@@ -76,7 +76,21 @@
 
 <script>
   const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxXtkIBDIzTqPlMgJMoiZuB_3ZtGzFYz2F2aW6ZLJgsEQjxZ1fUR6obZdpOUE_F55z1/exec";
-  let session = null; // { adminEmail, adminPassword, companyName, companyCode }
+  let session = null;
+
+  function jsonp(params) {
+    return new Promise((resolve, reject) => {
+      const cbName = 'cb_' + Math.random().toString(36).substring(2, 11);
+      const timeout = setTimeout(() => { cleanup(); reject(new Error('Request timed out. Check the Apps Script URL and deployment access.')); }, 15000);
+      function cleanup() { clearTimeout(timeout); delete window[cbName]; if (script.parentNode) script.parentNode.removeChild(script); }
+      window[cbName] = (data) => { cleanup(); resolve(data); };
+      const qs = new URLSearchParams({ ...params, callback: cbName }).toString();
+      const script = document.createElement('script');
+      script.src = APPS_SCRIPT_URL + '?' + qs;
+      script.onerror = () => { cleanup(); reject(new Error('Could not load the Apps Script URL.')); };
+      document.body.appendChild(script);
+    });
+  }
 
   function showMsg(el, text, type) { el.className = 'msg ' + type; el.innerHTML = text; }
 
@@ -89,8 +103,7 @@
 
     btn.disabled = true; btn.textContent = 'Logging in...';
     try {
-      const res = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'companyLogin', adminEmail, password }) });
-      const data = await res.json();
+      const data = await jsonp({ action: 'companyLogin', adminEmail, password });
       if (data.success) {
         session = { adminEmail, adminPassword: password, companyName: data.companyName, companyCode: data.companyCode };
         document.getElementById('loginCard').style.display = 'none';
@@ -102,7 +115,7 @@
         showMsg(msg, data.error || 'Login failed.', 'error');
       }
     } catch (err) {
-      showMsg(msg, 'Network error. Check APPS_SCRIPT_URL and your connection.', 'error');
+      showMsg(msg, err.message, 'error');
     }
     btn.disabled = false; btn.textContent = 'Log In';
   });
@@ -123,11 +136,7 @@
 
     btn.disabled = true; btn.textContent = 'Adding...';
     try {
-      const res = await fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'addEmployee', adminEmail: session.adminEmail, adminPassword: session.adminPassword, name, email })
-      });
-      const data = await res.json();
+      const data = await jsonp({ action: 'addEmployee', adminEmail: session.adminEmail, adminPassword: session.adminPassword, name, email });
       if (data.success) {
         showMsg(msg, data.emailSent
           ? `Added ${data.employeeId} — credentials emailed to ${email}.`
@@ -139,18 +148,14 @@
         showMsg(msg, data.error || 'Could not add employee.', 'error');
       }
     } catch (err) {
-      showMsg(msg, 'Network error. Check APPS_SCRIPT_URL and your connection.', 'error');
+      showMsg(msg, err.message, 'error');
     }
     btn.disabled = false; btn.textContent = 'Add Employee & Email Credentials';
   });
 
   async function loadEmployees() {
     try {
-      const res = await fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'listEmployees', adminEmail: session.adminEmail, adminPassword: session.adminPassword })
-      });
-      const data = await res.json();
+      const data = await jsonp({ action: 'listEmployees', adminEmail: session.adminEmail, adminPassword: session.adminPassword });
       const table = document.getElementById('empTable');
       const body = document.getElementById('empTableBody');
       const empty = document.getElementById('empEmpty');
