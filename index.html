@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Attendance System</title>
-<link rel="icon" type="image/png" href="logo.png">
+<link rel="icon" type="image/jpeg" href="https://raw.githubusercontent.com/infoattendancework-bit/Attendance/main/XYZ7702-001.jpg">
 <style>
   :root { --primary:#2563eb; --primary-dark:#1d4ed8; --bg:#f4f6f9; --card:#fff; --text:#1f2937; --muted:#6b7280; --border:#e5e7eb; }
   * { box-sizing: border-box; }
@@ -13,14 +13,39 @@
   h1 { font-size:1.6rem; margin-bottom:4px; }
   .subtitle { color:var(--muted); font-size:0.95rem; margin-bottom:32px; text-align:center; }
   .links { display:flex; flex-direction:column; gap:14px; width:100%; max-width:340px; }
-  a.link-card { display:block; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px 20px; text-decoration:none; color:var(--text); box-shadow:0 2px 8px rgba(0,0,0,0.05); }
-  a.link-card:hover { border-color:var(--primary); }
+  a.link-card { display:block; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px 20px; text-decoration:none; color:var(--text); box-shadow:0 2px 8px rgba(0,0,0,0.05); transition: border-color 0.15s ease, transform 0.1s ease; }
+  a.link-card:hover { border-color:var(--primary); transform:translateY(-1px); }
   a.link-card .title { font-weight:700; font-size:1.05rem; color:var(--primary-dark); }
   a.link-card .desc { font-size:0.85rem; color:var(--muted); margin-top:2px; }
+
+  /* Support footer */
+  footer.support {
+    margin-top:40px;
+    width:100%;
+    max-width:340px;
+    text-align:center;
+    font-size:0.82rem;
+    color:var(--muted);
+    border-top:1px solid var(--border);
+    padding-top:16px;
+  }
+  footer.support .support-title { font-weight:600; color:var(--text); margin-bottom:8px; font-size:0.85rem; }
+  footer.support a { color:var(--primary-dark); text-decoration:none; }
+  footer.support a:hover { text-decoration:underline; }
+  footer.support .contact-row { margin:4px 0; word-break:break-word; }
+
+  /* Slightly roomier layout on tablets/laptops/desktops */
+  @media (min-width: 640px) {
+    .links, footer.support { max-width:420px; }
+    h1 { font-size:1.8rem; }
+  }
+  @media (min-width: 1024px) {
+    .links, footer.support { max-width:460px; }
+  }
 </style>
 </head>
 <body>
-  <img class="logo" src="logo.png" alt="Attendance System logo">
+  <img class="logo" src="https://raw.githubusercontent.com/infoattendancework-bit/Attendance/main/XYZ7702-001.jpg" alt="Attendance System logo">
   <h1 style="margin-top:8px;">Attendance System</h1>
   <div class="subtitle">Choose where you need to go.</div>
   <div class="links">
@@ -37,5 +62,11 @@
       <div class="desc">Employees: check in or out with your ID and password.</div>
     </a>
   </div>
+
+  <footer class="support">
+    <div class="support-title">Need help?</div>
+    <div class="contact-row">Email: <a href="mailto:info.attendance.work@gmail.com">info.attendance.work@gmail.com</a></div>
+    <div class="contact-row">Phone: <a href="tel:+9999999999">9999999999</a></div>
+  </footer>
 </body>
 </html>
