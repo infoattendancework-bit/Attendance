@@ -52,6 +52,21 @@
   const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxXtkIBDIzTqPlMgJMoiZuB_3ZtGzFYz2F2aW6ZLJgsEQjxZ1fUR6obZdpOUE_F55z1/exec";
   if (APPS_SCRIPT_URL.indexOf("PASTE_YOUR") !== -1) document.getElementById('configWarning').style.display = 'block';
 
+  // JSONP call — avoids fetch()/CORS issues with Apps Script entirely.
+  function jsonp(params) {
+    return new Promise((resolve, reject) => {
+      const cbName = 'cb_' + Math.random().toString(36).substring(2, 11);
+      const timeout = setTimeout(() => { cleanup(); reject(new Error('Request timed out. Check the Apps Script URL and that it is deployed with access set to Anyone.')); }, 15000);
+      function cleanup() { clearTimeout(timeout); delete window[cbName]; if (script.parentNode) script.parentNode.removeChild(script); }
+      window[cbName] = (data) => { cleanup(); resolve(data); };
+      const qs = new URLSearchParams({ ...params, callback: cbName }).toString();
+      const script = document.createElement('script');
+      script.src = APPS_SCRIPT_URL + '?' + qs;
+      script.onerror = () => { cleanup(); reject(new Error('Could not load the Apps Script URL. Check it is correct and deployed.')); };
+      document.body.appendChild(script);
+    });
+  }
+
   function showMsg(el, text, type) { el.className = 'msg ' + type; el.innerHTML = text; }
 
   document.getElementById('registerBtn').addEventListener('click', async () => {
@@ -65,15 +80,7 @@
 
     btn.disabled = true; btn.textContent = 'Registering...';
     try {
-      const res = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'registerCompany', companyName, adminEmail, password }) });
-      const raw = await res.text();
-      let data;
-      try { data = JSON.parse(raw); }
-      catch (parseErr) {
-        showMsg(msg, 'Server did not return JSON (likely an Apps Script authorization or runtime error). Raw response:<br><pre style="white-space:pre-wrap;font-size:0.75rem;">' + raw.substring(0, 500).replace(/</g,'&lt;') + '</pre>', 'error');
-        btn.disabled = false; btn.textContent = 'Register Company';
-        return;
-      }
+      const data = await jsonp({ action: 'registerCompany', companyName, adminEmail, password });
       if (data.success) {
         showMsg(msg, `Registered! Your company code:<div class="code-display">${data.companyCode}</div>Log in to your <a href="dashboard.html">dashboard</a> to add employees.`, 'success');
         document.getElementById('companyName').value = '';
@@ -83,7 +90,7 @@
         showMsg(msg, data.error || 'Registration failed.', 'error');
       }
     } catch (err) {
-      showMsg(msg, 'Fetch failed before reaching the server: ' + err.message, 'error');
+      showMsg(msg, err.message, 'error');
     }
     btn.disabled = false; btn.textContent = 'Register Company';
   });
