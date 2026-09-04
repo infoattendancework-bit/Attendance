@@ -147,7 +147,23 @@
     btn.disabled = false; btn.textContent = 'Log In';
   });
 
-  document.getElementById('logoutBtn').addEventListener('click', () => {
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (session) {
+      logoutBtn.disabled = true;
+      logoutBtn.textContent = 'Logging out...';
+      try {
+        // Best-effort: mark Offline before logging out. If the employee is
+        // already Offline/Break (transition not allowed) or the request
+        // fails, we still proceed with logout — this should never trap
+        // someone on the dashboard.
+        await jsonp({ action: 'markStatus', employeeId: session.employeeId, password: session.password, status: 'Offline' });
+      } catch (err) {
+        // ignore — logout proceeds regardless
+      }
+      logoutBtn.disabled = false;
+      logoutBtn.textContent = 'Log out';
+    }
     session = null;
     document.getElementById('dashboard').style.display = 'none';
     document.getElementById('loginCard').style.display = 'block';
@@ -160,17 +176,11 @@
     badge.textContent = status;
     badge.className = 'status-badge status-' + status;
 
-    const allowedNext = {
-      'Offline': ['Online'],
-      'Online': ['Break', 'Offline'],
-      'Break': ['Back'],
-      'Back': ['Break', 'Offline']
-    };
-    const enabled = allowedNext[status] || [];
-    document.getElementById('onlineBtn').disabled = enabled.indexOf('Online') === -1;
-    document.getElementById('breakBtn').disabled = enabled.indexOf('Break') === -1;
-    document.getElementById('backBtn').disabled = enabled.indexOf('Back') === -1;
-    document.getElementById('offlineBtn').disabled = enabled.indexOf('Offline') === -1;
+    // Every button is always clickable — no transition restrictions.
+    document.getElementById('onlineBtn').disabled = false;
+    document.getElementById('breakBtn').disabled = false;
+    document.getElementById('backBtn').disabled = false;
+    document.getElementById('offlineBtn').disabled = false;
 
     const logList = document.getElementById('logList');
     logList.innerHTML = '';
