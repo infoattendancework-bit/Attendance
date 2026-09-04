@@ -34,12 +34,22 @@
   .status-Break { background:#fef3c7; color:var(--warn); }
   .status-Back { background:#dbeafe; color:var(--primary-dark); }
   .btn-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-  .status-btn { padding:14px; border:none; border-radius:10px; font-weight:700; font-size:0.95rem; cursor:pointer; color:#fff; }
-  .status-btn:disabled { background:#e5e7eb !important; color:#9ca3af; cursor:not-allowed; }
-  .btn-online { background:var(--success); }
-  .btn-break { background:var(--warn); }
-  .btn-back { background:var(--primary); }
-  .btn-offline { background:var(--danger); }
+  .status-btn {
+    padding:14px; border-radius:10px; font-weight:700; font-size:0.95rem; cursor:pointer;
+    background:#eef1f5; color:var(--text); border:1px solid var(--border);
+    transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease, color 0.15s ease;
+  }
+  .status-btn:hover:not(:disabled) { background:#e2e8f0; transform:translateY(-1px); box-shadow:0 3px 8px rgba(0,0,0,0.08); }
+  .status-btn:active:not(:disabled) { transform:translateY(0); box-shadow:none; }
+  .status-btn:disabled { background:#e5e7eb !important; color:#9ca3af; cursor:not-allowed; border-color:var(--border); transform:none; box-shadow:none; }
+  .status-btn.active-online { background:var(--success); color:#fff; border-color:var(--success); }
+  .status-btn.active-break { background:var(--warn); color:#fff; border-color:var(--warn); }
+  .status-btn.active-back { background:var(--primary); color:#fff; border-color:var(--primary); }
+  .status-btn.active-offline { background:var(--danger); color:#fff; border-color:var(--danger); }
+  .status-btn.active-online:hover:not(:disabled) { background:var(--success); filter:brightness(0.92); }
+  .status-btn.active-break:hover:not(:disabled) { background:var(--warn); filter:brightness(0.92); }
+  .status-btn.active-back:hover:not(:disabled) { background:var(--primary); filter:brightness(0.92); }
+  .status-btn.active-offline:hover:not(:disabled) { background:var(--danger); filter:brightness(0.92); }
   .log-title { font-size:0.85rem; font-weight:600; margin:20px 0 8px; color:var(--muted); }
   .log-row { display:flex; justify-content:space-between; font-size:0.85rem; padding:6px 0; border-bottom:1px solid var(--border); }
   .log-empty { font-size:0.85rem; color:var(--muted); text-align:center; padding:10px 0; }
@@ -74,10 +84,10 @@
         <span class="status-badge" id="statusBadge">—</span>
       </div>
       <div class="btn-grid">
-        <button class="status-btn btn-online" id="onlineBtn">Online</button>
-        <button class="status-btn btn-offline" id="offlineBtn">Offline</button>
-        <button class="status-btn btn-break" id="breakBtn">Break</button>
-        <button class="status-btn btn-back" id="backBtn">Back</button>
+        <button class="status-btn" id="onlineBtn">Online</button>
+        <button class="status-btn" id="offlineBtn">Offline</button>
+        <button class="status-btn" id="breakBtn">Break</button>
+        <button class="status-btn" id="backBtn">Back</button>
       </div>
       <div class="msg" id="statusMsg"></div>
 
@@ -177,10 +187,17 @@
     badge.className = 'status-badge status-' + status;
 
     // Every button is always clickable — no transition restrictions.
-    document.getElementById('onlineBtn').disabled = false;
-    document.getElementById('breakBtn').disabled = false;
-    document.getElementById('backBtn').disabled = false;
-    document.getElementById('offlineBtn').disabled = false;
+    // Only the button matching the current status gets colored in.
+    const buttonsByStatus = { Online: 'onlineBtn', Offline: 'offlineBtn', Break: 'breakBtn', Back: 'backBtn' };
+    ['onlineBtn', 'offlineBtn', 'breakBtn', 'backBtn'].forEach(id => {
+      const btn = document.getElementById(id);
+      btn.disabled = false;
+      btn.classList.remove('active-online', 'active-offline', 'active-break', 'active-back');
+    });
+    const activeBtnId = buttonsByStatus[status];
+    if (activeBtnId) {
+      document.getElementById(activeBtnId).classList.add('active-' + status.toLowerCase());
+    }
 
     const logList = document.getElementById('logList');
     logList.innerHTML = '';
