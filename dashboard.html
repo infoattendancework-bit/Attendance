@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Company Dashboard — Attendance System</title>
+<style>
+  :root { --primary:#2563eb; --primary-dark:#1d4ed8; --success:#16a34a; --danger:#dc2626; --bg:#f4f6f9; --card:#fff; --text:#1f2937; --muted:#6b7280; --border:#e5e7eb; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:24px 16px; }
+  h1 { font-size:1.4rem; margin-bottom:4px; }
+  .subtitle { color:var(--muted); font-size:0.9rem; margin-bottom:20px; text-align:center; }
+  .card { background:var(--card); border-radius:14px; padding:24px; width:100%; max-width:480px; box-shadow:0 2px 10px rgba(0,0,0,0.06); margin-bottom:20px; }
+  label { display:block; font-size:0.85rem; font-weight:600; margin:14px 0 6px; }
+  input { width:100%; padding:11px 12px; border-radius:8px; border:1px solid var(--border); font-size:1rem; }
+  input:focus { outline:none; border-color:var(--primary); }
+  button.action { width:100%; margin-top:20px; padding:12px; border:none; border-radius:8px; background:var(--primary); color:#fff; font-size:1rem; font-weight:600; cursor:pointer; }
+  button.action:hover { background:var(--primary-dark); }
+  button.action:disabled { background:#93a3b8; cursor:not-allowed; }
+  .msg { margin-top:16px; padding:12px; border-radius:8px; font-size:0.9rem; display:none; }
+  .msg.success { background:#dcfce7; color:var(--success); display:block; }
+  .msg.error { background:#fee2e2; color:var(--danger); display:block; }
+  .msg.info { background:#dbeafe; color:var(--primary-dark); display:block; }
+  #dashboard { display:none; width:100%; max-width:480px; }
+  .company-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+  .company-name { font-weight:700; font-size:1.1rem; }
+  .company-code { font-size:0.8rem; color:var(--muted); }
+  .logout-btn { background:none; border:1px solid var(--border); border-radius:8px; padding:6px 12px; font-size:0.8rem; cursor:pointer; color:var(--muted); }
+  table { width:100%; border-collapse:collapse; margin-top:16px; font-size:0.85rem; }
+  th, td { text-align:left; padding:8px; border-bottom:1px solid var(--border); }
+  th { color:var(--muted); font-weight:600; }
+  .empty { color:var(--muted); font-size:0.85rem; text-align:center; padding:16px 0; }
+</style>
+</head>
+<body>
+
+  <h1>Company Dashboard</h1>
+  <div class="subtitle">Log in to manage your employees.</div>
+
+  <div class="card" id="loginCard">
+    <label for="adminEmail">Admin Email</label>
+    <input type="email" id="adminEmail" placeholder="you@company.com">
+    <label for="adminPassword">Password</label>
+    <input type="password" id="adminPassword" placeholder="Your password">
+    <button class="action" id="loginBtn">Log In</button>
+    <div class="msg" id="loginMsg"></div>
+  </div>
+
+  <div id="dashboard">
+    <div class="card">
+      <div class="company-header">
+        <div>
+          <div class="company-name" id="companyNameLabel"></div>
+          <div class="company-code" id="companyCodeLabel"></div>
+        </div>
+        <button class="logout-btn" id="logoutBtn">Log out</button>
+      </div>
+
+      <label for="empName">Employee Name</label>
+      <input type="text" id="empName" placeholder="Full name">
+      <label for="empEmail">Employee Email</label>
+      <input type="email" id="empEmail" placeholder="employee@email.com">
+      <button class="action" id="addBtn">Add Employee &amp; Email Credentials</button>
+      <div class="msg" id="addMsg"></div>
+    </div>
+
+    <div class="card">
+      <strong>Employees</strong>
+      <table id="empTable" style="display:none;">
+        <thead><tr><th>ID</th><th>Name</th><th>Email</th></tr></thead>
+        <tbody id="empTableBody"></tbody>
+      </table>
+      <div class="empty" id="empEmpty">No employees added yet.</div>
+    </div>
+  </div>
+
+<script>
+  const APPS_SCRIPT_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
+  let session = null; // { adminEmail, adminPassword, companyName, companyCode }
+
+  function showMsg(el, text, type) { el.className = 'msg ' + type; el.innerHTML = text; }
+
+  document.getElementById('loginBtn').addEventListener('click', async () => {
+    const adminEmail = document.getElementById('adminEmail').value.trim();
+    const password = document.getElementById('adminPassword').value;
+    const msg = document.getElementById('loginMsg');
+    const btn = document.getElementById('loginBtn');
+    if (!adminEmail || !password) { showMsg(msg, 'Enter email and password.', 'error'); return; }
+
+    btn.disabled = true; btn.textContent = 'Logging in...';
+    try {
+      const res = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'companyLogin', adminEmail, password }) });
+      const data = await res.json();
+      if (data.success) {
+        session = { adminEmail, adminPassword: password, companyName: data.companyName, companyCode: data.companyCode };
+        document.getElementById('loginCard').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+        document.getElementById('companyNameLabel').textContent = data.companyName;
+        document.getElementById('companyCodeLabel').textContent = 'Code: ' + data.companyCode;
+        loadEmployees();
+      } else {
+        showMsg(msg, data.error || 'Login failed.', 'error');
+      }
+    } catch (err) {
+      showMsg(msg, 'Network error. Check APPS_SCRIPT_URL and your connection.', 'error');
+    }
+    btn.disabled = false; btn.textContent = 'Log In';
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    session = null;
+    document.getElementById('dashboard').style.display = 'none';
+    document.getElementById('loginCard').style.display = 'block';
+    document.getElementById('adminPassword').value = '';
+  });
+
+  document.getElementById('addBtn').addEventListener('click', async () => {
+    const name = document.getElementById('empName').value.trim();
+    const email = document.getElementById('empEmail').value.trim();
+    const msg = document.getElementById('addMsg');
+    const btn = document.getElementById('addBtn');
+    if (!name || !email) { showMsg(msg, 'Enter employee name and email.', 'error'); return; }
+
+    btn.disabled = true; btn.textContent = 'Adding...';
+    try {
+      const res = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'addEmployee', adminEmail: session.adminEmail, adminPassword: session.adminPassword, name, email })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showMsg(msg, data.emailSent
+          ? `Added ${data.employeeId} — credentials emailed to ${email}.`
+          : `Added ${data.employeeId}, but ${data.error}`, data.emailSent ? 'success' : 'info');
+        document.getElementById('empName').value = '';
+        document.getElementById('empEmail').value = '';
+        loadEmployees();
+      } else {
+        showMsg(msg, data.error || 'Could not add employee.', 'error');
+      }
+    } catch (err) {
+      showMsg(msg, 'Network error. Check APPS_SCRIPT_URL and your connection.', 'error');
+    }
+    btn.disabled = false; btn.textContent = 'Add Employee & Email Credentials';
+  });
+
+  async function loadEmployees() {
+    try {
+      const res = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'listEmployees', adminEmail: session.adminEmail, adminPassword: session.adminPassword })
+      });
+      const data = await res.json();
+      const table = document.getElementById('empTable');
+      const body = document.getElementById('empTableBody');
+      const empty = document.getElementById('empEmpty');
+      body.innerHTML = '';
+      if (data.success && data.employees.length) {
+        data.employees.forEach(emp => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${emp.employeeId}</td><td>${emp.name}</td><td>${emp.email}</td>`;
+          body.appendChild(tr);
+        });
+        table.style.display = 'table';
+        empty.style.display = 'none';
+      } else {
+        table.style.display = 'none';
+        empty.style.display = 'block';
+      }
+    } catch (err) { /* silent */ }
+  }
+</script>
+</body>
+</html>
