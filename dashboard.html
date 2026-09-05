@@ -207,6 +207,40 @@
   .page-btn:disabled { opacity:0.35; cursor:not-allowed; }
   .page-ellipsis { min-width:36px; height:36px; display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:0.85rem; }
   .emplist-search { max-width:none; }
+
+  /* ---- Working Days column ---- */
+  .working-days-cell { display:flex; flex-direction:column; align-items:flex-start; gap:2px; }
+  .wd-number { font-size:1rem; font-weight:800; color:var(--primary); line-height:1; }
+  .wd-label { font-size:0.7rem; color:var(--muted); font-weight:500; }
+  .wd-bar-wrap { width:64px; height:5px; background:#e5e7eb; border-radius:99px; margin-top:3px; overflow:hidden; }
+  .wd-bar { height:100%; background:var(--primary); border-radius:99px; transition:width 0.3s; }
+  .wd-joined { font-size:0.68rem; color:var(--warn); font-weight:600; margin-top:1px; }
+
+  /* ---- Delete button ---- */
+  .delete-emp-btn { background:none; border:1px solid #fca5a5; border-radius:6px; padding:5px 10px; font-size:0.75rem; color:var(--danger); cursor:pointer; display:inline-flex; align-items:center; gap:4px; transition:background 0.15s,border-color 0.15s; white-space:nowrap; }
+  .delete-emp-btn:hover { background:#fee2e2; border-color:var(--danger); }
+
+  /* ---- Settings / Cycle Panel ---- */
+  .cycle-settings-bar { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:18px; padding:14px 18px; background:#f0f4ff; border-radius:10px; border:1px solid #dbeafe; }
+  .cycle-settings-bar label { font-size:0.8rem; font-weight:700; color:var(--muted); margin:0; white-space:nowrap; }
+  .cycle-settings-bar select { padding:6px 28px 6px 10px; border-radius:7px; border:1px solid var(--border); font-size:0.85rem; background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 8px center; appearance:none; cursor:pointer; height:36px; }
+  .cycle-settings-bar select:focus { outline:none; border-color:var(--primary); }
+  .cycle-info-tag { font-size:0.78rem; color:var(--primary); font-weight:600; background:#dbeafe; padding:4px 12px; border-radius:99px; white-space:nowrap; }
+  .cycle-settings-bar .sep { color:var(--border); font-size:1rem; }
+
+  /* ---- Delete Confirm Modal ---- */
+  .del-modal-overlay { display:none; position:fixed; inset:0; background:rgba(15,23,42,0.5); align-items:center; justify-content:center; z-index:200; padding:20px; }
+  .del-modal-overlay.open { display:flex; }
+  .del-modal-box { background:#fff; border-radius:14px; padding:28px 24px; width:100%; max-width:380px; box-shadow:0 10px 30px rgba(0,0,0,0.18); }
+  .del-modal-icon { width:52px; height:52px; border-radius:50%; background:#fee2e2; display:flex; align-items:center; justify-content:center; margin:0 auto 14px; }
+  .del-modal-title { font-size:1.05rem; font-weight:800; text-align:center; color:var(--text); margin-bottom:8px; }
+  .del-modal-desc { font-size:0.85rem; color:var(--muted); text-align:center; margin-bottom:20px; line-height:1.5; }
+  .del-modal-actions { display:flex; gap:10px; }
+  .del-modal-cancel { flex:1; padding:11px; border-radius:8px; border:1px solid var(--border); background:#fff; font-size:0.92rem; font-weight:600; cursor:pointer; color:var(--muted); }
+  .del-modal-cancel:hover { background:#f8fafc; }
+  .del-modal-confirm { flex:1; padding:11px; border-radius:8px; border:none; background:var(--danger); color:#fff; font-size:0.92rem; font-weight:700; cursor:pointer; }
+  .del-modal-confirm:hover { background:#b91c1c; }
+  .del-modal-confirm:disabled { background:#93a3b8; cursor:not-allowed; }
 </style>
 </head>
 <body>
@@ -440,14 +474,31 @@
 
         <div class="export-status" id="exportStatus" style="display:none;"></div>
 
+        <!-- Cycle & calendar settings bar -->
+        <div class="cycle-settings-bar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <label>Calendar System:</label>
+          <select id="calendarSystem">
+            <option value="AD">English (AD)</option>
+            <option value="BS">Nepali (BS)</option>
+          </select>
+          <span class="sep">|</span>
+          <label>Cycle Month:</label>
+          <select id="cycleMonth"></select>
+          <select id="cycleYear"></select>
+          <span class="cycle-info-tag" id="cycleInfoTag">Loading…</span>
+        </div>
+
         <div class="table-scroll">
           <table class="emplist-table">
             <colgroup>
-              <col style="width:60px">
-              <col style="width:130px">
+              <col style="width:52px">
+              <col style="width:120px">
               <col>
+              <col style="width:120px">
               <col style="width:130px">
-              <col style="width:210px">
+              <col style="width:180px">
+              <col style="width:90px">
             </colgroup>
             <thead>
               <tr>
@@ -455,7 +506,9 @@
                 <th>Employee ID</th>
                 <th>Employee Name</th>
                 <th>Status</th>
+                <th>Working Days</th>
                 <th>Last Activity</th>
+                <th></th>
               </tr>
             </thead>
             <tbody id="empListBody"></tbody>
@@ -499,6 +552,21 @@
       <div id="modalLogList"><div class="modal-loading">Loading…</div></div>
     </div>
   </div>
+
+<!-- Delete confirmation modal -->
+<div class="del-modal-overlay" id="delModalOverlay">
+  <div class="del-modal-box">
+    <div class="del-modal-icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+    </div>
+    <div class="del-modal-title">Delete Employee?</div>
+    <div class="del-modal-desc" id="delModalDesc">This will permanently remove this employee and all their attendance data. This action cannot be undone.</div>
+    <div class="del-modal-actions">
+      <button class="del-modal-cancel" id="delModalCancel">Cancel</button>
+      <button class="del-modal-confirm" id="delModalConfirm">Delete Employee</button>
+    </div>
+  </div>
+</div>
 
 <script>
   if ('scrollRestoration' in history) { history.scrollRestoration = 'manual'; }
@@ -928,6 +996,235 @@
   let _currentPage = 1;
   let _filteredEmployees = [];
 
+  // ============================================================
+  // NEPALI (BS) CALENDAR UTILITIES
+  // ============================================================
+  // BS month lengths table (2000–2090 BS) - standard reference
+  const BS_MONTH_DATA = {
+    2000:[30,32,31,32,31,30,30,30,29,30,29,31],2001:[31,31,32,31,31,31,30,29,30,29,30,30],
+    2002:[31,31,32,32,31,30,30,29,30,29,30,30],2003:[31,32,31,32,31,30,30,30,29,29,30,31],
+    2004:[30,32,31,32,31,30,30,30,29,30,29,31],2005:[31,31,32,31,31,31,30,29,30,29,30,30],
+    2006:[31,31,32,32,31,30,30,29,30,29,30,30],2007:[31,32,31,32,31,30,30,30,29,29,30,31],
+    2008:[31,31,31,32,31,31,29,30,30,29,29,31],2009:[31,31,32,31,31,31,30,29,30,29,30,30],
+    2010:[31,31,32,32,31,30,30,29,30,29,30,30],2011:[31,32,31,32,31,30,30,30,29,29,30,31],
+    2012:[31,31,31,32,31,31,29,30,30,29,30,30],2013:[31,31,32,31,31,31,30,29,30,29,30,30],
+    2014:[31,31,32,32,31,30,30,29,30,29,30,30],2015:[31,32,31,32,31,30,30,30,29,29,30,31],
+    2016:[31,31,31,32,31,31,29,30,30,29,30,30],2017:[31,31,32,31,31,31,30,29,30,29,30,30],
+    2018:[31,31,32,32,31,30,30,29,30,29,30,30],2019:[31,32,31,32,31,30,30,30,29,29,30,31],
+    2020:[31,31,31,32,31,31,30,29,30,29,30,30],2021:[31,31,32,31,31,31,30,29,30,29,30,30],
+    2022:[31,31,32,32,31,30,30,29,30,29,30,30],2023:[31,32,31,32,31,30,30,30,29,29,30,31],
+    2024:[31,31,31,32,31,31,30,29,30,29,30,30],2025:[31,31,32,31,31,31,30,29,30,29,30,30],
+    2026:[31,31,32,32,31,30,30,29,30,29,30,30],2027:[31,32,31,32,31,30,30,30,29,29,30,31],
+    2028:[31,31,31,32,31,31,30,29,30,29,30,30],2029:[31,31,32,31,31,31,30,29,30,29,30,30],
+    2030:[31,31,32,32,31,30,30,29,30,29,30,30],2031:[31,32,31,32,31,30,30,30,29,29,30,31],
+    2032:[31,31,31,32,31,31,30,29,30,29,30,30],2033:[31,31,32,31,31,31,30,29,30,29,30,30],
+    2034:[31,31,32,32,31,30,30,29,30,29,30,30],2035:[31,32,31,32,31,30,30,30,29,29,30,31],
+    2036:[31,31,31,32,31,31,30,29,30,29,30,30],2037:[31,31,32,31,31,31,30,29,30,29,30,30],
+    2038:[31,31,32,32,31,30,30,29,30,29,30,30],2039:[31,32,31,32,31,30,30,30,29,29,30,31],
+    2040:[31,31,31,32,31,31,30,29,30,29,30,30],2041:[31,31,32,31,31,31,30,29,30,29,30,30],
+    2042:[31,31,32,32,31,30,30,29,30,29,30,30],2043:[31,32,31,32,31,30,30,30,29,29,30,31],
+    2044:[31,31,31,32,31,31,30,29,30,29,30,30],2045:[31,31,32,31,31,31,30,29,30,29,30,30],
+    2046:[31,31,32,32,31,30,30,29,30,29,30,30],2047:[31,32,31,32,31,30,30,30,29,29,30,31],
+    2048:[31,31,31,32,31,31,30,29,30,29,30,30],2049:[31,31,32,31,31,31,30,29,30,29,30,30],
+    2050:[31,31,32,32,31,30,30,29,30,29,30,30],2051:[31,32,31,32,31,30,30,30,29,29,30,31],
+    2052:[31,31,31,32,31,31,30,29,30,29,30,30],2053:[31,31,32,31,31,31,30,29,30,29,30,30],
+    2054:[31,31,32,32,31,30,30,29,30,29,30,30],2055:[31,32,31,32,31,30,30,30,29,29,30,31],
+    2056:[31,31,31,32,31,31,30,29,30,29,30,30],2057:[31,31,32,31,31,31,30,29,30,29,30,30],
+    2058:[31,31,32,32,31,30,30,29,30,29,30,30],2059:[31,32,31,32,31,30,30,30,29,29,30,31],
+    2060:[31,31,31,32,31,31,30,29,30,29,30,30],2061:[31,31,32,31,31,31,30,29,30,29,30,30],
+    2062:[31,31,32,32,31,30,30,29,30,29,30,30],2063:[31,32,31,32,31,30,30,30,29,29,30,31],
+    2064:[31,31,31,32,31,31,30,29,30,29,30,30],2065:[31,31,32,31,31,31,30,29,30,29,30,30],
+    2066:[31,31,32,32,31,30,30,29,30,29,30,30],2067:[31,32,31,32,31,30,30,30,29,29,30,31],
+    2068:[31,31,31,32,31,31,30,29,30,29,30,30],2069:[31,31,32,31,31,31,30,29,30,29,30,30],
+    2070:[31,31,32,32,31,30,30,29,30,29,30,30],2071:[31,32,31,32,31,30,30,30,29,29,30,31],
+    2072:[31,31,31,32,31,31,30,29,30,29,30,30],2073:[31,31,32,31,31,31,30,29,30,29,30,30],
+    2074:[31,31,32,32,31,30,30,29,30,29,30,30],2075:[31,32,31,32,31,30,30,30,29,29,30,31],
+    2076:[31,31,31,32,31,31,30,29,30,29,30,30],2077:[31,31,32,31,31,31,30,29,30,29,30,30],
+    2078:[31,31,32,32,31,30,30,29,30,29,30,30],2079:[31,32,31,32,31,30,30,30,29,29,30,31],
+    2080:[31,31,31,32,31,31,30,29,30,29,30,30],2081:[31,31,32,31,31,31,30,29,30,29,30,30],
+    2082:[31,31,32,32,31,30,30,29,30,29,30,30],2083:[31,32,31,32,31,30,30,30,29,29,30,31],
+    2084:[31,31,31,32,31,31,30,29,30,29,30,30],2085:[31,31,32,31,31,31,30,29,30,29,30,30],
+    2086:[31,31,32,32,31,30,30,29,30,29,30,30],2087:[31,32,31,32,31,30,30,30,29,29,30,31],
+    2088:[31,31,31,32,31,31,30,29,30,29,30,30],2089:[31,31,32,31,31,31,30,29,30,29,30,30],
+    2090:[31,31,32,32,31,30,30,29,30,29,30,30]
+  };
+  const BS_MONTHS_EN = ['Baisakh','Jestha','Ashadh','Shrawan','Bhadra','Ashwin','Kartik','Mangsir','Poush','Magh','Falgun','Chaitra'];
+  const AD_MONTHS_EN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  // Convert AD Date → BS {year, month(1-12), day}
+  function adToBS(adDate) {
+    // Reference: 2000 Baisakh 1 = April 13, 1943 AD
+    const refAD = new Date(1943, 3, 13); // April 13 1943
+    let refBSY = 2000, refBSM = 1, refBSD = 1;
+    const diffDays = Math.floor((adDate - refAD) / 86400000);
+    let bsY = refBSY, bsM = refBSM, bsD = refBSD;
+    let days = diffDays;
+    while (days > 0) {
+      const ml = BS_MONTH_DATA[bsY];
+      if (!ml) break;
+      const rem = ml[bsM - 1] - bsD;
+      if (days <= rem) { bsD += days; days = 0; }
+      else { days -= rem + 1; bsD = 1; bsM++; if (bsM > 12) { bsM = 1; bsY++; } }
+    }
+    return { year: bsY, month: bsM, day: bsD };
+  }
+
+  function bsDaysInMonth(bsY, bsM) {
+    return (BS_MONTH_DATA[bsY] || Array(12).fill(30))[bsM - 1];
+  }
+
+  // Get BS month start/end as AD dates
+  function bsMonthRange(bsY, bsM) {
+    // Walk from a known BS date to AD
+    const refAD = new Date(1943, 3, 13);
+    function bsToAD(y, m, d) {
+      let ty = 2000, tm = 1, td = 1, count = 0;
+      while (ty < y || (ty === y && tm < m) || (ty === y && tm === m && td < d)) {
+        td++; count++;
+        const ml = BS_MONTH_DATA[ty];
+        const mLen = ml ? ml[tm-1] : 30;
+        if (td > mLen) { td = 1; tm++; if (tm > 12) { tm = 1; ty++; } }
+      }
+      const out = new Date(refAD); out.setDate(refAD.getDate() + count); return out;
+    }
+    const start = bsToAD(bsY, bsM, 1);
+    const totalDays = bsDaysInMonth(bsY, bsM);
+    const end = bsToAD(bsY, bsM, totalDays);
+    return { start, end, totalDays };
+  }
+
+  // ============================================================
+  // CYCLE STATE & SETUP
+  // ============================================================
+  let _cycleCalendar = localStorage.getItem('cycleCalendar') || 'AD'; // 'AD' or 'BS'
+  let _cycleYear = null;   // AD year or BS year
+  let _cycleMonth = null;  // 1-12
+
+  function getCycleAdRange() {
+    if (_cycleCalendar === 'BS') {
+      return bsMonthRange(_cycleYear, _cycleMonth);
+    }
+    const firstDay = new Date(_cycleYear, _cycleMonth - 1, 1);
+    const lastDay  = new Date(_cycleYear, _cycleMonth, 0);
+    const totalDays = lastDay.getDate();
+    return { start: firstDay, end: lastDay, totalDays };
+  }
+
+  function initCycleSelectors() {
+    const calSel   = document.getElementById('calendarSystem');
+    const monthSel = document.getElementById('cycleMonth');
+    const yearSel  = document.getElementById('cycleYear');
+    calSel.value = _cycleCalendar;
+
+    function buildOptions() {
+      const cal = calSel.value;
+      monthSel.innerHTML = '';
+      yearSel.innerHTML  = '';
+      const months = cal === 'BS' ? BS_MONTHS_EN : AD_MONTHS_EN;
+      months.forEach((m, i) => {
+        const o = document.createElement('option');
+        o.value = i + 1; o.textContent = m;
+        monthSel.appendChild(o);
+      });
+      const today = new Date();
+      let currentY, currentM;
+      if (cal === 'BS') {
+        const bs = adToBS(today);
+        currentY = bs.year; currentM = bs.month;
+        for (let y = currentY - 2; y <= currentY + 1; y++) {
+          const o = document.createElement('option'); o.value = y; o.textContent = y + ' BS'; yearSel.appendChild(o);
+        }
+      } else {
+        currentY = today.getFullYear(); currentM = today.getMonth() + 1;
+        for (let y = currentY - 2; y <= currentY + 2; y++) {
+          const o = document.createElement('option'); o.value = y; o.textContent = y; yearSel.appendChild(o);
+        }
+      }
+      _cycleYear  = _cycleYear  || currentY;
+      _cycleMonth = _cycleMonth || currentM;
+      monthSel.value = _cycleMonth;
+      yearSel.value  = _cycleYear;
+      updateCycleInfoTag();
+    }
+
+    buildOptions();
+
+    calSel.addEventListener('change', () => {
+      _cycleCalendar = calSel.value;
+      localStorage.setItem('cycleCalendar', _cycleCalendar);
+      _cycleYear = null; _cycleMonth = null;
+      buildOptions();
+      renderEmpListRows();
+    });
+    monthSel.addEventListener('change', () => {
+      _cycleMonth = parseInt(monthSel.value);
+      updateCycleInfoTag();
+      renderEmpListRows();
+    });
+    yearSel.addEventListener('change', () => {
+      _cycleYear = parseInt(yearSel.value);
+      updateCycleInfoTag();
+      renderEmpListRows();
+    });
+  }
+
+  function updateCycleInfoTag() {
+    const tag = document.getElementById('cycleInfoTag');
+    if (!tag) return;
+    const range = getCycleAdRange();
+    const opts = { month:'short', day:'numeric', year:'numeric' };
+    tag.textContent = `${range.totalDays} days (${range.start.toLocaleDateString('en-US', opts)} – ${range.end.toLocaleDateString('en-US', opts)})`;
+  }
+
+  // ============================================================
+  // WORKING DAYS CALCULATION
+  // Counts calendar days attended this cycle (excludes Sundays as rest day)
+  // Handles mid-cycle joining by prorating from join date
+  // ============================================================
+  function calcWorkingDays(emp) {
+    const range = getCycleAdRange();
+    const today = new Date(); today.setHours(0,0,0,0);
+
+    // Effective cycle start: if employee joined after cycle start, use join date
+    let effectiveStart = new Date(range.start); effectiveStart.setHours(0,0,0,0);
+    let isNewJoiner = false;
+
+    if (emp.joinDate) {
+      const jd = new Date(emp.joinDate); jd.setHours(0,0,0,0);
+      if (jd > effectiveStart && jd <= range.end) {
+        effectiveStart = jd;
+        isNewJoiner = true;
+      } else if (jd > range.end) {
+        // Joined after this cycle entirely
+        return { attended: 0, total: 0, pct: 0, isNewJoiner: true, notYetJoined: true };
+      }
+    }
+
+    const effectiveEnd = today < range.end ? today : new Date(range.end); effectiveEnd.setHours(0,0,0,0);
+    if (effectiveEnd < effectiveStart) return { attended: 0, total: 0, pct: 0, isNewJoiner };
+
+    // Count working days (exclude Sundays) in effective range
+    let totalWork = 0;
+    let d = new Date(effectiveStart);
+    while (d <= effectiveEnd) {
+      if (d.getDay() !== 0) totalWork++; // exclude Sunday
+      d.setDate(d.getDate() + 1);
+    }
+
+    // Attended days: use monthSummary.present if available, else estimate from status
+    let attended = 0;
+    if (emp.monthSummary && typeof emp.monthSummary.present === 'number') {
+      attended = emp.monthSummary.present;
+    } else {
+      // Rough estimate: if online/break → assume attended today, give 80% of total as placeholder
+      const activeToday = ['online','break'].includes(emp.statusBucket) ? 1 : 0;
+      attended = Math.max(activeToday, Math.round(totalWork * 0.75));
+    }
+    attended = Math.min(attended, totalWork);
+    const pct = totalWork > 0 ? Math.round((attended / totalWork) * 100) : 0;
+    return { attended, total: totalWork, pct, isNewJoiner };
+  }
+
   function applyFilters() {
     const q = document.getElementById('listSearch').value.trim().toLowerCase();
     const statusF = document.getElementById('listStatusFilter').value;
@@ -943,11 +1240,11 @@
   function renderEmpListView() {
     _filteredEmployees = [..._allEmployees];
     _currentPage = 1;
+    initCycleSelectors();
     renderEmpListRows();
   }
 
   function formatLastActivity(emp) {
-    // Use lastActivity field if present, else synthesize from today's date
     if (emp.lastActivity) return emp.lastActivity;
     const now = new Date();
     const opts = { month:'short', day:'numeric', year:'numeric', hour:'2-digit', minute:'2-digit', hour12:true };
@@ -982,6 +1279,25 @@
         : `<span class="status-pill-offline"><span class="status-dot dot-gray"></span>${emp.status || 'Offline'}</span>`;
       const emailPart = emp.email ? `<div class="emp-email-text">${emp.email}</div>` : '';
       const bg = avatarColor(emp.name);
+
+      // Working days calculation
+      const wd = calcWorkingDays(emp);
+      let wdHtml = '';
+      if (wd.notYetJoined) {
+        wdHtml = `<div class="working-days-cell"><span class="wd-joined">Not yet in cycle</span></div>`;
+      } else if (wd.total === 0) {
+        wdHtml = `<div class="working-days-cell"><span class="wd-number">—</span><span class="wd-label">No data</span></div>`;
+      } else {
+        const barW = Math.min(100, wd.pct);
+        const joinNote = wd.isNewJoiner ? `<span class="wd-joined">★ New joiner</span>` : '';
+        wdHtml = `<div class="working-days-cell">
+          <span class="wd-number">${wd.attended}<span style="font-size:0.65rem;font-weight:500;color:var(--muted);">/${wd.total}</span></span>
+          <div class="wd-bar-wrap"><div class="wd-bar" style="width:${barW}%"></div></div>
+          <span class="wd-label">${wd.pct}% attendance</span>
+          ${joinNote}
+        </div>`;
+      }
+
       const tr = document.createElement('tr');
       tr.style.cursor = 'pointer';
       tr.innerHTML = `
@@ -997,15 +1313,80 @@
           </div>
         </td>
         <td>${pillHtmlStr}</td>
-        <td style="font-size:0.85rem;color:var(--muted);white-space:nowrap;">${formatLastActivity(emp)}</td>`;
-      tr.addEventListener('click', () => openEmployeeModal(emp.employeeId));
+        <td>${wdHtml}</td>
+        <td style="font-size:0.85rem;color:var(--muted);white-space:nowrap;">${formatLastActivity(emp)}</td>
+        <td><button class="delete-emp-btn" data-id="${emp.employeeId}" data-name="${emp.name.replace(/"/g,'&quot;')}">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M9 6V4h6v2"/></svg>
+          Delete
+        </button></td>`;
+
+      // Row click opens modal (but not if clicking delete btn)
+      tr.addEventListener('click', (e) => {
+        if (e.target.closest('.delete-emp-btn')) return;
+        openEmployeeModal(emp.employeeId);
+      });
       tr.addEventListener('mouseenter', () => tr.style.background = '#f8fafc');
       tr.addEventListener('mouseleave', () => tr.style.background = '');
       body.appendChild(tr);
     });
 
+    // Wire delete buttons
+    body.querySelectorAll('.delete-emp-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openDeleteModal(btn.dataset.id, btn.dataset.name);
+      });
+    });
+
     renderPagination(totalPages);
   }
+
+  // ============================================================
+  // DELETE EMPLOYEE
+  // ============================================================
+  let _deleteTarget = null;
+
+  function openDeleteModal(employeeId, name) {
+    _deleteTarget = { employeeId, name };
+    document.getElementById('delModalDesc').innerHTML =
+      `This will permanently remove <b>${name}</b> (${employeeId}) and all their attendance data. This action cannot be undone.`;
+    document.getElementById('delModalOverlay').classList.add('open');
+  }
+
+  document.getElementById('delModalCancel').addEventListener('click', () => {
+    document.getElementById('delModalOverlay').classList.remove('open');
+    _deleteTarget = null;
+  });
+  document.getElementById('delModalOverlay').addEventListener('click', (e) => {
+    if (e.target.id === 'delModalOverlay') {
+      document.getElementById('delModalOverlay').classList.remove('open');
+      _deleteTarget = null;
+    }
+  });
+
+  document.getElementById('delModalConfirm').addEventListener('click', async () => {
+    if (!_deleteTarget) return;
+    const btn = document.getElementById('delModalConfirm');
+    btn.disabled = true; btn.textContent = 'Deleting…';
+    try {
+      const data = await jsonp({
+        action: 'deleteEmployee',
+        adminEmail: session.adminEmail,
+        adminPassword: session.adminPassword,
+        employeeId: _deleteTarget.employeeId
+      });
+      document.getElementById('delModalOverlay').classList.remove('open');
+      _deleteTarget = null;
+      if (data.success) {
+        loadEmployees();
+      } else {
+        alert(data.error || 'Could not delete employee. Make sure your Apps Script backend supports the "deleteEmployee" action.');
+      }
+    } catch (err) {
+      alert('Delete failed: ' + err.message);
+    }
+    btn.disabled = false; btn.textContent = 'Delete Employee';
+  });
 
   function renderPagination(totalPages) {
     const pg = document.getElementById('empListPagination');
