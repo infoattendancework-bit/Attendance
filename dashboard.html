@@ -65,11 +65,20 @@
   .pill-offline { background:#f3f4f6; color:var(--muted); }
   .pill-leave { background:#ede9fe; color:var(--leave); }
   .summary-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:6px; }
-  .three-month-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
-  .month-block { border:1px solid var(--border); border-radius:12px; padding:16px; }
-  .month-block-title { font-weight:700; font-size:0.95rem; margin-bottom:10px; }
-  .month-block-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
-  @media (max-width:900px) { .three-month-grid { grid-template-columns:1fr; } }
+  .spark-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  .spark-card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px 20px 10px; }
+  .spark-card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .spark-card-label { font-size:0.83rem; color:var(--muted); font-weight:600; }
+  .spark-card-menu { color:#9ca3af; font-size:1.1rem; line-height:1; letter-spacing:1px; }
+  .spark-card-value-row { display:flex; align-items:baseline; gap:10px; margin-bottom:2px; flex-wrap:wrap; }
+  .spark-card-value { font-size:1.6rem; font-weight:800; color:var(--text); }
+  .spark-card-trend { font-size:0.82rem; font-weight:700; display:inline-flex; align-items:center; gap:2px; }
+  .spark-trend-up { color:var(--success); }
+  .spark-trend-down { color:var(--danger); }
+  .spark-card-chart { margin-top:8px; line-height:0; }
+  .spark-card-chart svg { display:block; width:100%; height:auto; }
+  .spark-card-empty { font-size:0.8rem; color:var(--muted); text-align:center; padding:16px 0; }
+  @media (max-width:900px) { .spark-grid { grid-template-columns:1fr; } }
   .summary-card { border-radius:10px; padding:14px; text-align:center; }
   .summary-card .num { font-size:1.5rem; font-weight:800; line-height:1; }
   .summary-card .lbl { font-size:0.78rem; margin-top:4px; font-weight:600; }
@@ -398,7 +407,7 @@
       <div class="card" style="margin-top:20px;">
         <strong>Past 3 Months Overview</strong>
         <div style="font-size:0.78rem; color:var(--muted); margin-top:2px; margin-bottom:14px;">Company-wide attendance totals for the last 3 months.</div>
-        <div class="three-month-grid" id="threeMonthGrid">
+        <div class="spark-grid" id="threeMonthGrid">
           <div class="empty" style="grid-column:1/-1;">Loading…</div>
         </div>
       </div>
@@ -802,14 +811,70 @@
   }
 
   function getPastMonthsAdRanges(count) {
+    // Returns oldest -> newest, e.g. [2 months ago, last month, this month]
     const ranges = [];
     const now = new Date();
-    for (let i = 0; i < count; i++) {
+    for (let i = count - 1; i >= 0; i--) {
       const first = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const last = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
       ranges.push({ label: first.toLocaleDateString('en-US', { month:'long', year:'numeric' }), start: first, end: last });
     }
     return ranges;
+  }
+
+  function buildSparklineSVG(values, colorHex) {
+    const w = 280, h = 56, pad = 6;
+    const hasData = values.some(v => v > 0);
+    if (!hasData) return null;
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const range = (max - min) || 1;
+    const n = values.length;
+    const pts = values.map((v, i) => {
+      const x = n === 1 ? w / 2 : (i / (n - 1)) * w;
+      const y = h - pad - ((v - min) / range) * (h - pad * 2);
+      return [x, y];
+    });
+    const lineD = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+    const areaD = lineD + ` L${w},${h} L0,${h} Z`;
+    const gid = 'sg' + Math.random().toString(36).slice(2, 9);
+    const dots = pts.map(p => `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="2.5" fill="${colorHex}"/>`).join('');
+    return `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
+      <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${colorHex}" stop-opacity="0.25"/>
+        <stop offset="100%" stop-color="${colorHex}" stop-opacity="0"/>
+      </linearGradient></defs>
+      <path d="${areaD}" fill="url(#${gid})" stroke="none"/>
+      <path d="${lineD}" fill="none" stroke="${colorHex}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      ${dots}
+    </svg>`;
+  }
+
+  function renderSparkCard(label, values, colorHex) {
+    const latest = values[values.length - 1] || 0;
+    const prev = values[values.length - 2] || 0;
+    let trendHtml = '';
+    if (values.length >= 2) {
+      const pct = prev === 0 ? (latest > 0 ? 100 : 0) : Math.round(((latest - prev) / prev) * 100);
+      const up = pct >= 0;
+      trendHtml = `<span class="spark-card-trend ${up ? 'spark-trend-up' : 'spark-trend-down'}">${up ? '↗' : '↘'} ${Math.abs(pct)}%</span>`;
+    }
+    const svg = buildSparklineSVG(values, colorHex);
+    const chartHtml = svg
+      ? `<div class="spark-card-chart">${svg}</div>`
+      : `<div class="spark-card-empty">No data yet</div>`;
+    return `
+      <div class="spark-card">
+        <div class="spark-card-header">
+          <div class="spark-card-label">${label}</div>
+          <div class="spark-card-menu">&#8942;</div>
+        </div>
+        <div class="spark-card-value-row">
+          <div class="spark-card-value">${latest}</div>
+          ${trendHtml}
+        </div>
+        ${chartHtml}
+      </div>`;
   }
 
   async function loadThreeMonthOverview() {
@@ -822,7 +887,7 @@
       const dd = String(d.getDate()).padStart(2, '0');
       return `${yyyy}-${mm}-${dd}`;
     };
-    const ranges = getPastMonthsAdRanges(3);
+    const ranges = getPastMonthsAdRanges(3); // oldest -> newest
     try {
       const results = await Promise.all(ranges.map(r =>
         jsonp({
@@ -833,9 +898,9 @@
           endDate: toISO(r.end)
         })
       ));
-      grid.innerHTML = '';
-      results.forEach((data, i) => {
-        const label = ranges[i].label;
+
+      const presentByMonth = [], leaveByMonth = [], absentByMonth = [];
+      results.forEach(data => {
         let present = 0, leave = 0, absent = 0;
         if (data.success && Array.isArray(data.employees)) {
           data.employees.forEach(e => {
@@ -844,17 +909,15 @@
             absent += e.absent || 0;
           });
         }
-        const block = document.createElement('div');
-        block.className = 'month-block';
-        block.innerHTML = `
-          <div class="month-block-title">${label}</div>
-          <div class="month-block-stats">
-            <div class="summary-card summary-online"><div class="num">${present}</div><div class="lbl">Present</div></div>
-            <div class="summary-card summary-leave"><div class="num">${leave}</div><div class="lbl">Leave</div></div>
-            <div class="summary-card" style="background:#fee2e2;"><div class="num" style="color:var(--danger);">${absent}</div><div class="lbl" style="color:var(--danger);">Absent</div></div>
-          </div>`;
-        grid.appendChild(block);
+        presentByMonth.push(present);
+        leaveByMonth.push(leave);
+        absentByMonth.push(absent);
       });
+
+      grid.innerHTML = '';
+      grid.insertAdjacentHTML('beforeend', renderSparkCard('Total Present Days', presentByMonth, resolvedColor('--success') || '#16a34a'));
+      grid.insertAdjacentHTML('beforeend', renderSparkCard('Total Leave Days', leaveByMonth, resolvedColor('--leave') || '#7c3aed'));
+      grid.insertAdjacentHTML('beforeend', renderSparkCard('Total Absent Days', absentByMonth, resolvedColor('--danger') || '#dc2626'));
     } catch (err) {
       grid.innerHTML = `<div class="empty" style="grid-column:1/-1;">Could not load 3-month overview: ${err.message}</div>`;
     }
