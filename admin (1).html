@@ -48,6 +48,16 @@
   <h1>Banner Settings</h1>
   <div class="subtitle">Upload an image to show on the homepage banner.</div>
 
+  <div class="card" id="loginCard">
+    <span class="field-label">Admin password</span>
+    <input type="password" id="passwordInput" placeholder="Enter password" autocomplete="off">
+    <div class="btn-row">
+      <button class="btn-primary" id="unlockBtn" style="flex:none; width:100%;">Unlock</button>
+    </div>
+    <div class="status" id="loginStatus"></div>
+  </div>
+
+  <div id="adminApp" style="display:none; width:100%;">
   <div class="card">
     <span class="field-label">Current banner</span>
     <div class="preview-wrap" id="previewWrap">
@@ -75,6 +85,7 @@
   </div>
 
   <a class="back-link" href="index.html">&larr; Back to home</a>
+  </div>
 
 <script>
   // Paste the same Google Apps Script Web App URL used in index.html (see Code.gs)
@@ -90,8 +101,15 @@
   var removeBtn = document.getElementById('removeBtn');
   var statusMsg = document.getElementById('statusMsg');
 
+  var loginCard = document.getElementById('loginCard');
+  var adminApp = document.getElementById('adminApp');
+  var passwordInput = document.getElementById('passwordInput');
+  var unlockBtn = document.getElementById('unlockBtn');
+  var loginStatus = document.getElementById('loginStatus');
+
   var pendingDataUrl = null; // newly chosen image, resized, base64
   var currentImageUrl = null; // image currently saved on the server
+  var sessionPassword = null; // kept in memory only for this page load, never stored
 
   function showPreview(url) {
     if (url) {
@@ -120,9 +138,7 @@
     return true;
   }
 
-  // Load existing banner from the backend so the admin sees what's live now
-  (function init() {
-    if (!apiConfigured()) return;
+  function loadCurrentBanner() {
     fetch(BANNER_API_URL)
       .then(function (res) { return res.json(); })
       .then(function (data) {
@@ -134,7 +150,48 @@
         if (data && data.caption) captionInput.value = data.caption;
       })
       .catch(function () { setStatus('Could not load current banner.', 'error'); });
-  })();
+  }
+
+  unlockBtn.addEventListener('click', function () {
+    if (!apiConfigured()) return;
+    var pwd = passwordInput.value;
+    if (!pwd) {
+      loginStatus.textContent = 'Enter the password.';
+      loginStatus.className = 'status error';
+      return;
+    }
+    unlockBtn.disabled = true;
+    loginStatus.textContent = 'Checking...';
+    loginStatus.className = 'status';
+
+    fetch(BANNER_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'checkPassword', password: pwd })
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        unlockBtn.disabled = false;
+        if (data && data.success) {
+          sessionPassword = pwd;
+          loginCard.style.display = 'none';
+          adminApp.style.display = 'block';
+          loadCurrentBanner();
+        } else {
+          loginStatus.textContent = 'Incorrect password.';
+          loginStatus.className = 'status error';
+        }
+      })
+      .catch(function () {
+        unlockBtn.disabled = false;
+        loginStatus.textContent = 'Could not reach the server.';
+        loginStatus.className = 'status error';
+      });
+  });
+
+  passwordInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') unlockBtn.click();
+  });
 
   fileInput.addEventListener('change', function (e) {
     var file = e.target.files && e.target.files[0];
@@ -175,6 +232,7 @@
 
     var payload = {
       action: 'saveBanner',
+      password: sessionPassword,
       link: linkInput.value.trim(),
       caption: captionInput.value.trim()
     };
@@ -207,18 +265,22 @@
     fetch(BANNER_API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'removeBanner' })
+      body: JSON.stringify({ action: 'removeBanner', password: sessionPassword })
     })
       .then(function (res) { return res.json(); })
-      .then(function () {
+      .then(function (data) {
         removeBtn.disabled = false;
-        pendingDataUrl = null;
-        currentImageUrl = null;
-        fileInput.value = '';
-        linkInput.value = '';
-        captionInput.value = '';
-        showPreview(null);
-        setStatus('Banner removed.', 'success');
+        if (data && data.success) {
+          pendingDataUrl = null;
+          currentImageUrl = null;
+          fileInput.value = '';
+          linkInput.value = '';
+          captionInput.value = '';
+          showPreview(null);
+          setStatus('Banner removed.', 'success');
+        } else {
+          setStatus('Remove failed: ' + (data && data.error ? data.error : 'unknown error'), 'error');
+        }
       })
       .catch(function () {
         removeBtn.disabled = false;
