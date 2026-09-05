@@ -857,7 +857,7 @@
       document.getElementById('modalId').textContent = 'ID: ' + data.employee.employeeId;
       document.getElementById('modalEmail').innerHTML = '<b>Email:</b> ' + data.employee.email;
 
-      const bucket = data.status === 'Leave' ? 'leave' : data.status === 'Break' ? 'break' : (data.status === 'Online' || data.status === 'Back') ? 'online' : 'offline';
+      const bucket = data.status === 'On Leave' ? 'leave' : data.status === 'Break' ? 'break' : (data.status === 'Online' || data.status === 'Back') ? 'online' : 'offline';
       document.getElementById('modalStatusPill').innerHTML = pillHtml(bucket, data.status);
 
       renderMonthSummary(data.monthSummary || data.employee.monthSummary);
