@@ -847,82 +847,81 @@
     `;
   }
 
- function downloadXlsx(filename, rows) {
-  const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [
-    { wch: 14 }, // Employee ID
-    { wch: 24 }, // Name
-    { wch: 28 }, // Email
-    { wch: 16 }, // Attendance Days
-    { wch: 14 }, // On Leave Days
-    { wch: 14 }, // Absent Days
-    { wch: 12 }  // Total Days
-  ];
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Payroll');
-  XLSX.writeFile(wb, filename);
+ async function exportAttendanceForPayroll() {
+  const btn = document.getElementById('exportAttendanceBtn');
+  const originalHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = 'Preparing report…';
+  try {
+    const range = getCycleAdRange();
+    const toISO = (d) => {
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    };
+    const startDate = toISO(range.start);
+    const endDate = toISO(range.end);
+
+    const data = await jsonp({
+      action: 'exportAttendance',
+      adminEmail: session.adminEmail,
+      adminPassword: session.adminPassword,
+      startDate,
+      endDate
+    });
+
+    if (!data.success || !Array.isArray(data.employees)) {
+      alert('Payroll export isn\'t set up on the backend yet.\n\nWhoever manages your Google Sheet / Apps Script backend needs to add an "exportAttendance" action that returns each employee\'s present/leave/absent day counts for the requested period — then this button will start working automatically.');
+      return;
+    }
+
+    const emailById = {};
+    _allEmployees.forEach(e => { emailById[e.employeeId] = e.email || ''; });
+
+    const rowsHtml = data.employees.map(r => `
+      <tr>
+        <td>${r.employeeId}</td>
+        <td>${r.name}</td>
+        <td>${emailById[r.employeeId] || ''}</td>
+        <td style="text-align:center;">${r.present || 0}</td>
+        <td style="text-align:center;">${r.leave || 0}</td>
+        <td style="text-align:center;">${r.absent || 0}</td>
+        <td style="text-align:center;">${r.totalDays || 0}</td>
+      </tr>`).join('');
+
+    const html = `
+      <html><head><title>Attendance Payroll ${startDate} to ${endDate}</title>
+      <style>
+        body{font-family:Arial,sans-serif;padding:24px;color:#1f2937;}
+        h2{margin-bottom:4px;} p{color:#6b7280;margin-top:0;}
+        table{border-collapse:collapse;width:100%;margin-top:16px;}
+        th,td{border:1px solid #e5e7eb;padding:8px 12px;font-size:14px;text-align:left;}
+        th{background:#f4f6f9;}
+        @media print { button{display:none;} }
+      </style></head>
+      <body>
+        <h2>Attendance for Payroll</h2>
+        <p>${startDate} to ${endDate}</p>
+        <button onclick="window.print()" style="margin-bottom:12px;padding:8px 16px;">Print / Save as PDF</button>
+        <table>
+          <thead><tr><th>Employee ID</th><th>Name</th><th>Email</th><th>Attendance Days</th><th>On Leave Days</th><th>Absent Days</th><th>Total Days</th></tr></thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+      </body></html>`;
+
+    const win = window.open('', '_blank');
+    win.document.write(html);
+    win.document.close();
+  } catch (err) {
+    alert('Could not export attendance report: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalHtml;
+  }
 }
 
-  // ============================================================
-  // EXPORT ATTENDANCE — FIXED
-  // Now uses the selected cycle (AD or BS, whatever month/year is
-  // chosen in the settings bar) via getCycleAdRange(), and matches
-  // the backend's actual response shape: { success, employees:[...] }
-  // with each employee = { employeeId, name, present, leave, absent, totalDays }.
-  // ============================================================
-  async function exportAttendanceForPayroll() {
-    const btn = document.getElementById('exportAttendanceBtn');
-    const originalHtml = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = 'Preparing report…';
-    try {
-      const range = getCycleAdRange();
-      const toISO = (d) => {
-        const yyyy = d.getFullYear();
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const dd = String(d.getDate()).padStart(2, '0');
-        return `${yyyy}-${mm}-${dd}`;
-      };
-      const startDate = toISO(range.start);
-      const endDate = toISO(range.end);
-
-      const data = await jsonp({
-        action: 'exportAttendance',
-        adminEmail: session.adminEmail,
-        adminPassword: session.adminPassword,
-        startDate,
-        endDate
-      });
-
-      if (!data.success || !Array.isArray(data.employees)) {
-        alert('Payroll export isn\'t set up on the backend yet.\n\nWhoever manages your Google Sheet / Apps Script backend needs to add an "exportAttendance" action that returns each employee\'s present/leave/absent day counts for the requested period — then this button will start working automatically.');
-        return;
-      }
-
-      const cycleLabel = `${startDate}_to_${endDate}`;
-      const emailById = {};
-      _allEmployees.forEach(e => { emailById[e.employeeId] = e.email || ''; });
-
-      const header = ['Employee ID', 'Name', 'Email', 'Attendance Days', 'On Leave Days', 'Absent Days', 'Total Days'];
-      const rows = [header, ...data.employees.map(r => [
-        r.employeeId,
-        r.name,
-        emailById[r.employeeId] || '',
-        r.present || 0,
-        r.leave || 0,
-        r.absent || 0,
-        r.totalDays || 0
-      ])];
-      downloadXlsx(`attendance-payroll-${cycleLabel}.xlsx`, rows);
-    } catch (err) {
-      alert('Could not export attendance report: ' + err.message);
-    } finally {
-      btn.disabled = false;
-      btn.innerHTML = originalHtml;
-    }
-  }
-
-  document.getElementById('exportAttendanceBtn').addEventListener('click', exportAttendanceForPayroll);
+document.getElementById('exportAttendanceBtn').addEventListener('click', exportAttendanceForPayroll);
 
   document.getElementById('modalClose').addEventListener('click', () => {
     document.getElementById('modalOverlay').classList.remove('open');
