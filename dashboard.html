@@ -210,6 +210,7 @@
   .del-modal-confirm:hover { background:#b91c1c; }
   .del-modal-confirm:disabled { background:#93a3b8; cursor:not-allowed; }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -846,20 +847,21 @@
     `;
   }
 
-  function csvEscape(val) {
-    const s = String(val ?? '');
-    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
-  }
-
-  function downloadCsv(filename, rows) {
-    const csv = rows.map(row => row.map(csvEscape).join(',')).join('\r\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = filename;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
+ function downloadXlsx(filename, rows) {
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [
+    { wch: 14 }, // Employee ID
+    { wch: 24 }, // Name
+    { wch: 28 }, // Email
+    { wch: 16 }, // Attendance Days
+    { wch: 14 }, // On Leave Days
+    { wch: 14 }, // Absent Days
+    { wch: 12 }  // Total Days
+  ];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Payroll');
+  XLSX.writeFile(wb, filename);
+}
 
   // ============================================================
   // EXPORT ATTENDANCE — FIXED
@@ -898,11 +900,20 @@
       }
 
       const cycleLabel = `${startDate}_to_${endDate}`;
-      const header = ['Employee ID', 'Name', 'Present Days', 'Leave Days', 'Absent Days', 'Total Days'];
+      const emailById = {};
+      _allEmployees.forEach(e => { emailById[e.employeeId] = e.email || ''; });
+
+      const header = ['Employee ID', 'Name', 'Email', 'Attendance Days', 'On Leave Days', 'Absent Days', 'Total Days'];
       const rows = [header, ...data.employees.map(r => [
-        r.employeeId, r.name, r.present || 0, r.leave || 0, r.absent || 0, r.totalDays || 0
+        r.employeeId,
+        r.name,
+        emailById[r.employeeId] || '',
+        r.present || 0,
+        r.leave || 0,
+        r.absent || 0,
+        r.totalDays || 0
       ])];
-      downloadCsv(`attendance-payroll-${cycleLabel}.csv`, rows);
+      downloadXlsx(`attendance-payroll-${cycleLabel}.xlsx`, rows);
     } catch (err) {
       alert('Could not export attendance report: ' + err.message);
     } finally {
