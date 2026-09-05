@@ -103,7 +103,7 @@
         <button class="status-btn" id="onlineBtn">Online</button>
         <button class="status-btn" id="offlineBtn">Offline</button>
         <button class="status-btn" id="breakBtn">Break</button>
-        <button class="status-btn" id="backBtn">On Leave</button>
+        <button class="status-btn" id="onleaveBtn">On Leave</button>
       </div>
       <div class="msg" id="statusMsg"></div>
 
@@ -257,7 +257,7 @@
 
   document.getElementById('onlineBtn').addEventListener('click', () => sendStatus('Online'));
   document.getElementById('breakBtn').addEventListener('click', () => sendStatus('Break'));
-  document.getElementById('backBtn').addEventListener('click', () => sendStatus('Back'));
+  document.getElementById('onleaveBtn').addEventListener('click', () => sendStatus('On Leave'));
   document.getElementById('offlineBtn').addEventListener('click', () => sendStatus('Offline'));
 </script>
 </body>
