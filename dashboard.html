@@ -108,6 +108,14 @@
   .modal-log-row { display:flex; justify-content:space-between; font-size:0.85rem; padding:6px 0; border-bottom:1px solid var(--border); }
   .modal-log-empty { font-size:0.85rem; color:var(--muted); text-align:center; padding:10px 0; }
   .modal-loading { font-size:0.85rem; color:var(--muted); text-align:center; padding:20px 0; }
+  .month-summary { display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-bottom:4px; }
+  .month-summary-cell { border-radius:8px; padding:10px 6px; text-align:center; }
+  .month-summary-cell .msc-num { font-size:1.3rem; font-weight:800; line-height:1; }
+  .month-summary-cell .msc-lbl { font-size:0.7rem; font-weight:600; margin-top:3px; }
+  .month-summary-present { background:#dcfce7; } .month-summary-present .msc-num, .month-summary-present .msc-lbl { color:var(--success); }
+  .month-summary-leave { background:#ede9fe; } .month-summary-leave .msc-num, .month-summary-leave .msc-lbl { color:var(--leave); }
+  .month-summary-absent { background:#fee2e2; } .month-summary-absent .msc-num, .month-summary-absent .msc-lbl { color:var(--danger); }
+  .month-summary-note { grid-column:1/-1; font-size:0.78rem; color:var(--muted); text-align:center; padding:8px 4px; }
 
   footer.support { margin-top:8px; width:100%; max-width:480px; text-align:center; font-size:0.8rem; color:var(--muted); border-top:1px solid var(--border); padding-top:14px; }
   footer.support .support-title { font-weight:600; color:var(--text); margin-bottom:6px; font-size:0.82rem; }
@@ -145,6 +153,14 @@
   /* ---- Employee List view (Image 1 style) ---- */
   #empListView { display:none; margin-bottom:24px; width:100%; }
   .emplist-header { display:flex; align-items:center; gap:16px; margin-bottom:20px; }
+  .emplist-header .emplist-title-wrap { flex:1; }
+  .export-btn { display:inline-flex; align-items:center; gap:8px; padding:0 20px; height:44px; border-radius:8px; background:var(--success); color:#fff; border:none; font-size:0.88rem; font-weight:700; cursor:pointer; white-space:nowrap; flex-shrink:0; }
+  .export-btn:hover { background:#15803d; }
+  .export-btn:disabled { background:#93a3b8; cursor:not-allowed; }
+  .export-status { margin-bottom:16px; padding:10px 14px; border-radius:8px; font-size:0.85rem; }
+  .export-status.info { background:#dbeafe; color:var(--primary-dark); }
+  .export-status.error { background:#fef3c7; color:#92400e; }
+  .export-status.success { background:#dcfce7; color:var(--success); }
   .emplist-back-btn { background:none; border:1px solid var(--border); border-radius:8px; padding:8px 16px; font-size:0.85rem; cursor:pointer; color:var(--muted); display:flex; align-items:center; gap:6px; white-space:nowrap; flex-shrink:0; }
   .emplist-back-btn:hover { background:#f8fafc; }
   .emplist-title-wrap { display:flex; align-items:center; gap:12px; }
@@ -390,6 +406,10 @@
             <div style="font-size:0.82rem;color:var(--muted);">View and manage all employees in your organization.</div>
           </div>
         </div>
+        <button class="export-btn" id="exportAttendanceBtn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export Attendance (for Payroll)
+        </button>
       </div>
 
       <div class="emplist-card">
@@ -417,6 +437,8 @@
             Filter
           </button>
         </div>
+
+        <div class="export-status" id="exportStatus" style="display:none;"></div>
 
         <div class="table-scroll">
           <table class="emplist-table">
@@ -467,6 +489,11 @@
       </div>
       <div class="modal-field" id="modalEmail"></div>
       <div class="modal-field">Status: <span id="modalStatusPill"></span></div>
+
+      <div class="modal-log-title">This month — for payroll</div>
+      <div id="modalMonthSummary" class="month-summary">
+        <div class="modal-loading">Loading…</div>
+      </div>
 
       <div class="modal-log-title">Today's activity</div>
       <div id="modalLogList"><div class="modal-loading">Loading…</div></div>
@@ -765,6 +792,8 @@
       const bucket = data.status === 'Leave' ? 'leave' : data.status === 'Break' ? 'break' : (data.status === 'Online' || data.status === 'Back') ? 'online' : 'offline';
       document.getElementById('modalStatusPill').innerHTML = pillHtml(bucket, data.status);
 
+      renderMonthSummary(data.monthSummary || data.employee.monthSummary);
+
       const logList = document.getElementById('modalLogList');
       logList.innerHTML = '';
       if (!data.log.length) {
@@ -783,9 +812,78 @@
     }
   }
 
+  function renderMonthSummary(summary) {
+    const el = document.getElementById('modalMonthSummary');
+    if (!summary || typeof summary.present !== 'number') {
+      el.innerHTML = `<div class="month-summary-note">Monthly attendance totals aren't available from the backend yet — see setup note below to enable this.</div>`;
+      return;
+    }
+    const present = summary.present || 0;
+    const leave = summary.leave || 0;
+    const absent = summary.absent || 0;
+    el.innerHTML = `
+      <div class="month-summary-cell month-summary-present"><div class="msc-num">${present}</div><div class="msc-lbl">Present</div></div>
+      <div class="month-summary-cell month-summary-leave"><div class="msc-num">${leave}</div><div class="msc-lbl">Leave</div></div>
+      <div class="month-summary-cell month-summary-absent"><div class="msc-num">${absent}</div><div class="msc-lbl">Absent</div></div>
+    `;
+  }
+
+  function csvEscape(val) {
+    const s = String(val ?? '');
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+
+  function downloadCsv(filename, rows) {
+    const csv = rows.map(row => row.map(csvEscape).join(',')).join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  async function exportAttendanceForPayroll() {
+    const btn = document.getElementById('exportAttendanceBtn');
+    const originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = 'Preparing report…';
+    try {
+      const now = new Date();
+      const data = await jsonp({
+        action: 'exportAttendance',
+        adminEmail: session.adminEmail,
+        adminPassword: session.adminPassword,
+        month: now.getMonth() + 1,
+        year: now.getFullYear()
+      });
+
+      if (!data.success || !Array.isArray(data.rows)) {
+        alert('Payroll export isn\'t set up on the backend yet.\n\nWhoever manages your Google Sheet / Apps Script backend needs to add an "exportAttendance" action that returns each employee\'s present/leave/absent day counts for the requested month — then this button will start working automatically.');
+        return;
+      }
+
+      const monthLabel = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const header = ['Employee ID', 'Name', 'Email', 'Present Days', 'Leave Days', 'Absent Days', 'Total Days'];
+      const rows = [header, ...data.rows.map(r => [
+        r.employeeId, r.name, r.email || '', r.present || 0, r.leave || 0, r.absent || 0,
+        (r.present || 0) + (r.leave || 0) + (r.absent || 0)
+      ])];
+      downloadCsv(`attendance-payroll-${monthLabel}.csv`, rows);
+    } catch (err) {
+      alert('Could not export attendance report: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+    }
+  }
+
+  document.getElementById('exportAttendanceBtn').addEventListener('click', exportAttendanceForPayroll);
+
   document.getElementById('modalClose').addEventListener('click', () => {
     document.getElementById('modalOverlay').classList.remove('open');
   });
+
   document.getElementById('modalOverlay').addEventListener('click', (e) => {
     if (e.target.id === 'modalOverlay') document.getElementById('modalOverlay').classList.remove('open');
   });
