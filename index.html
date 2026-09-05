@@ -32,6 +32,14 @@
   footer.support a { color:var(--primary-dark); text-decoration:none; }
   footer.support a:hover { text-decoration:underline; }
   footer.support .contact-row { margin:4px 0; word-break:break-word; }
+  footer.support .admin-link { margin-top:10px; }
+  footer.support .admin-link a { color:var(--muted); font-size:0.72rem; opacity:0.75; text-decoration:none; }
+  footer.support .admin-link a:hover { text-decoration:underline; opacity:1; }
+
+  .banner { width:100%; max-width:340px; margin-top:24px; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.05); border:1px solid var(--border); background:var(--card); display:none; }
+  .banner img { display:block; width:100%; height:auto; }
+  .banner a { display:block; }
+  .banner-caption { padding:12px 16px; font-size:0.85rem; color:#16a34a; font-weight:600; line-height:1.4; }
     @media (max-width: 360px) {
     .card, footer.support, .links { padding-left:0; padding-right:0; }
     h1 { font-size:1.25rem; }
@@ -44,6 +52,8 @@
   @media (min-width: 1024px) {
     .links, footer.support { max-width:460px; }
   }
+  @media (min-width: 640px) { .banner { max-width:420px; } }
+  @media (min-width: 1024px) { .banner { max-width:460px; } }
 </style>
 </head>
 <body>
@@ -67,10 +77,51 @@
     </a>
   </div>
 
+  <div class="banner" id="bannerSection">
+    <a id="bannerLink" href="#" target="_blank" rel="noopener">
+      <img id="bannerImg" src="" alt="Announcement banner">
+    </a>
+    <div class="banner-caption" id="bannerCaption" style="display:none;"></div>
+  </div>
+
   <footer class="support">
     <div class="support-title">Need help?</div>
     <div class="contact-row">Email: <a href="mailto:info.attendance.work@gmail.com">info.attendance.work@gmail.com</a></div>
     <div class="contact-row">Phone: <a href="tel:+9999999999">9999999999</a></div>
+    <div class="admin-link"><a href="admin.html">Admin</a></div>
   </footer>
+
+  <script>
+    // Paste the Google Apps Script Web App URL here (see Code.gs)
+    var BANNER_API_URL = 'https://script.google.com/macros/s/AKfycby56HpmJx2LxPzrT_RjaQ6zFmbT3YhIIiLm2uNA7-i7C8xJnypKPakzMtwGUwPhfaCRSA/exec';
+
+    (function () {
+      if (!BANNER_API_URL || BANNER_API_URL.indexOf('PASTE_YOUR') === 0) return;
+
+      fetch(BANNER_API_URL)
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          if (!data || !data.imageUrl) return;
+          var section = document.getElementById('bannerSection');
+          var imageEl = document.getElementById('bannerImg');
+          var linkEl = document.getElementById('bannerLink');
+          var captionEl = document.getElementById('bannerCaption');
+
+          imageEl.src = data.imageUrl;
+          if (data.link) {
+            linkEl.href = data.link;
+          } else {
+            linkEl.removeAttribute('href');
+            linkEl.style.cursor = 'default';
+          }
+          if (data.caption) {
+            captionEl.textContent = data.caption;
+            captionEl.style.display = 'block';
+          }
+          section.style.display = 'block';
+        })
+        .catch(function (err) { console.error('Banner load failed:', err); });
+    })();
+  </script>
 </body>
 </html>
