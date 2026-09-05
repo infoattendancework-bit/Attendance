@@ -34,9 +34,9 @@
   .spinner { width:34px; height:34px; border-radius:50%; border:3px solid var(--border); border-top-color:var(--primary); animation:spin 0.8s linear infinite; }
   @keyframes spin { to { transform:rotate(360deg); } }
 
-  /* ---- Dashboard: wide desktop layout ---- */
-  #dashboard { display:none; max-width:1320px; margin:0 auto; padding:32px 40px 56px; }
-  .dash-grid { display:grid; grid-template-columns:340px 1fr; gap:24px; align-items:start; }
+  /* ---- Dashboard: fixed wide desktop layout (not mobile-responsive by design) ---- */
+  #dashboard { display:none; width:92%; max-width:1680px; margin:0 auto; padding:40px 24px 64px; }
+  .dash-grid { display:grid; grid-template-columns:420px 1fr; gap:28px; align-items:start; }
   .company-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
   .company-name { font-weight:700; font-size:1.15rem; }
   .company-code { font-size:0.8rem; color:var(--muted); }
@@ -50,18 +50,6 @@
   .add-row { display:grid; grid-template-columns:1fr 1fr auto; gap:14px; align-items:end; }
   .add-row label { margin:0 0 6px; }
   .add-row button.action { width:auto; margin-top:0; padding:11px 22px; white-space:nowrap; }
-
-  @media (min-width: 1400px) {
-    #dashboard { max-width:1500px; padding:36px 48px 64px; }
-    .dash-grid { grid-template-columns:380px 1fr; gap:28px; }
-    .overview-card { max-width:960px; }
-  }
-
-  @media (max-width: 900px) {
-    .dash-grid { grid-template-columns:1fr; }
-    .add-row { grid-template-columns:1fr; }
-    .add-row button.action { width:100%; }
-  }
 
   /* Employee row is now clickable */
   #empTableBody tr { cursor:pointer; transition:background 0.12s ease; }
@@ -110,22 +98,11 @@
   footer.support a { color:var(--primary-dark); text-decoration:none; }
   footer.support a:hover { text-decoration:underline; }
   footer.support .contact-row { margin:3px 0; word-break:break-word; }
-    /* --- extra mobile tightening --- */
-  @media (max-width: 480px) {
-    #dashboard { padding:16px 12px 32px; }
-    .card { padding:16px; }
-    .company-header { flex-wrap:wrap; gap:8px; }
-    .summary-grid { gap:8px; }
-    .chart-wrap { flex-direction:column; gap:12px; }
-    #donutChart { width:130px; height:130px; }
-    .modal-box { padding:18px; max-width:100%; }
-  }
-
   .table-scroll { width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
   table { min-width:320px; }
 
   /* ---- Overview card (Image 2 style) ---- */
-  .overview-card { background:var(--card); border-radius:16px; padding:32px; margin-bottom:24px; box-shadow:0 2px 10px rgba(0,0,0,0.06); max-width:880px; margin-left:auto; margin-right:auto; margin-bottom:28px; }
+  .overview-card { background:var(--card); border-radius:16px; padding:40px; margin-bottom:24px; box-shadow:0 2px 10px rgba(0,0,0,0.06); width:100%; max-width:1200px; margin-left:auto; margin-right:auto; margin-bottom:28px; }
   .overview-company-row { display:flex; align-items:center; gap:16px; margin-bottom:24px; }
   .overview-company-icon { width:56px; height:56px; border-radius:50%; background:#dbeafe; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
   .overview-company-icon svg { width:28px; height:28px; color:#2563eb; }
@@ -197,17 +174,7 @@
   .page-btn.active { background:var(--primary); color:#fff; border-color:var(--primary); font-weight:700; }
   .page-btn:disabled { opacity:0.35; cursor:not-allowed; }
   .page-ellipsis { min-width:36px; height:36px; display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:0.85rem; }
-  @media (max-width: 700px) {
-    .overview-info-grid { grid-template-columns:1fr; }
-    .overview-stat-grid { flex-direction:column; }
-    .overview-stat:first-child { border-right:none; padding-right:0; border-bottom:1px solid var(--border); padding-bottom:16px; }
-    .overview-stat:last-child { padding-left:0; padding-top:16px; }
-    .emplist-filters { flex-direction:column; align-items:stretch; }
-    .emplist-search { max-width:100%; }
-    .emplist-select-wrap select { width:100%; min-width:unset; }
-    .filter-btn, .reset-btn { width:100%; justify-content:center; }
-    .emplist-table { min-width:580px; }
-  }
+  .emplist-search { max-width:none; }
 </style>
 </head>
 <body>
