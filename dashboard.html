@@ -220,6 +220,7 @@
   </div>
 
 <script>
+  if ('scrollRestoration' in history) { history.scrollRestoration = 'manual'; }
   const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxXtkIBDIzTqPlMgJMoiZuB_3ZtGzFYz2F2aW6ZLJgsEQjxZ1fUR6obZdpOUE_F55z1/exec";
   const SESSION_KEY = 'attendanceDashboardSession';
   let session = null;
