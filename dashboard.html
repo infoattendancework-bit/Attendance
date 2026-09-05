@@ -117,91 +117,6 @@
 
   .table-scroll { width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
   table { min-width:320px; }
-
-  /* ---- Overview card (Image 2 style) ---- */
-  .overview-card { background:var(--card); border-radius:16px; padding:32px; margin-bottom:24px; box-shadow:0 2px 10px rgba(0,0,0,0.06); max-width:720px; margin-left:auto; margin-right:auto; margin-bottom:28px; }
-  .overview-company-row { display:flex; align-items:center; gap:16px; margin-bottom:24px; }
-  .overview-company-icon { width:56px; height:56px; border-radius:50%; background:#dbeafe; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-  .overview-company-icon svg { width:28px; height:28px; color:#2563eb; }
-  .overview-company-name { font-size:1.4rem; font-weight:800; }
-  .overview-info-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px; }
-  .overview-info-box { background:#f0f4ff; border-radius:12px; padding:16px 18px; display:flex; align-items:center; gap:14px; }
-  .overview-info-icon { width:40px; height:40px; border-radius:50%; background:#dbeafe; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-  .overview-info-label { font-size:0.72rem; font-weight:700; color:var(--muted); letter-spacing:0.04em; text-transform:uppercase; }
-  .overview-info-value { font-size:1.15rem; font-weight:800; color:var(--primary); margin-top:2px; }
-  .overview-stat-grid { display:flex; border-top:1px solid var(--border); padding-top:24px; margin-bottom:24px; gap:0; }
-  .overview-stat { display:flex; align-items:flex-start; gap:16px; padding:0; flex:1; }
-  .overview-stat:first-child { padding-right:32px; border-right:1px solid var(--border); }
-  .overview-stat:last-child { padding-left:32px; }
-  .overview-stat-icon { width:48px; height:48px; border-radius:50%; background:#dbeafe; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-  .overview-stat-num { font-size:2.2rem; font-weight:900; color:var(--primary); line-height:1.1; margin-top:4px; margin-bottom:8px; }
-  .overview-stat-label { font-size:0.88rem; font-weight:700; color:var(--text); margin-bottom:4px; }
-  .overview-status-badge { display:inline-flex; align-items:center; gap:6px; padding:5px 14px; border-radius:999px; font-size:0.78rem; font-weight:700; }
-  .badge-online { background:#dcfce7; color:var(--success); }
-  .badge-offline { background:#fee2e2; color:var(--danger); }
-  .overview-footer { border-top:1px solid var(--border); padding-top:20px; display:flex; justify-content:center; }
-  .view-list-btn { display:inline-flex; align-items:center; gap:8px; border:2px solid var(--primary); border-radius:10px; padding:11px 28px; font-size:0.95rem; font-weight:700; color:var(--primary); background:#fff; cursor:pointer; transition:background 0.15s; }
-  .view-list-btn:hover { background:#eff6ff; }
-
-  /* ---- Employee List view (Image 1 style) ---- */
-  #empListView { display:none; margin-bottom:24px; width:100%; }
-  .emplist-header { display:flex; align-items:center; gap:16px; margin-bottom:20px; }
-  .emplist-back-btn { background:none; border:1px solid var(--border); border-radius:8px; padding:8px 16px; font-size:0.85rem; cursor:pointer; color:var(--muted); display:flex; align-items:center; gap:6px; white-space:nowrap; flex-shrink:0; }
-  .emplist-back-btn:hover { background:#f8fafc; }
-  .emplist-title-wrap { display:flex; align-items:center; gap:12px; }
-  .emplist-title-icon { width:44px; height:44px; border-radius:10px; background:#dbeafe; display:flex; align-items:center; justify-content:center; }
-  .emplist-card { background:var(--card); border-radius:16px; padding:28px; box-shadow:0 2px 10px rgba(0,0,0,0.06); width:100%; }
-  .emplist-filters { display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-bottom:24px; }
-  .emplist-search { flex:1; min-width:240px; max-width:480px; position:relative; }
-  .emplist-search input { width:100%; padding:0 12px 0 38px; height:42px; border-radius:8px; border:1px solid var(--border); font-size:0.9rem; box-sizing:border-box; }
-  .emplist-search input:focus { outline:none; border-color:var(--primary); }
-  .emplist-search-icon { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:var(--muted); }
-  .emplist-select-wrap { position:relative; }
-  .emplist-select-wrap label { position:absolute; top:-9px; left:10px; font-size:0.72rem; font-weight:600; color:var(--muted); background:#fff; padding:0 4px; z-index:1; }
-  .emplist-select-wrap select { padding:10px 36px 10px 14px; border-radius:8px; border:1px solid var(--border); font-size:0.88rem; appearance:none; background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center; cursor:pointer; min-width:150px; height:42px; }
-  .emplist-select-wrap select:focus { outline:none; border-color:var(--primary); }
-  .filter-btn { display:inline-flex; align-items:center; gap:6px; padding:0 20px; height:42px; border-radius:8px; background:var(--primary); color:#fff; border:none; font-size:0.88rem; font-weight:700; cursor:pointer; white-space:nowrap; }
-  .filter-btn:hover { background:var(--primary-dark); }
-  .reset-btn { display:inline-flex; align-items:center; gap:6px; padding:0 16px; height:42px; border-radius:8px; background:#fff; border:1px solid var(--border); font-size:0.88rem; color:var(--muted); cursor:pointer; white-space:nowrap; }
-  .reset-btn:hover { background:#f8fafc; }
-  .emplist-table { width:100%; border-collapse:collapse; font-size:0.9rem; table-layout:fixed; }
-  .emplist-table th { text-align:left; padding:12px 16px; border-bottom:2px solid var(--border); color:var(--muted); font-weight:700; font-size:0.82rem; white-space:nowrap; }
-  .emplist-table td { padding:14px 16px; border-bottom:1px solid var(--border); vertical-align:middle; }
-  .emplist-table tr:last-child td { border-bottom:none; }
-  .emplist-table colgroup col:nth-child(1) { width:60px; }
-  .emplist-table colgroup col:nth-child(2) { width:130px; }
-  .emplist-table colgroup col:nth-child(3) { width:auto; }
-  .emplist-table colgroup col:nth-child(4) { width:130px; }
-  .emplist-table colgroup col:nth-child(5) { width:210px; }
-  .emplist-table tr:last-child td { border-bottom:none; }
-  .emp-avatar { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.82rem; font-weight:800; color:#fff; flex-shrink:0; }
-  .emp-name-cell { display:flex; align-items:center; gap:10px; }
-  .emp-name-text { font-weight:600; font-size:0.9rem; }
-  .emp-email-text { font-size:0.78rem; color:var(--muted); }
-  .status-pill-online { background:#dcfce7; color:var(--success); display:inline-flex; align-items:center; gap:5px; padding:4px 12px; border-radius:999px; font-size:0.8rem; font-weight:700; }
-  .status-pill-offline { background:#f3f4f6; color:var(--muted); display:inline-flex; align-items:center; gap:5px; padding:4px 12px; border-radius:999px; font-size:0.8rem; font-weight:700; }
-  .status-dot { width:8px; height:8px; border-radius:50%; }
-  .dot-green { background:var(--success); }
-  .dot-gray { background:var(--muted); }
-  .emplist-footer { display:flex; justify-content:space-between; align-items:center; margin-top:20px; flex-wrap:wrap; gap:8px; }
-  .emplist-count-text { font-size:0.83rem; color:var(--muted); }
-  .pagination { display:flex; align-items:center; gap:4px; }
-  .page-btn { min-width:36px; height:36px; border-radius:8px; border:1px solid var(--border); background:#fff; font-size:0.85rem; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--text); padding:0 6px; }
-  .page-btn:hover:not(.active):not(:disabled) { background:#f0f4ff; border-color:var(--primary); }
-  .page-btn.active { background:var(--primary); color:#fff; border-color:var(--primary); font-weight:700; }
-  .page-btn:disabled { opacity:0.35; cursor:not-allowed; }
-  .page-ellipsis { min-width:36px; height:36px; display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:0.85rem; }
-  @media (max-width: 700px) {
-    .overview-info-grid { grid-template-columns:1fr; }
-    .overview-stat-grid { flex-direction:column; }
-    .overview-stat:first-child { border-right:none; padding-right:0; border-bottom:1px solid var(--border); padding-bottom:16px; }
-    .overview-stat:last-child { padding-left:0; padding-top:16px; }
-    .emplist-filters { flex-direction:column; align-items:stretch; }
-    .emplist-search { max-width:100%; }
-    .emplist-select-wrap select { width:100%; min-width:unset; }
-    .filter-btn, .reset-btn { width:100%; justify-content:center; }
-    .emplist-table { min-width:580px; }
-  }
 </style>
 </head>
 <body>
@@ -244,190 +159,51 @@
       <button class="logout-btn" id="logoutBtn">Log out</button>
     </div>
 
-    <!-- ===== OVERVIEW CARD (Image 2) ===== -->
-    <div id="overviewSection">
-      <div class="overview-card" id="overviewCard">
-        <div class="overview-company-row">
-          <div class="overview-company-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#2563eb;width:28px;height:28px;">
-              <rect x="2" y="3" width="20" height="18" rx="2"/><line x1="8" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="16" y2="21"/><line x1="2" y1="9" x2="22" y2="9"/><line x1="2" y1="15" x2="22" y2="15"/>
-            </svg>
-          </div>
-          <div class="overview-company-name" id="overviewCompanyName">—</div>
-        </div>
-        <div class="overview-info-grid">
-          <div class="overview-info-box">
-            <div class="overview-info-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            </div>
-            <div>
-              <div class="overview-info-label">Today / Day</div>
-              <div class="overview-info-value" id="overviewDay">—</div>
-            </div>
-          </div>
-          <div class="overview-info-box">
-            <div class="overview-info-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="12" cy="16" r="1" fill="#2563eb"/></svg>
-            </div>
-            <div>
-              <div class="overview-info-label">Today / Date</div>
-              <div class="overview-info-value" id="overviewDate">—</div>
-            </div>
-          </div>
-        </div>
-        <div class="overview-stat-grid">
-          <div class="overview-stat">
-            <div class="overview-stat-icon">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-            </div>
-            <div>
-              <div class="overview-stat-label">Active employees</div>
-              <div class="overview-stat-num" id="overviewOnline">0</div>
-              <span class="overview-status-badge badge-online" style="margin-top:6px;">
-                <span style="width:8px;height:8px;border-radius:50%;background:var(--success);display:inline-block;"></span> Online
-              </span>
-            </div>
-          </div>
-          <div class="overview-stat">
-            <div class="overview-stat-icon">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/><line x1="18" y1="14" x2="22" y2="18"/><line x1="22" y1="14" x2="18" y2="18"/></svg>
-            </div>
-            <div>
-              <div class="overview-stat-label">Offline employees</div>
-              <div class="overview-stat-num" id="overviewOffline">0</div>
-              <span class="overview-status-badge badge-offline" style="margin-top:6px;">
-                <span style="width:8px;height:8px;border-radius:50%;background:#dc2626;display:inline-block;"></span> Offline
-              </span>
-            </div>
-          </div>
-        </div>
-        <div class="overview-footer">
-          <button class="view-list-btn" id="viewEmpListBtn">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M2 20c0-3 3-5 7-5s7 2 7 5"/><path d="M16 13c3 0 6 1.5 6 4"/></svg>
-            View Employee List
-          </button>
-        </div>
-      </div>
-
-      <div class="dash-grid">
-        <div class="left-col">
-          <div class="card">
-            <strong>Today's overview</strong>
-            <div class="summary-grid" style="margin-top:14px;">
-              <div class="summary-card summary-online"><div class="num" id="countOnline">0</div><div class="lbl">Online</div></div>
-              <div class="summary-card summary-break"><div class="num" id="countBreak">0</div><div class="lbl">On Break</div></div>
-              <div class="summary-card summary-offline"><div class="num" id="countOffline">0</div><div class="lbl">Offline</div></div>
-              <div class="summary-card summary-leave"><div class="num" id="countLeave">0</div><div class="lbl">On Leave</div></div>
-            </div>
-            <div class="chart-wrap" id="chartWrap">
-              <svg id="donutChart" width="150" height="150" viewBox="0 0 150 150"></svg>
-              <div class="chart-legend" id="chartLegend"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="right-col">
-          <div class="card">
-            <strong>Add employee</strong>
-            <div class="add-row" style="margin-top:14px;">
-              <div>
-                <label for="empName">Employee Name</label>
-                <input type="text" id="empName" placeholder="Full name">
-              </div>
-              <div>
-                <label for="empEmail">Employee Email</label>
-                <input type="email" id="empEmail" placeholder="employee@email.com">
-              </div>
-              <button class="action" id="addBtn">Add &amp; Email Credentials</button>
-            </div>
-            <div class="msg" id="addMsg"></div>
+    <div class="dash-grid">
+      <div class="left-col">
+        <div class="card">
+          <strong>Today's overview</strong>
+          <div class="summary-grid" style="margin-top:14px;">
+            <div class="summary-card summary-online"><div class="num" id="countOnline">0</div><div class="lbl">Online</div></div>
+            <div class="summary-card summary-break"><div class="num" id="countBreak">0</div><div class="lbl">On Break</div></div>
+            <div class="summary-card summary-offline"><div class="num" id="countOffline">0</div><div class="lbl">Offline</div></div>
+            <div class="summary-card summary-leave"><div class="num" id="countLeave">0</div><div class="lbl">On Leave</div></div>
           </div>
 
-          <div class="card">
-            <strong>Employees</strong>
-            <div style="font-size:0.78rem; color:var(--muted); margin-top:2px;">Click a row to see full details.</div>
-            <div class="table-scroll">
-            <table id="empTable" style="display:none;">
-              <thead><tr><th>ID</th><th>Name</th><th>Status</th></tr></thead>
-              <tbody id="empTableBody"></tbody>
-            </table>
-            </div>
-            <div class="empty" id="empEmpty">No employees added yet.</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ===== EMPLOYEE LIST VIEW (Image 1) ===== -->
-    <div id="empListView">
-      <div class="emplist-header">
-        <button class="emplist-back-btn" id="backToOverviewBtn">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-          Back
-        </button>
-        <div class="emplist-title-wrap">
-          <div class="emplist-title-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M2 20c0-3 3-5 7-5s7 2 7 5"/><path d="M16 13c3 0 6 1.5 6 4"/></svg>
-          </div>
-          <div>
-            <div style="font-size:1.2rem;font-weight:800;">List of Employees</div>
-            <div style="font-size:0.82rem;color:var(--muted);">View and manage all employees in your organization.</div>
+          <div class="chart-wrap" id="chartWrap">
+            <svg id="donutChart" width="150" height="150" viewBox="0 0 150 150"></svg>
+            <div class="chart-legend" id="chartLegend"></div>
           </div>
         </div>
       </div>
 
-      <div class="emplist-card">
-        <div class="emplist-filters">
-          <div class="emplist-search">
-            <svg class="emplist-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" id="listSearch" placeholder="Search by name, ID or email...">
+      <div class="right-col">
+        <div class="card">
+          <strong>Add employee</strong>
+          <div class="add-row" style="margin-top:14px;">
+            <div>
+              <label for="empName">Employee Name</label>
+              <input type="text" id="empName" placeholder="Full name">
+            </div>
+            <div>
+              <label for="empEmail">Employee Email</label>
+              <input type="email" id="empEmail" placeholder="employee@email.com">
+            </div>
+            <button class="action" id="addBtn">Add &amp; Email Credentials</button>
           </div>
-          <div class="emplist-select-wrap">
-            <label>Status</label>
-            <select id="listStatusFilter">
-              <option value="">All Statuses</option>
-              <option value="online">Online</option>
-              <option value="offline">Offline</option>
-              <option value="break">On Break</option>
-              <option value="leave">On Leave</option>
-            </select>
-          </div>
-          <button class="reset-btn" id="listResetBtn">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.57"/></svg>
-            Reset
-          </button>
-          <button class="filter-btn" id="listFilterBtn">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-            Filter
-          </button>
+          <div class="msg" id="addMsg"></div>
         </div>
 
-        <div class="table-scroll">
-          <table class="emplist-table">
-            <colgroup>
-              <col style="width:60px">
-              <col style="width:130px">
-              <col>
-              <col style="width:130px">
-              <col style="width:210px">
-            </colgroup>
-            <thead>
-              <tr>
-                <th>No.</th>
-                <th>Employee ID</th>
-                <th>Employee Name</th>
-                <th>Status</th>
-                <th>Last Activity</th>
-              </tr>
-            </thead>
-            <tbody id="empListBody"></tbody>
+        <div class="card">
+          <strong>Employees</strong>
+          <div style="font-size:0.78rem; color:var(--muted); margin-top:2px;">Click a row to see full details.</div>
+          <div class="table-scroll">
+          <table id="empTable" style="display:none;">
+            <thead><tr><th>ID</th><th>Name</th><th>Status</th></tr></thead>
+            <tbody id="empTableBody"></tbody>
           </table>
-        </div>
-        <div class="empty" id="empListEmpty" style="display:none;">No employees found.</div>
-
-        <div class="emplist-footer">
-          <div class="emplist-count-text" id="empListCountText"></div>
-          <div class="pagination" id="empListPagination"></div>
+          </div>
+          <div class="empty" id="empEmpty">No employees added yet.</div>
         </div>
       </div>
     </div>
@@ -479,10 +255,6 @@
     session = s;
     document.getElementById('companyNameLabel').textContent = s.companyName;
     document.getElementById('companyCodeLabel').textContent = 'Code: ' + s.companyCode;
-    document.getElementById('overviewCompanyName').textContent = s.companyName;
-    // Reset to overview section on each login
-    document.getElementById('overviewSection').style.display = 'block';
-    document.getElementById('empListView').style.display = 'none';
     showScreen('dashboard');
     loadEmployees();
   }
@@ -694,15 +466,7 @@
         document.getElementById('countBreak').textContent = data.summary.break;
         document.getElementById('countOffline').textContent = data.summary.offline;
         document.getElementById('countLeave').textContent = data.summary.leave;
-        // Update overview card stats
-        document.getElementById('overviewOnline').textContent = data.summary.online;
-        document.getElementById('overviewOffline').textContent = data.summary.offline + (data.summary.leave || 0);
         renderChart(data.summary);
-      }
-
-      // Store all employees for the list view
-      if (data.success && data.employees) {
-        _allEmployees = data.employees;
       }
     } catch (err) { /* silent */ }
   }
@@ -753,167 +517,6 @@
   });
   document.getElementById('modalOverlay').addEventListener('click', (e) => {
     if (e.target.id === 'modalOverlay') document.getElementById('modalOverlay').classList.remove('open');
-  });
-
-  // ============================================================
-  // OVERVIEW CARD — populate day/date and wire up "View List" btn
-  // ============================================================
-  function updateOverviewDateTime() {
-    const now = new Date();
-    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-    document.getElementById('overviewDay').textContent = days[now.getDay()];
-    document.getElementById('overviewDate').textContent = now.toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' });
-  }
-  updateOverviewDateTime();
-
-  document.getElementById('viewEmpListBtn').addEventListener('click', () => {
-    document.getElementById('overviewSection').style.display = 'none';
-    document.getElementById('empListView').style.display = 'block';
-    renderEmpListView();
-  });
-
-  document.getElementById('backToOverviewBtn').addEventListener('click', () => {
-    document.getElementById('empListView').style.display = 'none';
-    document.getElementById('overviewSection').style.display = 'block';
-  });
-
-  // ============================================================
-  // EMPLOYEE LIST VIEW — avatar colors, search, filter, pagination
-  // ============================================================
-  const AVATAR_COLORS = ['#2563eb','#7c3aed','#db2777','#ea580c','#16a34a','#0891b2','#9333ea','#dc2626'];
-  function avatarColor(name) {
-    let h = 0; for (let c of name) h = (h * 31 + c.charCodeAt(0)) & 0xffff;
-    return AVATAR_COLORS[h % AVATAR_COLORS.length];
-  }
-  function initials(name) {
-    const parts = name.trim().split(/\s+/);
-    return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
-  }
-
-  let _allEmployees = [];
-  const PAGE_SIZE = 6;
-  let _currentPage = 1;
-  let _filteredEmployees = [];
-
-  function applyFilters() {
-    const q = document.getElementById('listSearch').value.trim().toLowerCase();
-    const statusF = document.getElementById('listStatusFilter').value;
-    _filteredEmployees = _allEmployees.filter(emp => {
-      const matchQ = !q || emp.name.toLowerCase().includes(q) || emp.employeeId.toLowerCase().includes(q) || (emp.email || '').toLowerCase().includes(q);
-      const matchS = !statusF || emp.statusBucket === statusF;
-      return matchQ && matchS;
-    });
-    _currentPage = 1;
-    renderEmpListRows();
-  }
-
-  function renderEmpListView() {
-    _filteredEmployees = [..._allEmployees];
-    _currentPage = 1;
-    renderEmpListRows();
-  }
-
-  function formatLastActivity(emp) {
-    // Use lastActivity field if present, else synthesize from today's date
-    if (emp.lastActivity) return emp.lastActivity;
-    const now = new Date();
-    const opts = { month:'short', day:'numeric', year:'numeric', hour:'2-digit', minute:'2-digit', hour12:true };
-    return now.toLocaleDateString('en-US', opts).replace(',','').replace(' AM',' AM').replace(' PM',' PM');
-  }
-
-  function renderEmpListRows() {
-    const body = document.getElementById('empListBody');
-    const empty = document.getElementById('empListEmpty');
-    body.innerHTML = '';
-
-    const total = _filteredEmployees.length;
-    const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-    if (_currentPage > totalPages) _currentPage = totalPages;
-    const start = (_currentPage - 1) * PAGE_SIZE;
-    const pageEmps = _filteredEmployees.slice(start, start + PAGE_SIZE);
-
-    if (!total) {
-      empty.style.display = 'block';
-      document.getElementById('empListCountText').textContent = '';
-      document.getElementById('empListPagination').innerHTML = '';
-      return;
-    }
-    empty.style.display = 'none';
-    document.getElementById('empListCountText').textContent =
-      `Showing ${start + 1} to ${Math.min(start + PAGE_SIZE, total)} of ${total} employee${total !== 1 ? 's' : ''}`;
-
-    pageEmps.forEach((emp, idx) => {
-      const isOnline = emp.statusBucket === 'online';
-      const pillHtmlStr = isOnline
-        ? `<span class="status-pill-online"><span class="status-dot dot-green"></span>Online</span>`
-        : `<span class="status-pill-offline"><span class="status-dot dot-gray"></span>${emp.status || 'Offline'}</span>`;
-      const emailPart = emp.email ? `<div class="emp-email-text">${emp.email}</div>` : '';
-      const bg = avatarColor(emp.name);
-      const tr = document.createElement('tr');
-      tr.style.cursor = 'pointer';
-      tr.innerHTML = `
-        <td style="color:var(--muted);font-size:0.88rem;font-weight:500;">${start + idx + 1}</td>
-        <td style="font-size:0.85rem;color:var(--muted);font-family:monospace;">${emp.employeeId}</td>
-        <td>
-          <div class="emp-name-cell">
-            <div class="emp-avatar" style="background:${bg};">${initials(emp.name)}</div>
-            <div>
-              <div class="emp-name-text">${emp.name}</div>
-              ${emailPart}
-            </div>
-          </div>
-        </td>
-        <td>${pillHtmlStr}</td>
-        <td style="font-size:0.85rem;color:var(--muted);white-space:nowrap;">${formatLastActivity(emp)}</td>`;
-      tr.addEventListener('click', () => openEmployeeModal(emp.employeeId));
-      tr.addEventListener('mouseenter', () => tr.style.background = '#f8fafc');
-      tr.addEventListener('mouseleave', () => tr.style.background = '');
-      body.appendChild(tr);
-    });
-
-    renderPagination(totalPages);
-  }
-
-  function renderPagination(totalPages) {
-    const pg = document.getElementById('empListPagination');
-    pg.innerHTML = '';
-    if (totalPages <= 1) return;
-
-    const mkBtn = (label, page, active, disabled, ellipsis) => {
-      if (ellipsis) {
-        const span = document.createElement('span');
-        span.className = 'page-ellipsis'; span.textContent = '…';
-        return span;
-      }
-      const btn = document.createElement('button');
-      btn.className = 'page-btn' + (active ? ' active' : '');
-      btn.disabled = !!disabled;
-      btn.innerHTML = label;
-      if (!disabled) btn.addEventListener('click', () => { _currentPage = page; renderEmpListRows(); });
-      return btn;
-    };
-
-    pg.appendChild(mkBtn('&#8249;', _currentPage - 1, false, _currentPage === 1));
-
-    // Always show first, last, current ±1, and ellipsis
-    const pages = new Set([1, totalPages, _currentPage, _currentPage - 1, _currentPage + 1].filter(p => p >= 1 && p <= totalPages));
-    const sorted = [...pages].sort((a,b) => a-b);
-    let prev = 0;
-    sorted.forEach(p => {
-      if (prev && p - prev > 1) pg.appendChild(mkBtn('…', null, false, false, true));
-      pg.appendChild(mkBtn(p, p, p === _currentPage, false, false));
-      prev = p;
-    });
-
-    pg.appendChild(mkBtn('&#8250;', _currentPage + 1, false, _currentPage === totalPages));
-  }
-
-  document.getElementById('listFilterBtn').addEventListener('click', applyFilters);
-  document.getElementById('listSearch').addEventListener('keydown', e => { if (e.key === 'Enter') applyFilters(); });
-  document.getElementById('listResetBtn').addEventListener('click', () => {
-    document.getElementById('listSearch').value = '';
-    document.getElementById('listStatusFilter').value = '';
-    applyFilters();
   });
 </script>
 </body>
