@@ -1131,7 +1131,7 @@
       if (cal === 'BS') {
         const bs = adToBS(today);
         currentY = bs.year; currentM = bs.month;
-        for (let y = currentY - 2; y <= currentY + 1; y++) {
+        for (let y = currentY - 2; y <= currentY + 7; y++) {
           const o = document.createElement('option'); o.value = y; o.textContent = y + ' BS'; yearSel.appendChild(o);
         }
       } else {
