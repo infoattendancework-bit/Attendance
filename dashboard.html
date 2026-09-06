@@ -590,7 +590,18 @@
         <button class="modal-close" id="modalClose">&times;</button>
       </div>
       <div class="modal-field" id="modalEmail"></div>
-      <div class="modal-field">Status: <span id="modalStatusPill"></span></div>
+      <div class="modal-field" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span>Status:</span>
+        <span id="modalStatusPill"></span>
+        <select id="modalStatusSelect" style="padding:5px 8px;border-radius:6px;border:1px solid var(--border);font-size:0.82rem;">
+          <option value="Online">Online</option>
+          <option value="Break">Break</option>
+          <option value="On Leave">On Leave</option>
+          <option value="Offline">Offline</option>
+        </select>
+        <button id="modalStatusSaveBtn" class="logout-btn" style="padding:5px 10px;">Update</button>
+        <span id="modalStatusMsg" style="font-size:0.78rem;"></span>
+      </div>
 
       <div class="modal-log-title">This month — for payroll</div>
       <div id="modalMonthSummary" class="month-summary">
@@ -648,6 +659,16 @@
     showScreen('dashboard');
     loadEmployees();
     loadThreeMonthOverview();
+    startAutoRefresh();
+  }
+
+  let _autoRefreshTimer = null;
+  function startAutoRefresh(intervalMs = 2000) {
+    if (_autoRefreshTimer) clearInterval(_autoRefreshTimer);
+    _autoRefreshTimer = setInterval(() => {
+      if (document.hidden) return; // skip while tab is in background
+      loadEmployees();
+    }, intervalMs);
   }
 
   (async function initSession() {
@@ -974,6 +995,11 @@
 
       const bucket = data.status === 'On Leave' ? 'leave' : data.status === 'Break' ? 'break' : (data.status === 'Online' || data.status === 'Back') ? 'online' : 'offline';
       document.getElementById('modalStatusPill').innerHTML = pillHtml(bucket, data.status);
+      const statusSelect = document.getElementById('modalStatusSelect');
+      const normalizedStatus = ['Online','Break','On Leave','Offline'].includes(data.status) ? data.status
+        : (data.status === 'Back' ? 'Online' : 'Offline');
+      statusSelect.value = normalizedStatus;
+      document.getElementById('modalStatusMsg').textContent = '';
 
       renderMonthSummary(data.monthSummary || data.employee.monthSummary);
       renderDayLog(data.log || []);
@@ -982,6 +1008,38 @@
       document.getElementById('modalLogList').innerHTML = `<div class="modal-loading">${err.message}</div>`;
     }
   }
+
+  document.getElementById('modalStatusSaveBtn').addEventListener('click', async () => {
+    if (!_modalEmployeeId) return;
+    const btn = document.getElementById('modalStatusSaveBtn');
+    const msgEl = document.getElementById('modalStatusMsg');
+    const newStatus = document.getElementById('modalStatusSelect').value;
+    btn.disabled = true; btn.textContent = 'Saving…';
+    msgEl.style.color = 'var(--muted)'; msgEl.textContent = '';
+    try {
+      const data = await jsonp({
+        action: 'setEmployeeStatus',
+        adminEmail: session.adminEmail,
+        adminPassword: session.adminPassword,
+        employeeId: _modalEmployeeId,
+        status: newStatus
+      });
+      if (data.success) {
+        msgEl.style.color = 'var(--success)';
+        msgEl.textContent = 'Updated';
+        const bucket = newStatus === 'On Leave' ? 'leave' : newStatus === 'Break' ? 'break' : newStatus === 'Online' ? 'online' : 'offline';
+        document.getElementById('modalStatusPill').innerHTML = pillHtml(bucket, newStatus);
+        loadEmployees();
+      } else {
+        msgEl.style.color = 'var(--danger)';
+        msgEl.textContent = data.error || 'Could not update. Backend needs a "setEmployeeStatus" action.';
+      }
+    } catch (err) {
+      msgEl.style.color = 'var(--danger)';
+      msgEl.textContent = 'Failed: ' + err.message;
+    }
+    btn.disabled = false; btn.textContent = 'Update';
+  });
 
   function renderDayLog(log) {
     const logList = document.getElementById('modalLogList');
