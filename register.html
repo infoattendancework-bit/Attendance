@@ -40,6 +40,10 @@
     h1 { font-size:1.25rem; }
   }
   @media (min-width: 640px) { .card, footer.support { max-width:440px; } }
+  .sub-summary { margin-top:14px; padding:12px 14px; border-radius:8px; background:#eef2ff; border:1px solid #dbe4ff; font-size:0.85rem; color:var(--text); }
+  .sub-summary .rate-row { display:flex; justify-content:space-between; margin:2px 0; }
+  .sub-summary .total-row { display:flex; justify-content:space-between; margin-top:8px; padding-top:8px; border-top:1px dashed var(--border); font-weight:700; }
+  .sub-note { font-size:0.78rem; color:var(--muted); margin-top:6px; }
 </style>
 </head>
 <body>
@@ -62,6 +66,17 @@
 
     <label for="password">Password</label>
     <input type="password" id="password" placeholder="Choose a password">
+
+    <label for="employeeCount">Number of Employees</label>
+    <input type="number" id="employeeCount" min="1" placeholder="e.g. 25" inputmode="numeric">
+
+    <div class="sub-summary" id="subSummary" style="display:none;">
+      <div class="rate-row"><span>Rate per employee</span><span id="subRate">-</span></div>
+      <div class="rate-row"><span>Number of employees</span><span id="subCount">-</span></div>
+      <div class="total-row"><span>Estimated monthly cost</span><span id="subTotal">-</span></div>
+      <div class="sub-note">Pricing: ₹100/employee (up to 30), ₹70/employee (31–100), ₹55/employee (100+).</div>
+    </div>
+    <div class="sub-note" style="margin-top:8px;">After registering, your subscription request is sent for admin approval. Once approved, you can start using the software. Payment is made directly to our account (offline) — it is not processed automatically in the system.</div>
 
     <button class="action" id="registerBtn">Register Company</button>
     <div class="msg" id="registerMsg"></div>
@@ -95,25 +110,63 @@
 
   function showMsg(el, text, type) { el.className = 'msg ' + type; el.innerHTML = text; }
 
+  // Subscription pricing: tiered per-employee rate based on headcount.
+  function getRatePerEmployee(count) {
+    if (count <= 30) return 100;
+    if (count <= 100) return 70;
+    return 55;
+  }
+
+  function updateSubSummary() {
+    const countEl = document.getElementById('employeeCount');
+    const summary = document.getElementById('subSummary');
+    const count = parseInt(countEl.value, 10);
+    if (!count || count <= 0) { summary.style.display = 'none'; return; }
+    const rate = getRatePerEmployee(count);
+    const total = rate * count;
+    document.getElementById('subRate').textContent = '₹' + rate + ' / employee';
+    document.getElementById('subCount').textContent = count;
+    document.getElementById('subTotal').textContent = '₹' + total.toLocaleString('en-IN') + ' / month';
+    summary.style.display = 'block';
+  }
+
+  document.getElementById('employeeCount').addEventListener('input', updateSubSummary);
+
   document.getElementById('logoImg').addEventListener('click', () => location.reload());
 
   document.getElementById('registerBtn').addEventListener('click', async () => {
     const companyName = document.getElementById('companyName').value.trim();
     const adminEmail = document.getElementById('adminEmail').value.trim();
     const password = document.getElementById('password').value;
+    const employeeCount = parseInt(document.getElementById('employeeCount').value, 10);
     const msg = document.getElementById('registerMsg');
     const btn = document.getElementById('registerBtn');
 
     if (!companyName || !adminEmail || !password) { showMsg(msg, 'Please fill in all fields.', 'error'); return; }
+    if (!employeeCount || employeeCount <= 0) { showMsg(msg, 'Please enter a valid number of employees.', 'error'); return; }
+
+    const ratePerEmployee = getRatePerEmployee(employeeCount);
+    const estimatedMonthlyCost = ratePerEmployee * employeeCount;
 
     btn.disabled = true; btn.textContent = 'Registering...';
     try {
-      const data = await jsonp({ action: 'registerCompany', companyName, adminEmail, password });
+      const data = await jsonp({
+        action: 'registerCompany',
+        companyName,
+        adminEmail,
+        password,
+        employeeCount,
+        ratePerEmployee,
+        estimatedMonthlyCost,
+        subscriptionStatus: 'pending'
+      });
       if (data.success) {
-        showMsg(msg, `Registered! Your company code:<div class="code-display">${data.companyCode}</div>Log in to your <a href="dashboard.html">dashboard</a> to add employees.`, 'success');
+        showMsg(msg, `Registered! Your company code:<div class="code-display">${data.companyCode}</div>Your subscription request (${employeeCount} employees, ₹${estimatedMonthlyCost.toLocaleString('en-IN')}/month) is <strong>pending admin approval</strong>. Once approved, log in to your <a href="dashboard.html">dashboard</a> to add employees and start using the software. Payment should be made to our account after approval, as instructed by the admin.`, 'success');
         document.getElementById('companyName').value = '';
         document.getElementById('adminEmail').value = '';
         document.getElementById('password').value = '';
+        document.getElementById('employeeCount').value = '';
+        document.getElementById('subSummary').style.display = 'none';
       } else {
         showMsg(msg, data.error || 'Registration failed.', 'error');
       }
