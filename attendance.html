@@ -60,6 +60,15 @@
   .log-title { font-size:0.85rem; font-weight:600; margin:20px 0 8px; color:var(--muted); }
   .log-row { display:flex; justify-content:space-between; font-size:0.85rem; padding:6px 0; border-bottom:1px solid var(--border); }
   .log-empty { font-size:0.85rem; color:var(--muted); text-align:center; padding:10px 0; }
+  .month-tabs { display:flex; gap:8px; margin-top:22px; }
+  .month-tab { flex:1; padding:8px; border-radius:8px; border:1px solid var(--border); background:#eef1f5; color:var(--text); font-size:0.85rem; font-weight:600; cursor:pointer; }
+  .month-tab.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+  .day-status { font-weight:700; padding:2px 8px; border-radius:999px; font-size:0.78rem; }
+  .day-status-Present { background:#dcfce7; color:var(--success); }
+  .day-status-Absent { background:#fee2e2; color:var(--danger); }
+  .day-status-OnLeave { background:#ede9fe; color:var(--leave); }
+  .day-status-Partial { background:#fef3c7; color:var(--warn); }
+  .month-summary { display:flex; justify-content:space-between; font-size:0.78rem; color:var(--muted); margin-bottom:8px; padding:0 2px; }
   footer.support { margin-top:8px; width:100%; max-width:400px; text-align:center; font-size:0.8rem; color:var(--muted); border-top:1px solid var(--border); padding-top:14px; }
   footer.support .support-title { font-weight:600; color:var(--text); margin-bottom:6px; font-size:0.82rem; }
   footer.support a { color:var(--primary-dark); text-decoration:none; }
@@ -119,6 +128,14 @@
 
       <div class="log-title">Today's activity</div>
       <div id="logList"></div>
+
+      <div class="month-tabs">
+        <button class="month-tab active" id="thisMonthTab">This Month</button>
+        <button class="month-tab" id="lastMonthTab">Last Month</button>
+      </div>
+      <div class="log-title" id="monthlyTitle">This Month's Attendance</div>
+      <div class="month-summary" id="monthlySummary"></div>
+      <div id="monthlyList"><div class="log-empty">Loading…</div></div>
     </div>
   </div>
 
@@ -184,6 +201,7 @@
           document.getElementById('greetCompanyName').textContent = data.companyName;
         }
         renderState(data.status, data.log);
+        loadMonthlyLog(0);
       } else {
         showMsg(msg, data.error || 'Login failed.', 'error');
       }
@@ -198,7 +216,8 @@
     if (!session) return;
     refreshBtn.disabled = true;
     refreshBtn.textContent = 'Refreshing...';
-    await refreshStatus();
+    const activeOffset = document.getElementById('lastMonthTab').classList.contains('active') ? 1 : 0;
+    await Promise.all([refreshStatus(), loadMonthlyLog(activeOffset)]);
     refreshBtn.disabled = false;
     refreshBtn.textContent = 'Refresh';
   });
@@ -279,6 +298,65 @@
   document.getElementById('breakBtn').addEventListener('click', () => sendStatus('Break'));
   document.getElementById('onleaveBtn').addEventListener('click', () => sendStatus('On Leave'));
   document.getElementById('offlineBtn').addEventListener('click', () => sendStatus('Offline'));
+
+  // ---- Monthly attendance (this month / last month) ----
+  let monthlyRequestInFlight = false;
+
+  async function loadMonthlyLog(monthOffset) {
+    if (monthlyRequestInFlight || !session) return;
+    monthlyRequestInFlight = true;
+    const list = document.getElementById('monthlyList');
+    const summary = document.getElementById('monthlySummary');
+    list.innerHTML = '<div class="log-empty">Loading…</div>';
+    summary.textContent = '';
+    try {
+      const data = await jsonp({ action: 'getMonthlyLog', employeeId: session.employeeId, password: session.password, monthOffset });
+      if (data.success) {
+        renderMonthlyLog(data.days || []);
+      } else {
+        list.innerHTML = `<div class="log-empty">${data.error || 'Could not load attendance.'}</div>`;
+      }
+    } catch (err) {
+      list.innerHTML = `<div class="log-empty">${err.message}</div>`;
+    }
+    monthlyRequestInFlight = false;
+  }
+
+  function renderMonthlyLog(days) {
+    const list = document.getElementById('monthlyList');
+    const summary = document.getElementById('monthlySummary');
+    list.innerHTML = '';
+    if (!days.length) {
+      list.innerHTML = '<div class="log-empty">No records found.</div>';
+      return;
+    }
+    const presentCount = days.filter(d => d.status === 'Present').length;
+    const leaveCount = days.filter(d => d.status === 'On Leave').length;
+    const absentCount = days.filter(d => d.status === 'Absent').length;
+    summary.innerHTML = `<span>Present: ${presentCount}</span><span>On Leave: ${leaveCount}</span><span>Absent: ${absentCount}</span>`;
+
+    days.slice().reverse().forEach(d => {
+      const row = document.createElement('div');
+      row.className = 'log-row';
+      const statusSlugged = statusSlug(d.status || 'Absent');
+      const timeInfo = d.firstIn ? `${d.firstIn}${d.lastOut ? ' – ' + d.lastOut : ''}` : '';
+      row.innerHTML = `<span>${d.date}${timeInfo ? ' <span class="hint" style="display:inline;">(' + timeInfo + ')</span>' : ''}</span><span class="day-status day-status-${statusSlugged}">${d.status || '—'}</span>`;
+      list.appendChild(row);
+    });
+  }
+
+  document.getElementById('thisMonthTab').addEventListener('click', () => {
+    document.getElementById('thisMonthTab').classList.add('active');
+    document.getElementById('lastMonthTab').classList.remove('active');
+    document.getElementById('monthlyTitle').textContent = "This Month's Attendance";
+    loadMonthlyLog(0);
+  });
+  document.getElementById('lastMonthTab').addEventListener('click', () => {
+    document.getElementById('lastMonthTab').classList.add('active');
+    document.getElementById('thisMonthTab').classList.remove('active');
+    document.getElementById('monthlyTitle').textContent = "Last Month's Attendance";
+    loadMonthlyLog(1);
+  });
 </script>
 </body>
 </html>
