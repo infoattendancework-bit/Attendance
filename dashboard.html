@@ -426,7 +426,7 @@
             <div class="emp-table-wrap" id="empTableWrap">
               <div class="table-scroll">
               <table id="empTable" style="display:none;">
-                <thead><tr><th>ID</th><th>Name</th><th>Status</th></tr></thead>
+                <thead><tr><th>ID</th><th>Name</th><th>Status</th><th>Location</th></tr></thead>
                 <tbody id="empTableBody"></tbody>
               </table>
               </div>
@@ -514,6 +514,7 @@
               <col style="width:120px">
               <col>
               <col style="width:120px">
+              <col style="width:160px">
               <col style="width:130px">
               <col style="width:180px">
               <col style="width:90px">
@@ -524,6 +525,7 @@
                 <th>Employee ID</th>
                 <th>Employee Name</th>
                 <th>Status</th>
+                <th>Location</th>
                 <th>Working Days</th>
                 <th>Last Activity</th>
                 <th></th>
@@ -878,7 +880,14 @@
       if (data.success && data.employees.length) {
         data.employees.forEach(emp => {
           const tr = document.createElement('tr');
+          const locTd = document.createElement('td');
+          locTd.style.cssText = 'font-size:0.82rem;color:var(--muted);max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+          locTd.textContent = emp.locationName || '—';
           tr.innerHTML = `<td>${emp.employeeId}</td><td>${emp.name}</td><td>${pillHtml(emp.statusBucket, emp.status)}</td>`;
+          tr.appendChild(locTd);
+          if (!emp.locationName && emp.lat && emp.lng) {
+            reverseGeocode(emp.lat, emp.lng).then(name => { locTd.textContent = name; });
+          }
           tr.addEventListener('click', () => openEmployeeModal(emp.employeeId));
           body.appendChild(tr);
         });
@@ -1071,6 +1080,25 @@
   function mapLink(lat, lng) {
     if (!lat || !lng) return '';
     return ` <a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" rel="noopener" style="font-size:0.78rem;color:var(--primary-dark);text-decoration:none;">📍 view</a>`;
+  }
+
+  // Cache reverse geocode results to avoid repeat requests
+  const _geoCache = {};
+  async function reverseGeocode(lat, lng) {
+    const key = `${parseFloat(lat).toFixed(4)},${parseFloat(lng).toFixed(4)}`;
+    if (_geoCache[key]) return _geoCache[key];
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`, {
+        headers: { 'Accept-Language': 'en' }
+      });
+      const json = await res.json();
+      const a = json.address || {};
+      const name = a.suburb || a.neighbourhood || a.village || a.town || a.city || a.county || a.state || json.display_name?.split(',')[0] || '—';
+      _geoCache[key] = name;
+      return name;
+    } catch {
+      return '—';
+    }
   }
 
   function renderDayLog(log) {
@@ -1669,12 +1697,26 @@ document.getElementById('exportAttendanceBtn').addEventListener('click', exportA
           </div>
         </td>
         <td>${pillHtmlStr}</td>
+        <td class="emp-location-cell" data-empid="${emp.employeeId}" style="font-size:0.82rem;color:var(--muted);max-width:160px;">
+          <div style="display:flex;align-items:center;gap:5px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;color:var(--primary);"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span class="loc-text" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${emp.locationName || '—'}</span>
+          </div>
+        </td>
         <td>${wdHtml}</td>
         <td style="font-size:0.85rem;color:var(--muted);white-space:nowrap;">${formatLastActivity(emp)}</td>
         <td><button class="delete-emp-btn" data-id="${emp.employeeId}" data-name="${emp.name.replace(/"/g,'&quot;')}">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M9 6V4h6v2"/></svg>
           Delete
         </button></td>`;
+
+      // Reverse geocode if lat/lng available and no cached name
+      if (!emp.locationName && emp.lat && emp.lng) {
+        reverseGeocode(emp.lat, emp.lng).then(name => {
+          const cell = tr.querySelector('.loc-text');
+          if (cell) cell.textContent = name;
+        });
+      }
 
       tr.addEventListener('click', (e) => {
         if (e.target.closest('.delete-emp-btn')) return;
