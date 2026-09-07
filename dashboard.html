@@ -1068,6 +1068,11 @@
     btn.disabled = false; btn.textContent = 'Update';
   });
 
+  function mapLink(lat, lng) {
+    if (!lat || !lng) return '';
+    return ` <a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" rel="noopener" style="font-size:0.78rem;color:var(--primary-dark);text-decoration:none;">📍 view</a>`;
+  }
+
   function renderDayLog(log) {
     const logList = document.getElementById('modalLogList');
     logList.innerHTML = '';
@@ -1077,7 +1082,7 @@
       log.slice().reverse().forEach(entry => {
         const row = document.createElement('div');
         row.className = 'modal-log-row';
-        row.innerHTML = `<span>${entry.status}</span><span>${entry.time}</span>`;
+        row.innerHTML = `<span>${entry.status}${mapLink(entry.lat, entry.lng)}</span><span>${entry.time}</span>`;
         logList.appendChild(row);
       });
     }
