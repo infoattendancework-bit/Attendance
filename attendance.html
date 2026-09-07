@@ -129,6 +129,7 @@
         <button class="status-btn" id="onleaveBtn">On Leave</button>
       </div>
       <div class="msg" id="statusMsg"></div>
+      <div class="hint" style="text-align:center;">Your location is recorded when you tap a status button. Allow location access if your browser asks.</div>
 
       <div class="log-title">Today's activity</div>
       <div id="logList"></div>
@@ -267,6 +268,28 @@
     location.reload();
   });
 
+  // ---- Geolocation capture ----
+  // Best-effort: resolves with {lat, lng} rounded to ~11m precision, or
+  // null if the browser has no geolocation support, the user denies the
+  // permission prompt, or it just times out. A denied/missing location
+  // should never block marking a status — the caller always gets a
+  // result, never a rejection.
+  function getLocation() {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) { resolve(null); return; }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => resolve({ lat: pos.coords.latitude.toFixed(6), lng: pos.coords.longitude.toFixed(6) }),
+        () => resolve(null),
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 }
+      );
+    });
+  }
+
+  function mapLink(lat, lng) {
+    if (!lat || !lng) return '';
+    return ` <a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" rel="noopener" class="hint" style="display:inline;">📍 view</a>`;
+  }
+
   function statusSlug(status) {
     return String(status).replace(/\s+/g, '');
   }
@@ -297,7 +320,7 @@
       log.slice().reverse().forEach(entry => {
         const row = document.createElement('div');
         row.className = 'log-row';
-        row.innerHTML = `<span>${entry.status}</span><span>${entry.time}</span>`;
+        row.innerHTML = `<span>${entry.status}${mapLink(entry.lat, entry.lng)}</span><span>${entry.time}</span>`;
         logList.appendChild(row);
       });
     }
@@ -311,11 +334,14 @@
 
     const msg = document.getElementById('statusMsg');
     ['onlineBtn', 'breakBtn', 'onleaveBtn', 'offlineBtn'].forEach(id => document.getElementById(id).disabled = true);
+    showMsg(msg, 'Getting your location…', 'info');
+    const loc = await getLocation();
     showMsg(msg, 'Updating…', 'info');
     try {
-      const data = await jsonp({ action: 'markStatus', employeeId: session.employeeId, password: session.password, status });
+      const data = await jsonp({ action: 'markStatus', employeeId: session.employeeId, password: session.password, status, lat: loc ? loc.lat : '', lng: loc ? loc.lng : '' });
       if (data.success) {
-        showMsg(msg, `Marked ${data.status} at ${data.time}`, 'success');
+        const locNote = loc ? '' : ' (location unavailable)';
+        showMsg(msg, `Marked ${data.status} at ${data.time}${locNote}`, 'success');
         renderState(data.status, data.log);
       } else {
         showMsg(msg, data.error || 'Could not update status.', 'error');
