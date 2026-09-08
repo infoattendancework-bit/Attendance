@@ -53,6 +53,9 @@
   .leave-row { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:8px; background:#faf5ff; }
   .leave-row .leave-avatar { width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.65rem; font-weight:800; color:#fff; flex-shrink:0; background:var(--leave); }
   .leave-row .leave-name { font-size:0.78rem; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .leave-date-row { display:flex; justify-content:space-between; align-items:center; padding:7px 9px; border-radius:8px; background:#faf5ff; flex-shrink:0; }
+  .leave-date-row .leave-date-label { font-size:0.86rem; font-weight:600; color:var(--text); }
+  .leave-date-row .leave-date-count { font-size:0.86rem; font-weight:800; color:var(--leave); }
   .add-row { display:grid; grid-template-columns:1fr; gap:16px; }
   .add-submit-btn { width:100%; margin-top:24px; height:56px; font-size:1.05rem; display:flex; align-items:center; justify-content:center; gap:8px; }
   .add-field label { display:block; font-size:0.9rem; font-weight:600; margin:0 0 8px; color:var(--text); }
@@ -401,12 +404,12 @@
                 </div>
                 <div>
                   <strong>On Leave</strong>
-                  <div style="font-size:0.78rem; color:var(--muted);">Employees away today</div>
+                  <div style="font-size:0.78rem; color:var(--muted);" id="leaveCardSubtitle">This month, by date</div>
                 </div>
               </div>
               <div class="leave-card-count" id="leaveCountBig">0</div>
               <div id="leaveListBody" class="leave-list">
-                <div class="leave-empty" id="leaveEmpty">No employees on leave today.</div>
+                <div class="leave-empty" id="leaveEmpty">Loading…</div>
               </div>
             </div>
           </div>
@@ -706,6 +709,7 @@
     showScreen('dashboard');
     loadEmployees();
     loadThreeMonthOverview();
+    loadMonthlyLeaveByDate();
     startAutoRefresh();
   }
 
@@ -953,28 +957,68 @@
 
       if (data.success && data.employees) {
         _allEmployees = data.employees;
-        renderLeaveCard(_allEmployees);
         document.getElementById('empSummaryCount').textContent = data.employees.length;
       }
     } catch (err) { /* silent */ }
   }
 
-  function renderLeaveCard(employees) {
-    const onLeave = employees.filter(emp => emp.statusBucket === 'leave');
+  // Renders the "On Leave" card as a by-date breakdown for the current
+  // calendar month (e.g. "Sep 3 — 2") instead of just today's list, using
+  // the leaveByDate array from exportAttendance. Card size (the fixed
+  // 230px column, 100px-tall scrolling list) never changes — a busier
+  // month just scrolls inside the same box instead of growing it.
+  async function loadMonthlyLeaveByDate() {
     const countEl = document.getElementById('leaveCountBig');
     const listEl = document.getElementById('leaveListBody');
-    if (countEl) countEl.textContent = onLeave.length;
+    const subtitleEl = document.getElementById('leaveCardSubtitle');
     if (!listEl) return;
-    if (!onLeave.length) {
-      listEl.innerHTML = '<div class="leave-empty" id="leaveEmpty">No employees on leave today.</div>';
-      return;
+
+    const now = new Date();
+    const toISO = (d) => {
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    };
+    const monthStart = toISO(new Date(now.getFullYear(), now.getMonth(), 1));
+    const monthEnd = toISO(now); // exportAttendance clamps future days anyway
+    const monthLabel = now.toLocaleDateString('en-US', { month: 'short' });
+
+    try {
+      const data = await jsonp({
+        action: 'exportAttendance',
+        adminEmail: session.adminEmail,
+        adminPassword: session.adminPassword,
+        startDate: monthStart,
+        endDate: monthEnd
+      });
+      if (!data.success || !Array.isArray(data.leaveByDate)) {
+        if (subtitleEl) subtitleEl.textContent = 'This month, by date';
+        if (countEl) countEl.textContent = '0';
+        listEl.innerHTML = `<div class="leave-empty" id="leaveEmpty">${data.error || 'Could not load this month\u2019s leave data.'}</div>`;
+        return;
+      }
+      const daysWithLeave = data.leaveByDate.filter(d => d.count > 0);
+      const totalLeaveDays = daysWithLeave.reduce((sum, d) => sum + d.count, 0);
+      if (subtitleEl) subtitleEl.textContent = monthLabel + ' \u2014 by date';
+      if (countEl) countEl.textContent = totalLeaveDays;
+
+      if (!daysWithLeave.length) {
+        listEl.innerHTML = '<div class="leave-empty" id="leaveEmpty">No employees on leave this month yet.</div>';
+        return;
+      }
+      listEl.innerHTML = daysWithLeave.slice().reverse().map(d => {
+        const dayLabel = new Date(d.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        return `
+          <div class="leave-date-row">
+            <span class="leave-date-label">${dayLabel}</span>
+            <span class="leave-date-count">${d.count}</span>
+          </div>`;
+      }).join('');
+    } catch (err) {
+      if (subtitleEl) subtitleEl.textContent = 'This month, by date';
+      listEl.innerHTML = `<div class="leave-empty" id="leaveEmpty">${err.message}</div>`;
     }
-    listEl.innerHTML = onLeave.map(emp => `
-      <div class="leave-row">
-        <div class="leave-avatar" style="background:${avatarColor(emp.name)};">${initials(emp.name)}</div>
-        <div class="leave-name">${emp.name}</div>
-      </div>
-    `).join('');
   }
 
   function getPastMonthsAdRanges(count) {
