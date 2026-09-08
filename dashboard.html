@@ -436,6 +436,25 @@
         </div>
       </div>
       <div class="card" style="margin-top:20px;">
+        <strong>Send Notice to All Employees</strong>
+        <div style="font-size:0.78rem; color:var(--muted); margin-top:2px; margin-bottom:14px;">Type a message and every registered employee gets it by email.</div>
+        <div class="add-field" style="margin-bottom:14px;">
+          <label for="noticeSubject">Subject (optional)</label>
+          <div class="add-input-wrap">
+            <input type="text" id="noticeSubject" placeholder="e.g. Office closed tomorrow" style="padding-left:18px;">
+          </div>
+        </div>
+        <div class="add-field">
+          <label for="noticeMessage">Message</label>
+          <textarea id="noticeMessage" rows="4" placeholder="Type your notice here…" style="width:100%; padding:11px 12px; border-radius:8px; border:1px solid var(--border); font-size:1rem; font-family:inherit; resize:vertical;"></textarea>
+        </div>
+        <button class="action add-submit-btn" id="noticeSendBtn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Send to All Employees
+        </button>
+        <div class="msg" id="noticeMsg"></div>
+      </div>
+      <div class="card" style="margin-top:20px;">
         <strong>Past 3 Months Overview</strong>
         <div style="font-size:0.78rem; color:var(--muted); margin-top:2px; margin-bottom:14px;">Company-wide attendance totals for the last 3 months.</div>
         <div class="three-month-grid" id="threeMonthGrid">
@@ -789,6 +808,30 @@
       showMsg(msg, err.message, 'error');
     }
     btn.disabled = false; btn.textContent = 'Add Employee & Email Credentials';
+  });
+
+  document.getElementById('noticeSendBtn').addEventListener('click', async () => {
+    const subject = document.getElementById('noticeSubject').value.trim();
+    const message = document.getElementById('noticeMessage').value.trim();
+    const msg = document.getElementById('noticeMsg');
+    const btn = document.getElementById('noticeSendBtn');
+    if (!message) { showMsg(msg, 'Type a message before sending.', 'error'); return; }
+
+    btn.disabled = true; btn.textContent = 'Sending...';
+    try {
+      const data = await jsonp({ action: 'sendNotice', adminEmail: session.adminEmail, adminPassword: session.adminPassword, subject, message });
+      if (data.success) {
+        const failedNote = data.failed && data.failed.length ? ` (${data.failed.length} failed to send)` : '';
+        showMsg(msg, `Sent to ${data.sentCount} of ${data.totalEmployees} employees.${failedNote}`, data.failed && data.failed.length ? 'info' : 'success');
+        document.getElementById('noticeSubject').value = '';
+        document.getElementById('noticeMessage').value = '';
+      } else {
+        showMsg(msg, data.error || 'Could not send notice.', 'error');
+      }
+    } catch (err) {
+      showMsg(msg, err.message, 'error');
+    }
+    btn.disabled = false; btn.textContent = 'Send to All Employees';
   });
 
   const BUCKET_META = {
