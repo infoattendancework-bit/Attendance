@@ -39,6 +39,18 @@
   a.back-link:hover { text-decoration:underline; }
 
   @media (min-width: 640px) { .card { max-width:460px; } }
+
+  /* Subscription Pricing section */
+  input[type="password"], input[type="number"], input[type="text"] { width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-size:0.9rem; font-family:inherit; }
+  .tier-row { display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:6px; align-items:center; margin-bottom:8px; }
+  .tier-row input { padding:8px 9px; font-size:0.82rem; }
+  .tier-row .tier-remove { flex:none; background:#fff; color:var(--danger); border:1px solid var(--danger); border-radius:8px; padding:0; width:32px; height:32px; font-size:1rem; line-height:1; }
+  .tier-head { display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:6px; margin-bottom:6px; }
+  .tier-head span { font-size:0.72rem; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.02em; }
+  .btn-secondary { background:#fff; color:var(--primary); border:1px solid var(--primary); }
+  .discount-field { display:flex; align-items:center; gap:8px; margin-top:16px; }
+  .discount-field input { max-width:100px; }
+  .pricing-locked-hint { color:var(--muted); font-size:0.78rem; margin-top:6px; }
 </style>
 </head>
 <body>
@@ -84,12 +96,51 @@
     <div class="status" id="statusMsg"></div>
   </div>
 
+  <div class="card" id="pricingLoginCard">
+    <span class="field-label">Subscription Pricing</span>
+    <div class="hint">Sets the per-employee rate tiers and yearly discount used on the company registration page. Requires the platform's SUPER_ADMIN_KEY, not the banner password above.</div>
+    <input type="password" id="pricingKeyInput" placeholder="Enter SUPER_ADMIN_KEY" autocomplete="off">
+    <div class="btn-row" style="margin-top:10px;">
+      <button class="btn-primary" id="pricingUnlockBtn" style="flex:none; width:100%;">Unlock Pricing</button>
+    </div>
+    <div class="status" id="pricingLoginStatus"></div>
+  </div>
+
+  <div class="card" id="pricingCard" style="display:none; max-width:400px; margin:18px auto 0;">
+    <span class="field-label">Subscription Pricing</span>
+    <div class="hint">Per-employee rate by headcount. Tiers must cover increasing, non-overlapping ranges — leave "Max" blank on the top tier for "and above".</div>
+
+    <div class="tier-head">
+      <span>Min emp.</span><span>Max emp.</span><span>Rate (₹)</span><span></span>
+    </div>
+    <div id="tierRows"></div>
+    <div class="btn-row">
+      <button class="btn-secondary" id="addTierBtn" type="button">+ Add tier</button>
+    </div>
+
+    <div class="discount-field">
+      <span class="field-label" style="margin-bottom:0;">Yearly discount</span>
+      <input type="number" id="yearlyDiscountInput" min="0" max="100" step="0.1">
+      <span>%</span>
+    </div>
+
+    <div class="btn-row" style="margin-top:18px;">
+      <button class="btn-primary" id="savePricingBtn">Save Pricing</button>
+    </div>
+    <div class="status" id="pricingStatus"></div>
+  </div>
+
   <a class="back-link" href="index.html">&larr; Back to home</a>
   </div>
 
 <script>
   // Paste the same Google Apps Script Web App URL used in index.html (see Code.gs)
   var BANNER_API_URL = 'https://script.google.com/macros/s/AKfycby56HpmJx2LxPzrT_RjaQ6zFmbT3YhIIiLm2uNA7-i7C8xJnypKPakzMtwGUwPhfaCRSA/exec';
+  // The ATTENDANCE SYSTEM's Apps Script Web App URL — same one used in
+  // register.html/dashboard.html/attendance.html. This is a DIFFERENT
+  // deployment from BANNER_API_URL above; pricing lives in that backend,
+  // not the banner one.
+  var APPS_SCRIPT_URL = 'PASTE_YOUR_ATTENDANCE_APPS_SCRIPT_URL_HERE';
   var MAX_DIMENSION = 1200;
 
   var fileInput = document.getElementById('fileInput');
@@ -285,6 +336,166 @@
       .catch(function () {
         removeBtn.disabled = false;
         setStatus('Remove failed. Check your connection.', 'error');
+      });
+  });
+
+  // ---------------------------------------------------------------
+  // Subscription Pricing (talks to APPS_SCRIPT_URL, the attendance
+  // backend — separate from BANNER_API_URL and its password above)
+  // ---------------------------------------------------------------
+  var pricingLoginCard = document.getElementById('pricingLoginCard');
+  var pricingCard = document.getElementById('pricingCard');
+  var pricingKeyInput = document.getElementById('pricingKeyInput');
+  var pricingUnlockBtn = document.getElementById('pricingUnlockBtn');
+  var pricingLoginStatus = document.getElementById('pricingLoginStatus');
+  var tierRowsEl = document.getElementById('tierRows');
+  var addTierBtn = document.getElementById('addTierBtn');
+  var yearlyDiscountInput = document.getElementById('yearlyDiscountInput');
+  var savePricingBtn = document.getElementById('savePricingBtn');
+  var pricingStatus = document.getElementById('pricingStatus');
+
+  var sessionAdminKey = null; // kept in memory only for this page load, never stored
+
+  function pricingApiConfigured() {
+    if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('PASTE_YOUR') === 0) {
+      pricingLoginStatus.textContent = 'Set APPS_SCRIPT_URL in the code first (the attendance system deployment, not the banner one).';
+      pricingLoginStatus.className = 'status error';
+      return false;
+    }
+    return true;
+  }
+
+  function pricingCall(payload) {
+    return fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // avoids CORS preflight on Apps Script
+      body: JSON.stringify(payload)
+    }).then(function (res) { return res.json(); });
+  }
+
+  function addTierRow(min, max, rate) {
+    var row = document.createElement('div');
+    row.className = 'tier-row';
+    row.innerHTML =
+      '<input type="number" class="tier-min" min="1" placeholder="e.g. 1" value="' + (min !== undefined ? min : '') + '">' +
+      '<input type="number" class="tier-max" min="1" placeholder="blank = open" value="' + (max !== null && max !== undefined ? max : '') + '">' +
+      '<input type="number" class="tier-rate" min="0" step="0.01" placeholder="e.g. 100" value="' + (rate !== undefined ? rate : '') + '">' +
+      '<button type="button" class="tier-remove" title="Remove tier">&times;</button>';
+    row.querySelector('.tier-remove').addEventListener('click', function () {
+      row.remove();
+    });
+    tierRowsEl.appendChild(row);
+  }
+
+  addTierBtn.addEventListener('click', function () {
+    addTierRow();
+  });
+
+  function renderPricing(tiers, yearlyDiscountPercent) {
+    tierRowsEl.innerHTML = '';
+    (tiers || []).forEach(function (t) { addTierRow(t.min, t.max, t.rate); });
+    if (!tiers || !tiers.length) addTierRow();
+    yearlyDiscountInput.value = (yearlyDiscountPercent !== undefined && yearlyDiscountPercent !== null) ? yearlyDiscountPercent : 10;
+  }
+
+  function loadPricingForEditing() {
+    // getPricingConfig is public (no key needed) — used here just to
+    // pre-fill the form with whatever is currently live.
+    pricingCall({ action: 'getPricingConfig' })
+      .then(function (data) {
+        if (data && data.success) {
+          renderPricing(data.tiers, data.yearlyDiscountPercent);
+        } else {
+          renderPricing([], 10);
+        }
+      })
+      .catch(function () {
+        pricingStatus.textContent = 'Could not load current pricing.';
+        pricingStatus.className = 'status error';
+        renderPricing([], 10);
+      });
+  }
+
+  pricingUnlockBtn.addEventListener('click', function () {
+    if (!pricingApiConfigured()) return;
+    var key = pricingKeyInput.value;
+    if (!key) {
+      pricingLoginStatus.textContent = 'Enter the SUPER_ADMIN_KEY.';
+      pricingLoginStatus.className = 'status error';
+      return;
+    }
+    // There's no separate "check key" action — the key is verified for
+    // real the first time you Save. Unlocking just reveals the editor
+    // and loads current pricing so you can review before saving.
+    sessionAdminKey = key;
+    pricingLoginCard.style.display = 'none';
+    pricingCard.style.display = 'block';
+    loadPricingForEditing();
+  });
+
+  pricingKeyInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') pricingUnlockBtn.click();
+  });
+
+  savePricingBtn.addEventListener('click', function () {
+    if (!pricingApiConfigured()) return;
+
+    var tiers = [];
+    var rows = tierRowsEl.querySelectorAll('.tier-row');
+    for (var i = 0; i < rows.length; i++) {
+      var minVal = rows[i].querySelector('.tier-min').value;
+      var maxVal = rows[i].querySelector('.tier-max').value;
+      var rateVal = rows[i].querySelector('.tier-rate').value;
+      if (minVal === '' || rateVal === '') {
+        pricingStatus.textContent = 'Every tier needs at least a starting employee count and a rate.';
+        pricingStatus.className = 'status error';
+        return;
+      }
+      tiers.push({
+        min: parseInt(minVal, 10),
+        max: maxVal === '' ? null : parseInt(maxVal, 10),
+        rate: parseFloat(rateVal)
+      });
+    }
+    if (!tiers.length) {
+      pricingStatus.textContent = 'Add at least one pricing tier.';
+      pricingStatus.className = 'status error';
+      return;
+    }
+
+    savePricingBtn.disabled = true;
+    pricingStatus.textContent = 'Saving...';
+    pricingStatus.className = 'status';
+
+    pricingCall({
+      action: 'savePricingConfig',
+      adminKey: sessionAdminKey,
+      tiers: JSON.stringify(tiers),
+      yearlyDiscountPercent: yearlyDiscountInput.value
+    })
+      .then(function (data) {
+        savePricingBtn.disabled = false;
+        if (data && data.success) {
+          renderPricing(data.tiers, data.yearlyDiscountPercent);
+          pricingStatus.textContent = 'Pricing saved. Register.html will pick it up automatically.';
+          pricingStatus.className = 'status success';
+        } else {
+          pricingStatus.textContent = 'Save failed: ' + (data && data.error ? data.error : 'unknown error');
+          pricingStatus.className = 'status error';
+          if (data && data.error === 'Not authorized.') {
+            // Wrong/missing key — send them back to unlock so they don't
+            // keep hammering Save with a bad key.
+            sessionAdminKey = null;
+            pricingCard.style.display = 'none';
+            pricingLoginCard.style.display = 'block';
+            pricingKeyInput.value = '';
+          }
+        }
+      })
+      .catch(function () {
+        savePricingBtn.disabled = false;
+        pricingStatus.textContent = 'Save failed. Check your connection.';
+        pricingStatus.className = 'status error';
       });
   });
 </script>
