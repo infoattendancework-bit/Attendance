@@ -168,7 +168,12 @@
   .mini-cal-grid .day.muted { color:var(--muted-2); }
   .mini-cal-grid .day.today { background:var(--primary); color:#fff; font-weight:700; }
 
-  .help-box { display:flex; gap:10px; padding:13px 15px; border-radius:var(--r-md); background:var(--primary-light); margin-top:14px; font-size:0.83rem; color:var(--text); line-height:1.5; }
+  .help-box { display:flex; gap:12px; padding:14px 16px; border-radius:var(--r-md); background:var(--primary-light); margin-top:14px; font-size:0.83rem; color:var(--text); }
+  .help-box .help-icon { flex-shrink:0; margin-top:1px; color:var(--primary-dark); }
+  .help-box-title { font-weight:700; color:var(--ink); margin-bottom:6px; font-size:0.83rem; }
+  .help-box-rows { display:flex; flex-direction:column; gap:5px; }
+  .help-box-row { display:flex; align-items:center; gap:7px; line-height:1.3; }
+  .help-box-row svg { flex-shrink:0; color:var(--muted); }
   .help-box a { color:var(--primary-dark); font-weight:600; text-decoration:none; }
   .help-box a:hover { text-decoration:underline; }
 
@@ -285,6 +290,17 @@
   .del-modal-actions { display:flex; gap:10px; }
   .del-modal-cancel { flex:1; padding:11px; border-radius:var(--r-sm); border:1.5px solid var(--border); background:#fff; font-weight:600; cursor:pointer; color:var(--muted); }
   .del-modal-confirm { flex:1; padding:11px; border-radius:var(--r-sm); border:none; background:var(--danger); color:#fff; font-weight:700; cursor:pointer; }
+
+  /* ---------- Month detail modal ---------- */
+  .month-modal-overlay { display:none; position:fixed; inset:0; background:rgba(15,18,35,0.5); align-items:center; justify-content:center; padding:20px; z-index:210; }
+  .month-modal-overlay.open { display:flex; }
+  .month-modal-box { background:#fff; border-radius:var(--r-xl); padding:24px; width:100%; max-width:640px; box-shadow:var(--shadow-lg); max-height:88vh; overflow-y:auto; }
+  .month-modal-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; }
+  .month-modal-title { font-weight:700; font-size:1.15rem; color:var(--ink); }
+  .month-modal-sub { font-size:0.82rem; color:var(--muted); margin-bottom:16px; }
+  .month-modal-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:18px; }
+  .month-modal-chart-wrap { margin-top:6px; }
+  .month-modal-table-title { font-size:0.78rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin:18px 0 8px; }
 
   @media (max-width:900px) {
     .sidebar { transform:translateX(-100%); transition:transform .2s var(--ease); }
@@ -418,7 +434,7 @@
             <div>
               <div class="card" style="margin-bottom:20px;">
                 <div class="section-title">Last 3 Months Overview</div>
-                <div class="section-sub">Company-wide attendance totals for the last 3 months.</div>
+                <div class="section-sub">Company-wide attendance totals for the last 3 months. Click a month for details.</div>
                 <div class="three-month-grid" id="threeMonthGrid"><div class="empty" style="grid-column:1/-1;">Loading…</div></div>
               </div>
 
@@ -469,8 +485,20 @@
                 <div class="section-title">Calendar</div>
                 <div class="mini-cal" id="miniCal"></div>
                 <div class="help-box">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px;"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>
-                  <div>Need help? Email <a href="mailto:info.attendance.work@gmail.com">info.attendance.work@gmail.com</a> or call <a href="tel:+9999999999">9999999999</a>.</div>
+                  <svg class="help-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>
+                  <div>
+                    <div class="help-box-title">Need help?</div>
+                    <div class="help-box-rows">
+                      <div class="help-box-row">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>
+                        <a href="mailto:info.attendance.work@gmail.com">info.attendance.work@gmail.com</a>
+                      </div>
+                      <div class="help-box-row">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                        <a href="tel:+9999999999">+999 999 9999</a>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -645,6 +673,32 @@
         <button class="del-modal-cancel" id="delModalCancel">Cancel</button>
         <button class="del-modal-confirm" id="delModalConfirm">Delete Employee</button>
       </div>
+    </div>
+  </div>
+
+  <div class="month-modal-overlay" id="monthModalOverlay">
+    <div class="month-modal-box">
+      <div class="month-modal-header">
+        <div>
+          <div class="month-modal-title" id="monthModalTitle">—</div>
+          <div class="month-modal-sub" id="monthModalSub">Company-wide attendance for this month</div>
+        </div>
+        <button class="modal-close" id="monthModalClose">&times;</button>
+      </div>
+      <div class="month-modal-stats" id="monthModalStats">
+        <div class="summary-card summary-online"><div class="num">0</div><div class="lbl">Present</div></div>
+        <div class="summary-card summary-leave"><div class="num">0</div><div class="lbl">Leave</div></div>
+        <div class="summary-card summary-absent"><div class="num">0</div><div class="lbl">Absent</div></div>
+      </div>
+      <div class="month-modal-chart-wrap" id="monthModalChartWrap"><div class="empty">Loading…</div></div>
+      <div class="month-modal-table-title">By employee</div>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Employee</th><th>Present</th><th>Leave</th><th>Absent</th><th>Total</th></tr></thead>
+          <tbody id="monthModalBody"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="monthModalEmpty" style="display:none;">No data for this month.</div>
     </div>
   </div>
 
@@ -908,6 +962,7 @@
     }
     return ranges;
   }
+  let _threeMonthCache = [];
   async function loadThreeMonthOverview() {
     const grid = document.getElementById('threeMonthGrid');
     if (!grid) return;
@@ -917,25 +972,107 @@
     try {
       const results = await Promise.all(ranges.map(r => jsonp({ action: 'exportAttendance', adminEmail: session.adminEmail, adminPassword: session.adminPassword, startDate: toISO(r.start), endDate: toISO(r.end) })));
       grid.innerHTML = '';
+      _threeMonthCache = [];
       results.forEach((data, i) => {
         const label = ranges[i].label;
         let present = 0, leave = 0, absent = 0;
         if (data.success && Array.isArray(data.employees)) {
           data.employees.forEach(e => { present += e.present || 0; leave += e.leave || 0; absent += e.absent || 0; });
         }
+        _threeMonthCache.push({ label, range: ranges[i], data });
         const block = document.createElement('div');
         block.className = 'month-block';
+        block.style.cursor = 'pointer';
+        block.title = `View details for ${label}`;
         block.innerHTML = `<div class="month-block-title">${label}</div><div class="month-block-stats">
           <div class="summary-card summary-online"><div class="num">${present}</div><div class="lbl">Present</div></div>
           <div class="summary-card summary-leave"><div class="num">${leave}</div><div class="lbl">Leave</div></div>
           <div class="summary-card summary-absent"><div class="num">${absent}</div><div class="lbl">Absent</div></div>
         </div>`;
+        block.addEventListener('click', () => openMonthModal(i));
         grid.appendChild(block);
       });
     } catch (err) {
       grid.innerHTML = `<div class="empty" style="grid-column:1/-1;">Could not load 3-month overview: ${err.message}</div>`;
     }
   }
+
+  // ---- Month detail modal ----
+  function openMonthModal(index) {
+    const entry = _threeMonthCache[index];
+    if (!entry) return;
+    const overlay = document.getElementById('monthModalOverlay');
+    document.getElementById('monthModalTitle').textContent = entry.label;
+    document.getElementById('monthModalSub').textContent = `${entry.range.start.toLocaleDateString('en-US',{month:'short',day:'numeric'})} – ${entry.range.end.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
+    overlay.classList.add('open');
+
+    const data = entry.data;
+    const body = document.getElementById('monthModalBody');
+    const empty = document.getElementById('monthModalEmpty');
+    const chartWrap = document.getElementById('monthModalChartWrap');
+    const statsWrap = document.getElementById('monthModalStats');
+    body.innerHTML = '';
+
+    if (!data.success || !Array.isArray(data.employees) || !data.employees.length) {
+      empty.style.display = 'block';
+      chartWrap.innerHTML = '<div class="empty">No data for this month.</div>';
+      statsWrap.innerHTML = `
+        <div class="summary-card summary-online"><div class="num">0</div><div class="lbl">Present</div></div>
+        <div class="summary-card summary-leave"><div class="num">0</div><div class="lbl">Leave</div></div>
+        <div class="summary-card summary-absent"><div class="num">0</div><div class="lbl">Absent</div></div>`;
+      return;
+    }
+    empty.style.display = 'none';
+
+    let present = 0, leave = 0, absent = 0;
+    data.employees.forEach(e => { present += e.present || 0; leave += e.leave || 0; absent += e.absent || 0; });
+    statsWrap.innerHTML = `
+      <div class="summary-card summary-online"><div class="num">${present}</div><div class="lbl">Present</div></div>
+      <div class="summary-card summary-leave"><div class="num">${leave}</div><div class="lbl">Leave</div></div>
+      <div class="summary-card summary-absent"><div class="num">${absent}</div><div class="lbl">Absent</div></div>`;
+
+    // Simple per-employee bar chart
+    renderMonthModalBarChart(data.employees);
+
+    data.employees.forEach(e => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${e.name || e.employeeId}</td>
+        <td style="color:var(--success);font-weight:700;">${e.present || 0}</td>
+        <td style="color:var(--leave);font-weight:700;">${e.leave || 0}</td>
+        <td style="color:var(--danger);font-weight:700;">${e.absent || 0}</td>
+        <td style="color:var(--muted);">${e.totalDays || 0}</td>`;
+      body.appendChild(tr);
+    });
+  }
+
+  function renderMonthModalBarChart(employees) {
+    const wrap = document.getElementById('monthModalChartWrap');
+    const rows = employees.slice(0, 8);
+    if (!rows.length) { wrap.innerHTML = '<div class="empty">No data.</div>'; return; }
+    const w = 580, barH = 20, gap = 12, padL = 100, padR = 40, padT = 8;
+    const maxVal = Math.max(1, ...rows.map(r => (r.present||0) + (r.leave||0) + (r.absent||0)));
+    const plotW = w - padL - padR;
+    const h = padT + rows.length * (barH + gap);
+    let svg = `<svg viewBox="0 0 ${w} ${h}" width="100%" style="max-width:100%;">`;
+    rows.forEach((r, i) => {
+      const y = padT + i * (barH + gap);
+      const total = (r.present||0) + (r.leave||0) + (r.absent||0);
+      const pW = (r.present||0) / maxVal * plotW;
+      const lW = (r.leave||0) / maxVal * plotW;
+      const aW = (r.absent||0) / maxVal * plotW;
+      const name = (r.name || r.employeeId || '').length > 14 ? (r.name || r.employeeId).slice(0,13) + '…' : (r.name || r.employeeId);
+      svg += `<text x="${padL - 10}" y="${y + barH/2 + 4}" font-size="11" fill="${resolvedColor('--text')}" text-anchor="end">${name}</text>`;
+      let x = padL;
+      if (pW > 0) { svg += `<rect x="${x}" y="${y}" width="${pW}" height="${barH}" rx="3" fill="${resolvedColor('--success')}"/>`; x += pW; }
+      if (lW > 0) { svg += `<rect x="${x}" y="${y}" width="${lW}" height="${barH}" rx="3" fill="${resolvedColor('--leave')}"/>`; x += lW; }
+      if (aW > 0) { svg += `<rect x="${x}" y="${y}" width="${aW}" height="${barH}" rx="3" fill="${resolvedColor('--danger')}"/>`; x += aW; }
+      svg += `<text x="${x + 6}" y="${y + barH/2 + 4}" font-size="10" fill="${resolvedColor('--muted')}">${total}</text>`;
+    });
+    svg += `</svg>`;
+    wrap.innerHTML = svg;
+  }
+  document.getElementById('monthModalClose').addEventListener('click', () => document.getElementById('monthModalOverlay').classList.remove('open'));
+  document.getElementById('monthModalOverlay').addEventListener('click', (e) => { if (e.target.id === 'monthModalOverlay') document.getElementById('monthModalOverlay').classList.remove('open'); });
 
   // ---- Attendance Trend (last 7 days), built from getCompanyDayView ----
   async function loadAttendanceTrend() {
@@ -970,25 +1107,42 @@
 
   function renderTrendSvg(points) {
     const wrap = document.getElementById('trendChartWrap');
-    const w = 560, h = 200, padL = 30, padB = 24, padT = 12, padR = 12;
+    const w = 560, h = 210, padL = 34, padB = 26, padT = 16, padR = 16;
     const maxVal = Math.max(1, ...points.map(p => Math.max(p.present, p.leave, p.absent)));
+    const niceMax = Math.ceil(maxVal / 5) * 5 || 5;
     const plotW = w - padL - padR, plotH = h - padT - padB;
     const stepX = points.length > 1 ? plotW / (points.length - 1) : 0;
     const xAt = i => padL + stepX * i;
-    const yAt = v => padT + plotH - (v / maxVal) * plotH;
-    function pathFor(key, color) {
-      const pts = points.map((p, i) => `${xAt(i)},${yAt(p[key])}`).join(' ');
-      const dots = points.map((p, i) => `<circle cx="${xAt(i)}" cy="${yAt(p[key])}" r="3" fill="${color}"/>`).join('');
-      return `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>${dots}`;
+    const yAt = v => padT + plotH - (v / niceMax) * plotH;
+
+    function smoothPath(key) {
+      const pts = points.map((p, i) => [xAt(i), yAt(p[key])]);
+      if (pts.length < 2) return `M ${pts[0][0]},${pts[0][1]}`;
+      let d = `M ${pts[0][0]},${pts[0][1]}`;
+      for (let i = 0; i < pts.length - 1; i++) {
+        const [x0, y0] = pts[i], [x1, y1] = pts[i + 1];
+        const mx = (x0 + x1) / 2;
+        d += ` C ${mx},${y0} ${mx},${y1} ${x1},${y1}`;
+      }
+      return d;
     }
-    let svg = `<svg viewBox="0 0 ${w} ${h}" width="100%" style="max-width:100%;">`;
+    function seriesGroup(key, color) {
+      const path = smoothPath(key);
+      const dots = points.map((p, i) => `<circle cx="${xAt(i)}" cy="${yAt(p[key])}" r="3.5" fill="#fff" stroke="${color}" stroke-width="2"/>`).join('');
+      return `<path d="${path}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>${dots}`;
+    }
+
+    let svg = `<svg viewBox="0 0 ${w} ${h}" width="100%" style="max-width:100%;font-family:var(--font-ui);">`;
+    // gridlines + y-axis labels
     for (let g = 0; g <= 4; g++) {
+      const val = Math.round(niceMax - (niceMax / 4) * g);
       const gy = padT + (plotH / 4) * g;
-      svg += `<line x1="${padL}" y1="${gy}" x2="${w - padR}" y2="${gy}" stroke="#E5E7F0" stroke-width="1"/>`;
+      svg += `<line x1="${padL}" y1="${gy}" x2="${w - padR}" y2="${gy}" stroke="#EEF0F5" stroke-width="1"/>`;
+      svg += `<text x="${padL - 8}" y="${gy + 3}" font-size="9.5" fill="${resolvedColor('--muted-2')}" text-anchor="end">${val}</text>`;
     }
-    svg += pathFor('absent', resolvedColor('--danger'));
-    svg += pathFor('leave', resolvedColor('--leave'));
-    svg += pathFor('present', resolvedColor('--success'));
+    svg += seriesGroup('absent', resolvedColor('--danger'));
+    svg += seriesGroup('leave', resolvedColor('--leave'));
+    svg += seriesGroup('present', resolvedColor('--success'));
     points.forEach((p, i) => {
       svg += `<text x="${xAt(i)}" y="${h - 4}" font-size="10" fill="${resolvedColor('--muted')}" text-anchor="middle">${p.label}</text>`;
     });
