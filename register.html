@@ -2,60 +2,225 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Register Your Company — Attendance System</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Register Your Company — Attendance System</title>
+<link rel="icon" type="image/png" href="">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  :root { --primary:#2563eb; --primary-dark:#1d4ed8; --success:#16a34a; --danger:#dc2626; --bg:#f4f6f9; --card:#fff; --text:#1f2937; --muted:#6b7280; --border:#e5e7eb; --header-h:64px; }
+  :root {
+    --primary:#4f46e5;
+    --primary-dark:#4338ca;
+    --primary-light:#6366f1;
+    --accent:#06b6d4;
+    --success:#16a34a;
+    --danger:#dc2626;
+    --bg-deep:#0b1020;
+    --bg:#f6f7fb;
+    --card:#ffffff;
+    --text:#111827;
+    --muted:#6b7280;
+    --border:#e5e7eb;
+    --header-h:68px;
+    --shadow-sm: 0 1px 2px rgba(16,24,40,0.06);
+    --shadow-md: 0 4px 16px rgba(16,24,40,0.08);
+    --shadow-lg: 0 20px 48px -12px rgba(79,70,229,0.28);
+    --radius: 16px;
+  }
+
   * { box-sizing: border-box; }
   html, body { margin:0; padding:0; }
-  body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:calc(var(--header-h) + 24px) 16px 24px; }
 
-  /* Fixed white header bar pinned to the top; page content scrolls underneath it */
-  .top-bar { position:fixed; top:0; left:0; right:0; height:var(--header-h); background:#fff; box-shadow:0 1px 4px rgba(0,0,0,0.08); display:flex; align-items:center; padding:0 16px; z-index:1000; }
-  .top-bar .logo { width:36px; height:36px; object-fit:contain; cursor:pointer; }
-
-  h1 { font-size:1.4rem; margin-bottom:4px; margin-top:8px; text-align:center; }
-  .subtitle { color:var(--muted); font-size:0.9rem; margin-bottom:20px; text-align:center; }
-  .card { background:var(--card); border-radius:14px; padding:24px; width:100%; max-width:400px; box-shadow:0 2px 10px rgba(0,0,0,0.06); }
-  label { display:block; font-size:0.85rem; font-weight:600; margin:14px 0 6px; }
-  input { width:100%; padding:11px 12px; border-radius:8px; border:1px solid var(--border); font-size:1rem; }
-  input:focus { outline:none; border-color:var(--primary); }
-  button.action { width:100%; margin-top:20px; padding:12px; border:none; border-radius:8px; background:var(--primary); color:#fff; font-size:1rem; font-weight:600; cursor:pointer; }
-  button.action:hover { background:var(--primary-dark); }
-  button.action:disabled { background:#93a3b8; cursor:not-allowed; }
-  .msg { margin-top:16px; padding:12px; border-radius:8px; font-size:0.9rem; display:none; }
-  .msg.success { background:#dcfce7; color:var(--success); display:block; }
-  .msg.error { background:#fee2e2; color:var(--danger); display:block; }
-  .code-display { text-align:center; font-size:1.6rem; font-weight:700; letter-spacing:2px; color:var(--primary); margin:10px 0; }
-  .footer-link { margin-top:16px; font-size:0.85rem; color:var(--muted); text-align:center; }
-  .footer-link a { color:var(--primary); text-decoration:none; }
-  .config-warning { background:#fef3c7; color:#92400e; padding:10px 14px; border-radius:8px; font-size:0.82rem; max-width:400px; margin-bottom:16px; display:none; }
-  footer.support { margin-top:24px; width:100%; max-width:400px; text-align:center; font-size:0.8rem; color:var(--muted); border-top:1px solid var(--border); padding-top:14px; }
-  footer.support .support-title { font-weight:600; color:var(--text); margin-bottom:6px; font-size:0.82rem; }
-  footer.support a { color:var(--primary-dark); text-decoration:none; }
-  footer.support a:hover { text-decoration:underline; }
-  footer.support .contact-row { margin:3px 0; word-break:break-word; }
-    @media (max-width: 360px) {
-    .card, footer.support { padding-left:0; padding-right:0; }
-    h1 { font-size:1.25rem; }
+  body {
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    color:var(--text);
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:calc(var(--header-h) + 40px) 16px 40px;
+    background:#ffffff;
   }
-  @media (min-width: 640px) { .card, footer.support { max-width:440px; } }
-  .sub-summary { margin-top:14px; padding:12px 14px; border-radius:8px; background:#eef2ff; border:1px solid #dbe4ff; font-size:0.85rem; color:var(--text); }
-  .sub-summary .rate-row { display:flex; justify-content:space-between; margin:2px 0; }
-  .sub-summary .total-row { display:flex; justify-content:space-between; margin-top:8px; padding-top:8px; border-top:1px dashed var(--border); font-weight:700; }
-  .sub-note { font-size:0.78rem; color:var(--muted); margin-top:6px; }
-  .billing-toggle { display:flex; gap:8px; margin-top:14px; }
-  .billing-toggle button { flex:1; padding:9px 10px; border-radius:8px; border:1px solid var(--border); background:#fff; color:var(--text); font-size:0.88rem; font-weight:600; cursor:pointer; }
-  .billing-toggle button.active { background:var(--primary); border-color:var(--primary); color:#fff; }
-  .discount-badge { display:inline-block; margin-left:6px; padding:1px 6px; border-radius:999px; background:#dcfce7; color:var(--success); font-size:0.72rem; font-weight:700; }
+
+  /* ---------------- Top bar ---------------- */
+  .top-bar {
+    position:fixed; top:0; left:0; right:0; height:var(--header-h);
+    background:#ffffff;
+    box-shadow:0 1px 4px rgba(0,0,0,0.08);
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 20px;
+    z-index:1000;
+  }
+  .top-bar .brand { display:flex; align-items:center; gap:10px; }
+  .top-bar .logo {
+    width:38px; height:38px; object-fit:contain; cursor:pointer;
+    border-radius:10px;
+    transition:transform .35s cubic-bezier(.34,1.56,.64,1), box-shadow .25s ease;
+  }
+  .top-bar .logo:hover {
+    transform:scale(1.1) rotate(-6deg);
+    box-shadow:0 6px 18px rgba(79,70,229,0.35);
+  }
+  .top-bar .brand-name {
+    font-weight:700; font-size:0.98rem; letter-spacing:-0.01em; color:var(--text);
+  }
+  .top-bar .tagline { font-size:0.78rem; color:var(--muted); display:none; }
+  @media (min-width:560px){ .top-bar .tagline{ display:inline-block; } }
+
+  /* ---------------- Headings ---------------- */
+  h1 {
+    font-size:1.7rem; font-weight:800; letter-spacing:-0.02em;
+    margin-bottom:6px; margin-top:8px; text-align:center;
+    color:#111827;
+  }
+  .subtitle { color:var(--muted); font-size:0.95rem; margin-bottom:26px; text-align:center; max-width:420px; line-height:1.5; }
+
+  /* ---------------- Card ---------------- */
+  .card {
+    background:var(--card);
+    border:1px solid rgba(17,24,39,0.06);
+    border-radius:var(--radius);
+    padding:30px 28px;
+    width:100%; max-width:420px;
+    box-shadow:var(--shadow-md);
+    transition:box-shadow .35s ease, transform .35s ease;
+  }
+  .card:hover {
+    box-shadow:var(--shadow-lg);
+    transform:translateY(-3px);
+  }
+
+  label { display:block; font-size:0.83rem; font-weight:600; margin:16px 0 6px; color:#374151; }
+
+  input {
+    width:100%; padding:12px 14px; border-radius:10px;
+    border:1.5px solid var(--border); font-size:0.98rem;
+    background:#fafafb; color:var(--text);
+    transition:border-color .2s ease, box-shadow .2s ease, background .2s ease, transform .15s ease;
+  }
+  input:hover {
+    border-color:#c7d2fe;
+    background:#fff;
+    box-shadow:0 2px 8px rgba(79,70,229,0.08);
+  }
+  input:focus {
+    outline:none;
+    border-color:var(--primary);
+    background:#fff;
+    box-shadow:0 0 0 4px rgba(79,70,229,0.14);
+  }
+
+  /* ---------------- Primary button ---------------- */
+  button.action {
+    width:100%; margin-top:24px; padding:13px; border:none; border-radius:10px;
+    background:linear-gradient(135deg,var(--primary),var(--primary-light));
+    color:#fff; font-size:1rem; font-weight:700; letter-spacing:.01em;
+    cursor:pointer; position:relative; overflow:hidden;
+    box-shadow:0 8px 20px -6px rgba(79,70,229,0.55);
+    transition:transform .18s ease, box-shadow .25s ease, filter .2s ease;
+  }
+  button.action:hover {
+    transform:translateY(-2px) scale(1.01);
+    box-shadow:0 14px 28px -8px rgba(79,70,229,0.6);
+    filter:brightness(1.05);
+  }
+  button.action:active { transform:translateY(0) scale(0.99); }
+  button.action:disabled {
+    background:#9aa4b8; cursor:not-allowed; box-shadow:none; transform:none; filter:none;
+  }
+
+  /* ---------------- Messages ---------------- */
+  .msg { margin-top:16px; padding:13px 14px; border-radius:10px; font-size:0.9rem; display:none; line-height:1.5; }
+  .msg.success { background:#dcfce7; color:var(--success); display:block; border:1px solid #bbf7d0; }
+  .msg.error { background:#fee2e2; color:var(--danger); display:block; border:1px solid #fecaca; }
+  .code-display { text-align:center; font-size:1.7rem; font-weight:800; letter-spacing:3px; color:var(--primary); margin:10px 0; }
+
+  .footer-link { margin-top:18px; font-size:0.86rem; color:var(--muted); text-align:center; }
+  .footer-link a {
+    color:var(--primary); text-decoration:none; font-weight:600;
+    border-bottom:1.5px solid transparent; transition:border-color .2s ease, color .2s ease;
+  }
+  .footer-link a:hover { border-color:var(--primary); color:var(--primary-dark); }
+
+  .config-warning {
+    background:#fef3c7; color:#92400e; padding:11px 15px; border-radius:10px;
+    font-size:0.82rem; max-width:420px; margin-bottom:18px; display:none;
+    border:1px solid #fde68a;
+  }
+
+  /* ---------------- Footer / support ---------------- */
+  footer.support {
+    margin-top:28px; width:100%; max-width:420px; text-align:center;
+    font-size:0.8rem; color:var(--muted);
+    border-top:1px solid var(--border); padding-top:16px;
+  }
+  footer.support .support-title { font-weight:700; color:var(--text); margin-bottom:8px; font-size:0.84rem; }
+  footer.support .contact-row {
+    margin:4px 0; word-break:break-word;
+    padding:4px 8px; border-radius:8px;
+    transition:background .2s ease;
+    display:inline-block;
+  }
+  footer.support .contact-row:hover { background:rgba(79,70,229,0.06); }
+  footer.support a { color:var(--primary-dark); text-decoration:none; font-weight:600; }
+  footer.support a:hover { text-decoration:underline; }
+
+  @media (max-width: 360px) {
+    .card, footer.support { padding-left:18px; padding-right:18px; }
+    h1 { font-size:1.4rem; }
+  }
+  @media (min-width: 640px) { .card, footer.support { max-width:460px; } }
+
+  /* ---------------- Subscription summary ---------------- */
+  .sub-summary {
+    margin-top:16px; padding:14px 16px; border-radius:12px;
+    background:linear-gradient(135deg,#eef2ff,#f5f3ff);
+    border:1px solid #dbe4ff; font-size:0.88rem; color:var(--text);
+    transition:box-shadow .25s ease, transform .2s ease;
+  }
+  .sub-summary:hover { box-shadow:0 6px 20px rgba(79,70,229,0.14); transform:translateY(-1px); }
+  .sub-summary .rate-row { display:flex; justify-content:space-between; margin:3px 0; }
+  .sub-summary .total-row {
+    display:flex; justify-content:space-between; margin-top:9px; padding-top:9px;
+    border-top:1px dashed #c7d2fe; font-weight:800; font-size:1rem;
+  }
+  .sub-note { font-size:0.79rem; color:var(--muted); margin-top:7px; }
+
+  /* ---------------- Billing toggle ---------------- */
+  .billing-toggle {
+    display:flex; gap:6px; margin-top:14px;
+    background:#f1f2f6; padding:5px; border-radius:12px;
+  }
+  .billing-toggle button {
+    flex:1; padding:10px 10px; border-radius:9px; border:1px solid transparent;
+    background:transparent; color:var(--muted); font-size:0.9rem; font-weight:700;
+    cursor:pointer; transition:all .2s ease;
+  }
+  .billing-toggle button:hover {
+    background:rgba(79,70,229,0.08);
+    color:var(--primary-dark);
+  }
+  .billing-toggle button.active {
+    background:#fff; border-color:var(--border); color:var(--text);
+    box-shadow:var(--shadow-sm);
+  }
+  .billing-toggle button.active:hover { background:#fff; }
+  .discount-badge {
+    display:inline-block; margin-left:6px; padding:2px 7px; border-radius:999px;
+    background:#dcfce7; color:var(--success); font-size:0.72rem; font-weight:800;
+  }
 </style>
 </head>
 <body>
-  
+
   <div class="top-bar">
     <div class="brand">
-      <img class="logo" id="logoImg" id="logoImg" src="https://raw.githubusercontent.com/infoattendancework-bit/Attendance/main/logo%20(1).png" alt="Attendance System logo" title="Refresh">
+      <img class="logo" id="logoImg" src="https://raw.githubusercontent.com/infoattendancework-bit/Attendance/main/logo%20(1).png" alt="Attendance System logo" title="Refresh">
       <span class="brand-name">Attendance System</span>
     </div>
+    <span class="tagline">Trusted by growing teams everywhere</span>
+  </div>
 
   <div class="config-warning" id="configWarning">⚠️ Set APPS_SCRIPT_URL near the bottom of this file first.</div>
 
