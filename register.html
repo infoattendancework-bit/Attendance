@@ -80,7 +80,7 @@
     <label>Billing Cycle</label>
     <div class="billing-toggle" id="billingToggle">
       <button type="button" id="monthlyBtn" class="active" data-cycle="monthly">Monthly</button>
-      <button type="button" id="yearlyBtn" data-cycle="yearly">Yearly <span class="discount-badge">10% off</span></button>
+      <button type="button" id="yearlyBtn" data-cycle="yearly">Yearly <span class="discount-badge" id="yearlyDiscountBadge">…</span></button>
     </div>
 
     <div class="sub-summary" id="subSummary" style="display:none;">
@@ -88,7 +88,7 @@
       <div class="rate-row"><span>Number of employees</span><span id="subCount">-</span></div>
       <div class="rate-row" id="subDiscountRow" style="display:none;"><span>Yearly discount</span><span id="subDiscount">-</span></div>
       <div class="total-row"><span id="subTotalLabel">Estimated monthly cost</span><span id="subTotal">-</span></div>
-      <div class="sub-note">Pricing: ₹100/employee (up to 30), ₹70/employee (31–100), ₹55/employee (100+). Yearly billing gets 10% off.</div>
+      <div class="sub-note" id="subPricingNote">Loading pricing…</div>
     </div>
     <div class="sub-note" style="margin-top:8px;">After registering, your subscription request is sent for admin approval. Once approved, you can start using the software. Payment is made directly to our account (offline) — it is not processed automatically in the system.</div>
 
@@ -124,22 +124,64 @@
 
   function showMsg(el, text, type) { el.className = 'msg ' + type; el.innerHTML = text; }
 
-  // Subscription pricing: tiered per-employee rate based on headcount.
+  // Subscription pricing: fetched from the backend (admin.html's
+  // "Subscription Pricing" section writes it) instead of being
+  // hardcoded here. Falls back to a small built-in default only if the
+  // backend call fails, so the form still works while the issue is
+  // fixed.
+  let pricingTiers = [
+    { min: 1, max: 30, rate: 100 },
+    { min: 31, max: 100, rate: 70 },
+    { min: 101, max: null, rate: 55 }
+  ];
+  let yearlyDiscountPercent = 10;
+  let pricingLoaded = false;
+
   function getRatePerEmployee(count) {
-    if (count <= 30) return 100;
-    if (count <= 100) return 70;
-    return 55;
+    let rate = pricingTiers.length ? pricingTiers[0].rate : 0;
+    for (const t of pricingTiers) {
+      if (count >= t.min && (t.max === null || count <= t.max)) return t.rate;
+      if (count >= t.min) rate = t.rate;
+    }
+    return rate;
+  }
+
+  function describePricing() {
+    const parts = pricingTiers.map((t, i) => {
+      const range = t.max === null ? (t.min + '+') : (i === 0 ? 'up to ' + t.max : t.min + '–' + t.max);
+      return '₹' + t.rate + '/employee (' + range + ')';
+    });
+    return 'Pricing: ' + parts.join(', ') + '. Yearly billing gets ' + yearlyDiscountPercent + '% off.';
+  }
+
+  function loadPricingConfig() {
+    return jsonp({ action: 'getPricingConfig' }).then(data => {
+      if (data && data.success && Array.isArray(data.tiers) && data.tiers.length) {
+        pricingTiers = data.tiers;
+        yearlyDiscountPercent = data.yearlyDiscountPercent;
+      }
+      pricingLoaded = true;
+      document.getElementById('yearlyDiscountBadge').textContent = yearlyDiscountPercent + '% off';
+      document.getElementById('subPricingNote').textContent = describePricing();
+      updateSubSummary();
+    }).catch(() => {
+      // Keep the built-in fallback silently — registerCompany() still
+      // computes the authoritative price server-side either way.
+      pricingLoaded = true;
+      document.getElementById('yearlyDiscountBadge').textContent = yearlyDiscountPercent + '% off';
+      document.getElementById('subPricingNote').textContent = describePricing();
+      updateSubSummary();
+    });
   }
 
   let billingCycle = 'monthly';
-  const YEARLY_DISCOUNT = 0.10;
 
   function updateSubSummary() {
     const countEl = document.getElementById('employeeCount');
     const summary = document.getElementById('subSummary');
     const discountRow = document.getElementById('subDiscountRow');
     const count = parseInt(countEl.value, 10);
-    if (!count || count <= 0) { summary.style.display = 'none'; return; }
+    if (!pricingLoaded || !count || count <= 0) { summary.style.display = 'none'; return; }
     const rate = getRatePerEmployee(count);
     const monthlyTotal = rate * count;
 
@@ -148,10 +190,10 @@
 
     if (billingCycle === 'yearly') {
       const yearlyBeforeDiscount = monthlyTotal * 12;
-      const discountAmount = yearlyBeforeDiscount * YEARLY_DISCOUNT;
+      const discountAmount = yearlyBeforeDiscount * (yearlyDiscountPercent / 100);
       const yearlyTotal = yearlyBeforeDiscount - discountAmount;
       discountRow.style.display = 'flex';
-      document.getElementById('subDiscount').textContent = '-₹' + discountAmount.toLocaleString('en-IN', { maximumFractionDigits: 0 }) + ' (10%)';
+      document.getElementById('subDiscount').textContent = '-₹' + discountAmount.toLocaleString('en-IN', { maximumFractionDigits: 0 }) + ' (' + yearlyDiscountPercent + '%)';
       document.getElementById('subTotalLabel').textContent = 'Estimated yearly cost';
       document.getElementById('subTotal').textContent = '₹' + yearlyTotal.toLocaleString('en-IN', { maximumFractionDigits: 0 }) + ' / year';
     } else {
@@ -162,6 +204,7 @@
     summary.style.display = 'block';
   }
 
+  loadPricingConfig();
   document.getElementById('employeeCount').addEventListener('input', updateSubSummary);
 
   document.getElementById('monthlyBtn').addEventListener('click', () => {
@@ -192,14 +235,12 @@
     if (!companyName || !adminEmail || !phoneNumber || !password) { showMsg(msg, 'Please fill in all fields.', 'error'); return; }
     if (!employeeCount || employeeCount <= 0) { showMsg(msg, 'Please enter a valid number of employees.', 'error'); return; }
 
-    const ratePerEmployee = getRatePerEmployee(employeeCount);
-    const monthlyCost = ratePerEmployee * employeeCount;
-    const yearlyBeforeDiscount = monthlyCost * 12;
-    const yearlyDiscountAmount = billingCycle === 'yearly' ? yearlyBeforeDiscount * YEARLY_DISCOUNT : 0;
-    const estimatedCost = billingCycle === 'yearly' ? (yearlyBeforeDiscount - yearlyDiscountAmount) : monthlyCost;
-
     btn.disabled = true; btn.textContent = 'Registering...';
     try {
+      // Rate/cost are no longer sent from here — the backend computes
+      // them itself from the saved pricing config (see registerCompany
+      // in Code.gs), so the numbers below always match what the admin
+      // configured, even if this page's local copy is stale.
       const data = await jsonp({
         action: 'registerCompany',
         companyName,
@@ -207,15 +248,14 @@
         phoneNumber,
         password,
         employeeCount,
-        ratePerEmployee,
         billingCycle,
-        estimatedCost,
         subscriptionStatus: 'pending'
       });
       if (data.success) {
+        const estimatedCost = data.estimatedCost;
         const costLabel = billingCycle === 'yearly'
-          ? `₹${estimatedCost.toLocaleString('en-IN', { maximumFractionDigits: 0 })}/year (10% yearly discount applied)`
-          : `₹${estimatedCost.toLocaleString('en-IN')}/month`;
+          ? `₹${estimatedCost.toLocaleString('en-IN', { maximumFractionDigits: 0 })}/year (${yearlyDiscountPercent}% yearly discount applied)`
+          : `₹${estimatedCost.toLocaleString('en-IN', { maximumFractionDigits: 0 })}/month`;
         showMsg(msg, `Registered! Your company code:<div class="code-display">${data.companyCode}</div>Your subscription request (${employeeCount} employees, ${costLabel}) is <strong>pending admin approval</strong>. Once approved, log in to your <a href="dashboard.html">dashboard</a> to add employees and start using the software. Payment should be made to our account after approval, as instructed by the admin.`, 'success');
         document.getElementById('companyName').value = '';
         document.getElementById('adminEmail').value = '';
