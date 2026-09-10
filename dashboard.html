@@ -421,6 +421,43 @@
   .quick-day-btn:hover:not(.active) { background:var(--bg); }
   .dayview-summary-strip { display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap; }
   .dayview-summary-strip .summary-card { flex:1; min-width:100px; }
+
+  /* ---------- Universal card hover polish ---------- */
+  .card, .overview-card, .emplist-card {
+    transition:box-shadow 0.2s var(--ease), transform 0.2s var(--ease), border-color 0.2s var(--ease);
+  }
+  .card:hover, .overview-card:hover, .emplist-card:hover {
+    box-shadow:var(--shadow-md); border-color:var(--border-strong); transform:translateY(-3px);
+  }
+  .overview-info-box, .summary-card, .month-summary-cell, .leave-row, .leave-date-row {
+    transition:box-shadow 0.15s var(--ease), transform 0.15s var(--ease);
+  }
+  .overview-info-box:hover, .summary-card:hover, .month-summary-cell:hover, .leave-row:hover, .leave-date-row:hover {
+    box-shadow:var(--shadow-sm); transform:translateY(-2px);
+  }
+  .overview-stat {
+    transition:box-shadow 0.15s var(--ease), transform 0.15s var(--ease), border-color 0.15s var(--ease);
+  }
+  .overview-stat:hover { box-shadow:var(--shadow-sm); transform:translateY(-2px); }
+  .month-block:hover { transform:translateY(-2px); }
+  .del-modal-box, .modal-box { transition:box-shadow 0.2s var(--ease); }
+  .leave-card-icon, .emp-summary-icon, .overview-info-icon, .overview-stat-icon, .overview-company-icon,
+  .dayview-title-icon, .emplist-title-icon {
+    transition:transform 0.15s var(--ease);
+  }
+  .overview-card:hover .overview-company-icon, .card:hover .leave-card-icon, .card:hover .emp-summary-icon,
+  .overview-info-box:hover .overview-info-icon, .overview-stat:hover .overview-stat-icon,
+  .emplist-header:hover .emplist-title-icon, .dayview-header:hover .dayview-title-icon {
+    transform:scale(1.08);
+  }
+  .pill, .status-pill-online, .status-pill-offline, .overview-status-badge {
+    transition:transform 0.12s var(--ease), box-shadow 0.12s var(--ease);
+  }
+  .pill:hover, .status-pill-online:hover, .status-pill-offline:hover, .overview-status-badge:hover {
+    transform:scale(1.06); box-shadow:var(--shadow-xs);
+  }
+  .emp-avatar { transition:transform 0.15s var(--ease); }
+  .emp-name-cell:hover .emp-avatar { transform:scale(1.08); }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 </head>
