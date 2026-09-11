@@ -1406,6 +1406,7 @@
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.getElementById('view' + name.charAt(0).toUpperCase() + name.slice(1)).classList.add('active');
     document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.view === name && !n.dataset.export));
+    window.scrollTo({ top: 0, behavior: 'instant' });
     if (name === 'employees') renderEmpListView();
     if (name === 'attendance') {
       _dayViewOffset = 0; setDayViewQuickButton(0);
