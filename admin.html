@@ -2,502 +2,494 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Admin - Banner Settings</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Employee Attendance</title>
 <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/infoattendancework-bit/Attendance/main/logo%20(1).png">
 <style>
-  :root { --primary:#2563eb; --primary-dark:#1d4ed8; --bg:#f4f6f9; --card:#fff; --text:#1f2937; --muted:#6b7280; --border:#e5e7eb; --header-h:60px; --danger:#dc2626; --success:#16a34a; }
+  :root { --primary:#2563eb; --primary-dark:#1d4ed8; --success:#16a34a; --danger:#dc2626; --warn:#d97706; --leave:#7c3aed; --bg:#f4f6f9; --card:#fff; --text:#1f2937; --muted:#6b7280; --border:#e5e7eb; --header-h:60px; }
   * { box-sizing: border-box; }
   body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:24px 16px; padding-top:calc(var(--header-h) + 24px); }
   header.top-bar { position:fixed; top:0; left:0; right:0; height:var(--header-h); background:#fff; display:flex; align-items:center; padding:0 16px; box-shadow:0 1px 4px rgba(0,0,0,0.08); z-index:1000; }
-  header.top-bar img.logo { width:38px; height:38px; object-fit:contain; cursor:pointer; }
-  h1 { font-size:1.5rem; margin-bottom:4px; text-align:center; }
-  .subtitle { color:var(--muted); font-size:0.9rem; margin-bottom:28px; text-align:center; }
+  header.top-bar img.logo { width:38px; height:38px; object-fit:contain; cursor:pointer; border-radius:8px; transition:transform 0.15s cubic-bezier(.2,.7,.3,1); }
+  header.top-bar img.logo:hover { transform:scale(1.04); }
+  h1 { font-size:1.4rem; margin-bottom:4px; margin-top:8px; }
+  .subtitle { color:var(--muted); font-size:0.9rem; margin-bottom:20px; text-align:center; }
+  .card { background:var(--card); border-radius:14px; padding:24px; width:100%; max-width:400px; box-shadow:0 2px 10px rgba(0,0,0,0.06); margin-bottom:16px; }
+  label { display:block; font-size:0.85rem; font-weight:600; margin:14px 0 6px; }
+  input { width:100%; padding:11px 12px; border-radius:8px; border:1px solid var(--border); font-size:1rem; letter-spacing:2px; }
+  input:focus { outline:none; border-color:var(--primary); }
+  button.action { width:100%; margin-top:20px; padding:12px; border:none; border-radius:8px; background:var(--primary); color:#fff; font-size:1rem; font-weight:600; cursor:pointer; }
+  button.action:hover { background:var(--primary-dark); }
+  button.action:disabled { background:#93a3b8; cursor:not-allowed; }
+  .msg { margin-top:16px; padding:12px; border-radius:8px; font-size:0.9rem; display:none; }
+  .msg.success { background:#dcfce7; color:var(--success); display:block; }
+  .msg.error { background:#fee2e2; color:var(--danger); display:block; }
+  .msg.info { background:#dbeafe; color:var(--primary-dark); display:block; }
+  .hint { font-size:0.78rem; color:var(--muted); margin-top:4px; }
+  .config-warning { background:#fef3c7; color:#92400e; padding:10px 14px; border-radius:8px; font-size:0.82rem; max-width:400px; margin-bottom:16px; display:none; }
 
-  .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:22px 20px; width:100%; max-width:400px; box-shadow:0 2px 8px rgba(0,0,0,0.05); }
-  .card + .card { margin-top:18px; }
-  .field-label { font-weight:600; font-size:0.9rem; margin-bottom:8px; display:block; }
+  #dashboard { display:none; width:100%; max-width:400px; }
+  .greet-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  .greet-company { font-size:0.78rem; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:0.03em; margin-bottom:2px; }
+  .greet-name { font-weight:700; font-size:1.1rem; }
+  .topbar-company { font-weight:700; font-size:1rem; color:var(--text); margin-left:10px; }
+  .header-actions { display:flex; align-items:center; gap:8px; }
+  .logout-btn { background:none; border:1px solid var(--border); border-radius:8px; padding:6px 12px; font-size:0.8rem; cursor:pointer; color:var(--muted); }
+  .logout-link { font-size:0.78rem; color:var(--muted); text-decoration:none; cursor:pointer; }
+  .logout-link:hover { text-decoration:underline; }
+  .status-badge { display:inline-block; padding:6px 14px; border-radius:999px; font-weight:700; font-size:0.95rem; margin-bottom:18px; }
+  .status-Online { background:#dcfce7; color:var(--success); }
+  .status-Offline { background:#f3f4f6; color:var(--muted); }
+  .status-Break { background:#fef3c7; color:var(--warn); }
+  .status-Back { background:#dbeafe; color:var(--primary-dark); }
+  .status-OnLeave { background:#ede9fe; color:var(--leave); }
+  .btn-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .status-btn {
+    padding:14px; border-radius:10px; font-weight:700; font-size:0.95rem; cursor:pointer;
+    background:#eef1f5; color:var(--text); border:1px solid var(--border);
+    transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease, color 0.15s ease;
+  }
+  .status-btn:hover:not(:disabled) { background:#e2e8f0; transform:translateY(-1px); box-shadow:0 3px 8px rgba(0,0,0,0.08); }
+  .status-btn:active:not(:disabled) { transform:translateY(0); box-shadow:none; }
+  .status-btn:disabled { background:#e5e7eb !important; color:#9ca3af; cursor:not-allowed; border-color:var(--border); transform:none; box-shadow:none; }
+  .status-btn.active-online { background:var(--success); color:#fff; border-color:var(--success); }
+  .status-btn.active-break { background:var(--warn); color:#fff; border-color:var(--warn); }
+  .status-btn.active-back { background:var(--primary); color:#fff; border-color:var(--primary); }
+  .status-btn.active-offline { background:var(--danger); color:#fff; border-color:var(--danger); }
+  .status-btn.active-onleave { background:var(--leave); color:#fff; border-color:var(--leave); }
+  .status-btn.active-online:hover:not(:disabled) { background:var(--success); filter:brightness(0.92); }
+  .status-btn.active-break:hover:not(:disabled) { background:var(--warn); filter:brightness(0.92); }
+  .status-btn.active-back:hover:not(:disabled) { background:var(--primary); filter:brightness(0.92); }
+  .status-btn.active-offline:hover:not(:disabled) { background:var(--danger); filter:brightness(0.92); }
+  .status-btn.active-onleave:hover:not(:disabled) { background:var(--leave); filter:brightness(0.92); }
+  .log-title { font-size:0.85rem; font-weight:600; margin:20px 0 8px; color:var(--muted); }
+  .log-row { display:flex; justify-content:space-between; font-size:0.85rem; padding:6px 0; border-bottom:1px solid var(--border); }
+  .log-empty { font-size:0.85rem; color:var(--muted); text-align:center; padding:10px 0; }
 
-  .preview-wrap { width:100%; border:1px dashed var(--border); border-radius:10px; background:var(--bg); min-height:120px; display:flex; align-items:center; justify-content:center; overflow:hidden; margin-bottom:14px; }
-  .preview-wrap img { width:100%; display:block; }
-  .preview-empty { color:var(--muted); font-size:0.85rem; padding:24px; text-align:center; }
+  .monthly-toggle { display:flex; justify-content:space-between; align-items:center; margin-top:22px; padding:12px 14px; border-radius:10px; border:1px solid var(--border); background:#f8fafc; cursor:pointer; user-select:none; }
+  .monthly-toggle .mt-label { font-size:0.85rem; font-weight:700; color:var(--text); }
+  .monthly-toggle .mt-hint { font-size:0.76rem; color:var(--muted); margin-top:2px; }
+  .monthly-toggle .chevron { font-size:0.9rem; color:var(--muted); transition:transform 0.2s ease; }
+  .monthly-toggle.open .chevron { transform:rotate(180deg); }
+  .monthly-panel { display:none; margin-top:12px; }
+  .monthly-panel.open { display:block; }
 
-  input[type="file"] { width:100%; font-size:0.85rem; margin-bottom:14px; }
-  input[type="url"] { width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-size:0.9rem; margin-bottom:6px; font-family:inherit; }
-  .hint { color:var(--muted); font-size:0.75rem; margin-bottom:14px; }
-
-  .btn-row { display:flex; gap:10px; margin-top:4px; }
-  button { flex:1; border:none; border-radius:8px; padding:11px 14px; font-size:0.9rem; font-weight:600; cursor:pointer; transition:filter 0.15s ease; }
-  button:hover { filter:brightness(0.95); }
-  .btn-primary { background:var(--primary); color:#fff; }
-  .btn-danger { background:#fff; color:var(--danger); border:1px solid var(--danger); }
-
-  .status { margin-top:14px; font-size:0.85rem; text-align:center; min-height:1.2em; }
-  .status.success { color:var(--success); }
-  .status.error { color:var(--danger); }
-
-  a.back-link { display:inline-block; margin-top:20px; color:var(--muted); font-size:0.8rem; text-decoration:none; }
-  a.back-link:hover { text-decoration:underline; }
-
-  @media (min-width: 640px) { .card { max-width:460px; } }
-
-  /* Subscription Pricing section */
-  input[type="password"], input[type="number"], input[type="text"] { width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-size:0.9rem; font-family:inherit; }
-  .tier-row { display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:6px; align-items:center; margin-bottom:8px; }
-  .tier-row input { padding:8px 9px; font-size:0.82rem; }
-  .tier-row .tier-remove { flex:none; background:#fff; color:var(--danger); border:1px solid var(--danger); border-radius:8px; padding:0; width:32px; height:32px; font-size:1rem; line-height:1; }
-  .tier-head { display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:6px; margin-bottom:6px; }
-  .tier-head span { font-size:0.72rem; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.02em; }
-  .btn-secondary { background:#fff; color:var(--primary); border:1px solid var(--primary); }
-  .discount-field { display:flex; align-items:center; gap:8px; margin-top:16px; }
-  .discount-field input { max-width:100px; }
-  .pricing-locked-hint { color:var(--muted); font-size:0.78rem; margin-top:6px; }
+  .month-tabs { display:flex; gap:8px; margin-top:6px; }
+  .month-tab { flex:1; padding:8px; border-radius:8px; border:1px solid var(--border); background:#eef1f5; color:var(--text); font-size:0.85rem; font-weight:600; cursor:pointer; }
+  .month-tab.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+  .day-status { font-weight:700; padding:2px 8px; border-radius:999px; font-size:0.78rem; }
+  .day-status-Present { background:#dcfce7; color:var(--success); }
+  .day-status-Absent { background:#fee2e2; color:var(--danger); }
+  .day-status-OnLeave { background:#ede9fe; color:var(--leave); }
+  .day-status-Partial { background:#fef3c7; color:var(--warn); }
+  .month-summary { display:flex; justify-content:space-between; font-size:0.78rem; color:var(--muted); margin-bottom:8px; padding:0 2px; }
+  footer.support { margin-top:8px; width:100%; max-width:400px; text-align:center; font-size:0.8rem; color:var(--muted); border-top:1px solid var(--border); padding-top:14px; }
+  footer.support .support-title { font-weight:600; color:var(--text); margin-bottom:6px; font-size:0.82rem; }
+  footer.support a { color:var(--primary-dark); text-decoration:none; }
+  footer.support a:hover { text-decoration:underline; }
+  footer.support .contact-row { margin:3px 0; word-break:break-word; }
+    @media (max-width: 380px) {
+    .card { padding:18px; }
+    .btn-grid { gap:8px; }
+    .status-btn { padding:12px; font-size:0.9rem; }
+  }
 </style>
 </head>
 <body>
-<header class="top-bar">
-    <img class="logo" src="https://raw.githubusercontent.com/infoattendancework-bit/Attendance/main/logo%20(1).png" alt="Attendance System logo" title="Refresh page" onclick="location.reload()">
+
+  <header class="top-bar">
+    <img class="logo" src="https://raw.githubusercontent.com/infoattendancework-bit/Attendance/main/logo%20(1).png" alt="Attendance System logo" title="Refresh page" onclick="location.reload()">    <span class="topbar-company" id="companyNameTopBar"></span>
   </header>
-  <h1>Banner Settings</h1>
-  <div class="subtitle">Upload an image to show on the homepage banner.</div>
+
+  <div class="config-warning" id="configWarning">⚠️ Set APPS_SCRIPT_URL near the bottom of this file first.</div>
+
+  <h1>Employee Attendance</h1>
+  <div class="subtitle" id="pageSubtitle">Log in to mark your status.</div>
 
   <div class="card" id="loginCard">
-    <span class="field-label">Admin password</span>
-    <input type="password" id="passwordInput" placeholder="Enter password" autocomplete="off">
-    <div class="btn-row">
-      <button class="btn-primary" id="unlockBtn" style="flex:none; width:100%;">Unlock</button>
-    </div>
-    <div class="status" id="loginStatus"></div>
+    <label for="employeeId">Employee ID</label>
+    <input type="text" id="employeeId" placeholder="e.g. 1234" inputmode="numeric" pattern="\d{4}" maxlength="4" autocomplete="off">
+    <div class="hint">4-digit ID sent to your email when your company added you.</div>
+
+    <label for="password">Password</label>
+    <input type="password" id="password" placeholder="4-digit PIN" inputmode="numeric" pattern="\d{4}" maxlength="4" autocomplete="off">
+
+    <button class="action" id="loginBtn">Log In</button>
+    <div class="msg" id="loginMsg"></div>
+    <div style="text-align:center; margin-top:12px;"><a href="employee-forgot-password.html" style="color:var(--primary-dark); font-size:0.88rem; font-weight:600; text-decoration:none;">Forgot password?</a></div>
   </div>
 
-  <div id="adminApp" style="display:none; width:100%; max-width:400px; margin:0 auto;">
-  <div class="card">
-    <span class="field-label">Current banner</span>
-    <div class="preview-wrap" id="previewWrap">
-      <div class="preview-empty" id="previewEmpty">No banner set</div>
-      <img id="previewImg" style="display:none;" alt="Banner preview">
+  <div id="dashboard">
+    <div class="card">
+      <div class="greet-header">
+        <div>
+          <div class="greet-company" id="greetCompanyName"></div>
+          <div class="greet-name" id="empNameLabel"></div>
+        </div>
+        <div class="header-actions">
+          <button class="logout-btn" id="logoutBtn">Refresh</button>
+        </div>
+      </div>
+      <div>
+        <span class="status-badge" id="statusBadge">—</span>
+      </div>
+      <div class="btn-grid">
+        <button class="status-btn" id="onlineBtn">Online</button>
+        <button class="status-btn" id="offlineBtn">Offline</button>
+        <button class="status-btn" id="breakBtn">Break</button>
+        <button class="status-btn" id="onleaveBtn">On Leave</button>
+      </div>
+      <div class="msg" id="statusMsg"></div>
+      <div class="hint" style="text-align:center;">Your location is recorded when you tap a status button. Allow location access if your browser asks.</div>
+
+      <div class="log-title">Today's activity</div>
+      <div id="logList"></div>
+
+      <div class="monthly-toggle" id="monthlyToggle">
+        <div>
+          <div class="mt-label">Monthly Attendance</div>
+          <div class="mt-hint">Tap to view this month &amp; last month</div>
+        </div>
+        <span class="chevron">▾</span>
+      </div>
+
+      <div class="monthly-panel" id="monthlyPanel">
+        <div class="month-tabs">
+          <button class="month-tab active" id="thisMonthTab">This Month</button>
+          <button class="month-tab" id="lastMonthTab">Last Month</button>
+        </div>
+        <div class="log-title" id="monthlyTitle">This Month's Attendance</div>
+        <div class="month-summary" id="monthlySummary"></div>
+        <div id="monthlyList"><div class="log-empty">Loading…</div></div>
+      </div>
+
+      <div style="text-align:center; margin-top:18px;">
+        <a href="#" id="logoutLink" class="logout-link">Log out</a>
+      </div>
     </div>
-
-    <span class="field-label">Upload new image</span>
-    <input type="file" id="fileInput" accept="image/*">
-    <div class="hint">PNG or JPG recommended. Large images are resized automatically.</div>
-
-    <span class="field-label">Link when tapped (optional)</span>
-    <input type="url" id="linkInput" placeholder="https://example.com">
-    <div class="hint">Leave blank if the banner shouldn't be clickable.</div>
-
-    <span class="field-label">Caption text (optional)</span>
-    <input type="text" id="captionInput" placeholder="e.g. Support Disaster Relief in Nepal...">
-    <div class="hint">Shown in green under the banner image, like the ShopSlipper example.</div>
-
-    <div class="btn-row">
-      <button class="btn-primary" id="saveBtn">Save Banner</button>
-      <button class="btn-danger" id="removeBtn">Remove Banner</button>
-    </div>
-    <div class="status" id="statusMsg"></div>
   </div>
 
-  <div class="card" id="pricingLoginCard">
-    <span class="field-label">Subscription Pricing</span>
-    <div class="hint">Sets the per-employee rate tiers and yearly discount used on the company registration page. Requires the platform's SUPER_ADMIN_KEY, not the banner password above.</div>
-    <input type="password" id="pricingKeyInput" placeholder="Enter SUPER_ADMIN_KEY" autocomplete="off">
-    <div class="btn-row" style="margin-top:10px;">
-      <button class="btn-primary" id="pricingUnlockBtn" style="flex:none; width:100%;">Unlock Pricing</button>
-    </div>
-    <div class="status" id="pricingLoginStatus"></div>
-  </div>
-
-  <div class="card" id="pricingCard" style="display:none; max-width:400px; margin:18px auto 0;">
-    <span class="field-label">Subscription Pricing</span>
-    <div class="hint">Per-employee rate by headcount. Tiers must cover increasing, non-overlapping ranges — leave "Max" blank on the top tier for "and above".</div>
-
-    <div class="tier-head">
-      <span>Min emp.</span><span>Max emp.</span><span>Rate (₹)</span><span></span>
-    </div>
-    <div id="tierRows"></div>
-    <div class="btn-row">
-      <button class="btn-secondary" id="addTierBtn" type="button">+ Add tier</button>
-    </div>
-
-    <div class="discount-field">
-      <span class="field-label" style="margin-bottom:0;">Yearly discount</span>
-      <input type="number" id="yearlyDiscountInput" min="0" max="100" step="0.1">
-      <span>%</span>
-    </div>
-
-    <div class="btn-row" style="margin-top:18px;">
-      <button class="btn-primary" id="savePricingBtn">Save Pricing</button>
-    </div>
-    <div class="status" id="pricingStatus"></div>
-  </div>
-
-  <a class="back-link" href="index.html">&larr; Back to home</a>
-  </div>
+  <footer class="support">
+    <div class="support-title">Need help?</div>
+    <div class="contact-row">Email: <a href="mailto:info.attendance.work@gmail.com">info.attendance.work@gmail.com</a></div>
+    <div class="contact-row">Phone: <a href="tel:+9999999999">9767xxxxxx</a></div>
+  </footer>
 
 <script>
-  // Paste the same Google Apps Script Web App URL used in index.html (see Code.gs)
-  var BANNER_API_URL = 'https://script.google.com/macros/s/AKfycby56HpmJx2LxPzrT_RjaQ6zFmbT3YhIIiLm2uNA7-i7C8xJnypKPakzMtwGUwPhfaCRSA/exec';
-  // The ATTENDANCE SYSTEM's Apps Script Web App URL — same one used in
-  // register.html/dashboard.html/attendance.html. This is a DIFFERENT
-  // deployment from BANNER_API_URL above; pricing lives in that backend,
-  // not the banner one.
-  var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzYiUzTQijI7gJwVIu6RWPVNS8IQGIOJkIYKfkgjdmAb_3JXhP_Z6ANDDoEhOs8wkSO/exec';
-  var MAX_DIMENSION = 1200;
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzYiUzTQijI7gJwVIu6RWPVNS8IQGIOJkIYKfkgjdmAb_3JXhP_Z6ANDDoEhOs8wkSO/exec";
+  if (APPS_SCRIPT_URL.indexOf("PASTE_YOUR") !== -1) document.getElementById('configWarning').style.display = 'block';
 
-  var fileInput = document.getElementById('fileInput');
-  var linkInput = document.getElementById('linkInput');
-  var captionInput = document.getElementById('captionInput');
-  var previewImg = document.getElementById('previewImg');
-  var previewEmpty = document.getElementById('previewEmpty');
-  var saveBtn = document.getElementById('saveBtn');
-  var removeBtn = document.getElementById('removeBtn');
-  var statusMsg = document.getElementById('statusMsg');
+  let session = null; // { employeeId, password }
+  let monthlyLoaded = false; // tracks whether the monthly panel has fetched data yet
 
-  var loginCard = document.getElementById('loginCard');
-  var adminApp = document.getElementById('adminApp');
-  var passwordInput = document.getElementById('passwordInput');
-  var unlockBtn = document.getElementById('unlockBtn');
-  var loginStatus = document.getElementById('loginStatus');
-
-  var pendingDataUrl = null; // newly chosen image, resized, base64
-  var currentImageUrl = null; // image currently saved on the server
-  var sessionPassword = null; // kept in memory only for this page load, never stored
-
-  function showPreview(url) {
-    if (url) {
-      previewImg.src = url;
-      previewImg.style.display = 'block';
-      previewEmpty.style.display = 'none';
-    } else {
-      previewImg.style.display = 'none';
-      previewEmpty.style.display = 'block';
-    }
+  // ---- Session persistence (localStorage) ----
+  const SESSION_KEY = 'attendanceSession';
+  function saveSession(employeeId, password) {
+    try { localStorage.setItem(SESSION_KEY, JSON.stringify({ employeeId, password })); } catch (e) { /* storage unavailable — session just won't persist */ }
+  }
+  function loadSavedSession() {
+    try {
+      const raw = localStorage.getItem(SESSION_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  }
+  function clearSavedSession() {
+    try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
   }
 
-  function setStatus(msg, type) {
-    statusMsg.textContent = msg;
-    statusMsg.className = 'status' + (type ? ' ' + type : '');
-    if (msg) {
-      setTimeout(function () { statusMsg.textContent = ''; statusMsg.className = 'status'; }, 4000);
-    }
-  }
-
-  function apiConfigured() {
-    if (!BANNER_API_URL || BANNER_API_URL.indexOf('PASTE_YOUR') === 0) {
-      setStatus('Set BANNER_API_URL in the code first (see Code.gs instructions).', 'error');
-      return false;
-    }
-    return true;
-  }
-
-  function loadCurrentBanner() {
-    fetch(BANNER_API_URL)
-      .then(function (res) { return res.json(); })
-      .then(function (data) {
-        if (data && data.imageUrl) {
-          currentImageUrl = data.imageUrl;
-          showPreview(data.imageUrl);
-        }
-        if (data && data.link) linkInput.value = data.link;
-        if (data && data.caption) captionInput.value = data.caption;
-      })
-      .catch(function () { setStatus('Could not load current banner.', 'error'); });
-  }
-
-  unlockBtn.addEventListener('click', function () {
-    if (!apiConfigured()) return;
-    var pwd = passwordInput.value;
-    if (!pwd) {
-      loginStatus.textContent = 'Enter the password.';
-      loginStatus.className = 'status error';
-      return;
-    }
-    unlockBtn.disabled = true;
-    loginStatus.textContent = 'Checking...';
-    loginStatus.className = 'status';
-
-    fetch(BANNER_API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'checkPassword', password: pwd })
-    })
-      .then(function (res) { return res.json(); })
-      .then(function (data) {
-        unlockBtn.disabled = false;
-        if (data && data.success) {
-          sessionPassword = pwd;
-          loginCard.style.display = 'none';
-          adminApp.style.display = 'block';
-          loadCurrentBanner();
-        } else {
-          loginStatus.textContent = 'Incorrect password.';
-          loginStatus.className = 'status error';
-        }
-      })
-      .catch(function () {
-        unlockBtn.disabled = false;
-        loginStatus.textContent = 'Could not reach the server.';
-        loginStatus.className = 'status error';
-      });
-  });
-
-  passwordInput.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') unlockBtn.click();
-  });
-
-  fileInput.addEventListener('change', function (e) {
-    var file = e.target.files && e.target.files[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      setStatus('Please choose an image file.', 'error');
-      return;
-    }
-    var reader = new FileReader();
-    reader.onload = function (ev) {
-      var img = new Image();
-      img.onload = function () {
-        var canvas = document.createElement('canvas');
-        var w = img.width, h = img.height;
-        if (w > MAX_DIMENSION || h > MAX_DIMENSION) {
-          if (w >= h) { h = Math.round(h * (MAX_DIMENSION / w)); w = MAX_DIMENSION; }
-          else { w = Math.round(w * (MAX_DIMENSION / h)); h = MAX_DIMENSION; }
-        }
-        canvas.width = w;
-        canvas.height = h;
-        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-        pendingDataUrl = canvas.toDataURL('image/jpeg', 0.85);
-        showPreview(pendingDataUrl);
-      };
-      img.src = ev.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
-
-  saveBtn.addEventListener('click', function () {
-    if (!apiConfigured()) return;
-    if (!pendingDataUrl && !currentImageUrl) {
-      setStatus('Choose an image first.', 'error');
-      return;
-    }
-    saveBtn.disabled = true;
-    setStatus('Saving...', '');
-
-    var payload = {
-      action: 'saveBanner',
-      password: sessionPassword,
-      link: linkInput.value.trim(),
-      caption: captionInput.value.trim()
-    };
-    if (pendingDataUrl) payload.image = pendingDataUrl; // only send if a new image was picked
-
-    fetch(BANNER_API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // avoids CORS preflight on Apps Script
-      body: JSON.stringify(payload)
-    })
-      .then(function (res) { return res.json(); })
-      .then(function (data) {
-        saveBtn.disabled = false;
-        if (data && data.success) {
-          if (data.imageUrl) { currentImageUrl = data.imageUrl; pendingDataUrl = null; }
-          setStatus('Banner saved. It will show on the homepage.', 'success');
-        } else {
-          setStatus('Save failed: ' + (data && data.error ? data.error : 'unknown error'), 'error');
-        }
-      })
-      .catch(function () {
-        saveBtn.disabled = false;
-        setStatus('Save failed. Check your connection.', 'error');
-      });
-  });
-
-  removeBtn.addEventListener('click', function () {
-    if (!apiConfigured()) return;
-    removeBtn.disabled = true;
-    fetch(BANNER_API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'removeBanner', password: sessionPassword })
-    })
-      .then(function (res) { return res.json(); })
-      .then(function (data) {
-        removeBtn.disabled = false;
-        if (data && data.success) {
-          pendingDataUrl = null;
-          currentImageUrl = null;
-          fileInput.value = '';
-          linkInput.value = '';
-          captionInput.value = '';
-          showPreview(null);
-          setStatus('Banner removed.', 'success');
-        } else {
-          setStatus('Remove failed: ' + (data && data.error ? data.error : 'unknown error'), 'error');
-        }
-      })
-      .catch(function () {
-        removeBtn.disabled = false;
-        setStatus('Remove failed. Check your connection.', 'error');
-      });
-  });
-
-  // ---------------------------------------------------------------
-  // Subscription Pricing (talks to APPS_SCRIPT_URL, the attendance
-  // backend — separate from BANNER_API_URL and its password above)
-  // ---------------------------------------------------------------
-  var pricingLoginCard = document.getElementById('pricingLoginCard');
-  var pricingCard = document.getElementById('pricingCard');
-  var pricingKeyInput = document.getElementById('pricingKeyInput');
-  var pricingUnlockBtn = document.getElementById('pricingUnlockBtn');
-  var pricingLoginStatus = document.getElementById('pricingLoginStatus');
-  var tierRowsEl = document.getElementById('tierRows');
-  var addTierBtn = document.getElementById('addTierBtn');
-  var yearlyDiscountInput = document.getElementById('yearlyDiscountInput');
-  var savePricingBtn = document.getElementById('savePricingBtn');
-  var pricingStatus = document.getElementById('pricingStatus');
-
-  var sessionAdminKey = null; // kept in memory only for this page load, never stored
-
-  function pricingApiConfigured() {
-    if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('PASTE_YOUR') === 0) {
-      pricingLoginStatus.textContent = 'Set APPS_SCRIPT_URL in the code first (the attendance system deployment, not the banner one).';
-      pricingLoginStatus.className = 'status error';
-      return false;
-    }
-    return true;
-  }
-
-  function pricingCall(payload) {
-    return fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // avoids CORS preflight on Apps Script
-      body: JSON.stringify(payload)
-    }).then(function (res) { return res.json(); });
-  }
-
-  function addTierRow(min, max, rate) {
-    var row = document.createElement('div');
-    row.className = 'tier-row';
-    row.innerHTML =
-      '<input type="number" class="tier-min" min="1" placeholder="e.g. 1" value="' + (min !== undefined ? min : '') + '">' +
-      '<input type="number" class="tier-max" min="1" placeholder="blank = open" value="' + (max !== null && max !== undefined ? max : '') + '">' +
-      '<input type="number" class="tier-rate" min="0" step="0.01" placeholder="e.g. 100" value="' + (rate !== undefined ? rate : '') + '">' +
-      '<button type="button" class="tier-remove" title="Remove tier">&times;</button>';
-    row.querySelector('.tier-remove').addEventListener('click', function () {
-      row.remove();
+  // Restrict Employee ID and Password fields to exactly 4 digits.
+  function digitsOnly4(inputEl) {
+    inputEl.addEventListener('input', () => {
+      inputEl.value = inputEl.value.replace(/\D/g, '').slice(0, 4);
     });
-    tierRowsEl.appendChild(row);
+  }
+  digitsOnly4(document.getElementById('employeeId'));
+  digitsOnly4(document.getElementById('password'));
+
+  function jsonp(params) {
+    return new Promise((resolve, reject) => {
+      const cbName = 'cb_' + Math.random().toString(36).substring(2, 11);
+      const timeout = setTimeout(() => { cleanup(); reject(new Error('Request timed out. Check the Apps Script URL and deployment access.')); }, 25000);
+      function cleanup() { clearTimeout(timeout); delete window[cbName]; if (script.parentNode) script.parentNode.removeChild(script); }
+      window[cbName] = (data) => { cleanup(); resolve(data); };
+      const qs = new URLSearchParams({ ...params, callback: cbName }).toString();
+      const script = document.createElement('script');
+      script.src = APPS_SCRIPT_URL + '?' + qs;
+      script.onerror = () => { cleanup(); reject(new Error('Could not load the Apps Script URL.')); };
+      document.body.appendChild(script);
+    });
   }
 
-  addTierBtn.addEventListener('click', function () {
-    addTierRow();
-  });
+  function showMsg(el, text, type) { el.className = 'msg ' + type; el.innerHTML = text; }
 
-  function renderPricing(tiers, yearlyDiscountPercent) {
-    tierRowsEl.innerHTML = '';
-    (tiers || []).forEach(function (t) { addTierRow(t.min, t.max, t.rate); });
-    if (!tiers || !tiers.length) addTierRow();
-    yearlyDiscountInput.value = (yearlyDiscountPercent !== undefined && yearlyDiscountPercent !== null) ? yearlyDiscountPercent : 10;
+  function enterDashboard(employeeId, password, data) {
+    session = { employeeId, password };
+    saveSession(employeeId, password);
+    document.getElementById('loginCard').style.display = 'none';
+    document.getElementById('pageSubtitle').textContent = '';
+    document.getElementById('dashboard').style.display = 'block';
+    document.getElementById('empNameLabel').textContent = data.name;
+    if (data.companyName) {
+      document.getElementById('companyNameTopBar').textContent = data.companyName;
+      document.getElementById('greetCompanyName').textContent = data.companyName;
+    }
+    renderState(data.status, data.log);
+    // Monthly attendance is no longer fetched automatically — it loads
+    // lazily the first time the user opens the "Monthly Attendance" panel.
   }
 
-  function loadPricingForEditing() {
-    // getPricingConfig is public (no key needed) — used here just to
-    // pre-fill the form with whatever is currently live.
-    pricingCall({ action: 'getPricingConfig' })
-      .then(function (data) {
-        if (data && data.success) {
-          renderPricing(data.tiers, data.yearlyDiscountPercent);
-        } else {
-          renderPricing([], 10);
-        }
-      })
-      .catch(function () {
-        pricingStatus.textContent = 'Could not load current pricing.';
-        pricingStatus.className = 'status error';
-        renderPricing([], 10);
-      });
-  }
+  document.getElementById('loginBtn').addEventListener('click', async () => {
+    const employeeId = document.getElementById('employeeId').value.trim();
+    const password = document.getElementById('password').value;
+    const msg = document.getElementById('loginMsg');
+    const btn = document.getElementById('loginBtn');
 
-  pricingUnlockBtn.addEventListener('click', function () {
-    if (!pricingApiConfigured()) return;
-    var key = pricingKeyInput.value;
-    if (!key) {
-      pricingLoginStatus.textContent = 'Enter the SUPER_ADMIN_KEY.';
-      pricingLoginStatus.className = 'status error';
+    if (!/^\d{4}$/.test(employeeId) || !/^\d{4}$/.test(password)) {
+      showMsg(msg, 'Employee ID and Password must each be exactly 4 digits.', 'error');
       return;
     }
-    // There's no separate "check key" action — the key is verified for
-    // real the first time you Save. Unlocking just reveals the editor
-    // and loads current pricing so you can review before saving.
-    sessionAdminKey = key;
-    pricingLoginCard.style.display = 'none';
-    pricingCard.style.display = 'block';
-    loadPricingForEditing();
-  });
 
-  pricingKeyInput.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') pricingUnlockBtn.click();
-  });
-
-  savePricingBtn.addEventListener('click', function () {
-    if (!pricingApiConfigured()) return;
-
-    var tiers = [];
-    var rows = tierRowsEl.querySelectorAll('.tier-row');
-    for (var i = 0; i < rows.length; i++) {
-      var minVal = rows[i].querySelector('.tier-min').value;
-      var maxVal = rows[i].querySelector('.tier-max').value;
-      var rateVal = rows[i].querySelector('.tier-rate').value;
-      if (minVal === '' || rateVal === '') {
-        pricingStatus.textContent = 'Every tier needs at least a starting employee count and a rate.';
-        pricingStatus.className = 'status error';
-        return;
+    btn.disabled = true; btn.textContent = 'Logging in...';
+    try {
+      const data = await jsonp({ action: 'getStatus', employeeId, password });
+      if (data.success) {
+        enterDashboard(employeeId, password, data);
+      } else {
+        showMsg(msg, data.error || 'Login failed.', 'error');
       }
-      tiers.push({
-        min: parseInt(minVal, 10),
-        max: maxVal === '' ? null : parseInt(maxVal, 10),
-        rate: parseFloat(rateVal)
+    } catch (err) {
+      showMsg(msg, err.message, 'error');
+    }
+    btn.disabled = false; btn.textContent = 'Log In';
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    const refreshBtn = document.getElementById('logoutBtn');
+    if (!session) return;
+    refreshBtn.disabled = true;
+    refreshBtn.textContent = 'Refreshing...';
+    const tasks = [refreshStatus()];
+    // Only refresh the monthly log too if the panel is open/has been loaded.
+    if (monthlyLoaded) {
+      const activeOffset = document.getElementById('lastMonthTab').classList.contains('active') ? 1 : 0;
+      tasks.push(loadMonthlyLog(activeOffset));
+    }
+    await Promise.all(tasks);
+    refreshBtn.disabled = false;
+    refreshBtn.textContent = 'Refresh';
+  });
+
+  document.getElementById('logoutLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    clearSavedSession();
+    session = null;
+    location.reload();
+  });
+
+  // ---- Geolocation capture ----
+  // maximumAge raised to 5 min so a recently-cached GPS fix resolves
+  // near-instantly instead of forcing a fresh fix every tap. Timeout no
+  // longer affects perceived speed — this now runs in the background
+  // (see attachLocationInBackground below), never blocking the status tap.
+  function getLocation() {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) { resolve(null); return; }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => resolve({ lat: pos.coords.latitude.toFixed(6), lng: pos.coords.longitude.toFixed(6) }),
+        () => resolve(null),
+        { enableHighAccuracy: false, timeout: 4000, maximumAge: 300000 }
+      );
+    });
+  }
+
+  function mapLink(lat, lng) {
+    if (!lat || !lng) return '';
+    return ` <a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" rel="noopener" class="hint" style="display:inline;">📍 view</a>`;
+  }
+
+  function statusSlug(status) {
+    return String(status).replace(/\s+/g, '');
+  }
+
+  function renderState(status, log) {
+    const badge = document.getElementById('statusBadge');
+    badge.textContent = status;
+    badge.className = 'status-badge status-' + statusSlug(status);
+
+    const buttonsByStatus = { Online: 'onlineBtn', Offline: 'offlineBtn', Break: 'breakBtn', 'On Leave': 'onleaveBtn' };
+    ['onlineBtn', 'offlineBtn', 'breakBtn', 'onleaveBtn'].forEach(id => {
+      const btn = document.getElementById(id);
+      if (!btn) return;
+      btn.disabled = false;
+      btn.classList.remove('active-online', 'active-offline', 'active-break', 'active-onleave');
+    });
+    const activeBtnId = buttonsByStatus[status];
+    if (activeBtnId) {
+      const activeClass = 'active-' + statusSlug(status).toLowerCase();
+      document.getElementById(activeBtnId).classList.add(activeClass);
+    }
+
+    const logList = document.getElementById('logList');
+    logList.innerHTML = '';
+    if (!log.length) {
+      logList.innerHTML = '<div class="log-empty">No activity yet today.</div>';
+    } else {
+      log.slice().reverse().forEach(entry => {
+        const row = document.createElement('div');
+        row.className = 'log-row';
+        row.innerHTML = `<span>${entry.status}${mapLink(entry.lat, entry.lng)}</span><span>${entry.time}</span>`;
+        logList.appendChild(row);
       });
     }
-    if (!tiers.length) {
-      pricingStatus.textContent = 'Add at least one pricing tier.';
-      pricingStatus.className = 'status error';
+  }
+
+  let statusRequestInFlight = false;
+
+  // Status update no longer waits on GPS before contacting the server.
+  // It used to `await getLocation()` first — up to 4s of dead time on
+  // every tap, worse with a weak GPS lock. Now markStatus() fires
+  // immediately with blank lat/lng, the UI updates right away, and
+  // location is patched in afterward via a background call that never
+  // blocks the button or the status message.
+  async function sendStatus(status) {
+    if (statusRequestInFlight) return;
+    statusRequestInFlight = true;
+
+    const msg = document.getElementById('statusMsg');
+    ['onlineBtn', 'breakBtn', 'onleaveBtn', 'offlineBtn'].forEach(id => document.getElementById(id).disabled = true);
+    showMsg(msg, 'Updating…', 'info');
+    try {
+      const data = await jsonp({ action: 'markStatus', employeeId: session.employeeId, password: session.password, status, lat: '', lng: '' });
+      if (data.success) {
+        showMsg(msg, `Marked ${data.status} at ${data.time}`, 'success');
+        renderState(data.status, data.log);
+        attachLocationInBackground();
+      } else {
+        showMsg(msg, data.error || 'Could not update status.', 'error');
+        if (data.status) renderState(data.status, data.log || []);
+      }
+    } catch (err) {
+      showMsg(msg, err.message + ' Re-checking your status…', 'error');
+      await refreshStatus();
+    }
+    statusRequestInFlight = false;
+  }
+
+  // Fire-and-forget: resolves GPS whenever it resolves (or gives up),
+  // then patches lat/lng onto the row markStatus() just wrote. A denial,
+  // timeout, or network failure here is silent — it never blocks
+  // anything and the status update itself has already succeeded.
+  function attachLocationInBackground() {
+    getLocation().then(loc => {
+      if (!loc || !session) return;
+      return jsonp({ action: 'updateLocation', employeeId: session.employeeId, password: session.password, lat: loc.lat, lng: loc.lng })
+        .then(() => refreshStatus()); // pulls the patched lat/lng into the displayed log
+    }).catch(() => {});
+  }
+
+  async function refreshStatus() {
+    try {
+      const data = await jsonp({ action: 'getStatus', employeeId: session.employeeId, password: session.password });
+      if (data.success) renderState(data.status, data.log);
+    } catch (err) {
+      const badge = document.getElementById('statusBadge');
+      const currentStatus = badge.textContent && badge.textContent !== '—' ? badge.textContent : 'Offline';
+      renderState(currentStatus, []);
+    }
+  }
+
+  document.getElementById('onlineBtn').addEventListener('click', () => sendStatus('Online'));
+  document.getElementById('breakBtn').addEventListener('click', () => sendStatus('Break'));
+  document.getElementById('onleaveBtn').addEventListener('click', () => sendStatus('On Leave'));
+  document.getElementById('offlineBtn').addEventListener('click', () => sendStatus('Offline'));
+
+  // ---- Monthly attendance (collapsed by default, lazy-loaded on open) ----
+  let monthlyRequestInFlight = false;
+
+  document.getElementById('monthlyToggle').addEventListener('click', () => {
+    const toggle = document.getElementById('monthlyToggle');
+    const panel = document.getElementById('monthlyPanel');
+    const isOpen = panel.classList.toggle('open');
+    toggle.classList.toggle('open', isOpen);
+    if (isOpen && !monthlyLoaded) {
+      monthlyLoaded = true;
+      loadMonthlyLog(0);
+    }
+  });
+
+  async function loadMonthlyLog(monthOffset) {
+    if (monthlyRequestInFlight || !session) return;
+    monthlyRequestInFlight = true;
+    const list = document.getElementById('monthlyList');
+    const summary = document.getElementById('monthlySummary');
+    list.innerHTML = '<div class="log-empty">Loading…</div>';
+    summary.textContent = '';
+    try {
+      const data = await jsonp({ action: 'getMonthlyLog', employeeId: session.employeeId, password: session.password, monthOffset });
+      if (data.success) {
+        renderMonthlyLog(data.days || []);
+      } else {
+        list.innerHTML = `<div class="log-empty">${data.error || 'Could not load attendance.'}</div>`;
+      }
+    } catch (err) {
+      list.innerHTML = `<div class="log-empty">${err.message}</div>`;
+    }
+    monthlyRequestInFlight = false;
+  }
+
+  function renderMonthlyLog(days) {
+    const list = document.getElementById('monthlyList');
+    const summary = document.getElementById('monthlySummary');
+    list.innerHTML = '';
+    if (!days.length) {
+      list.innerHTML = '<div class="log-empty">No records found.</div>';
       return;
     }
+    const presentCount = days.filter(d => d.status === 'Present').length;
+    const leaveCount = days.filter(d => d.status === 'On Leave').length;
+    const absentCount = days.filter(d => d.status === 'Absent').length;
+    summary.innerHTML = `<span>Present: ${presentCount}</span><span>On Leave: ${leaveCount}</span><span>Absent: ${absentCount}</span>`;
 
-    savePricingBtn.disabled = true;
-    pricingStatus.textContent = 'Saving...';
-    pricingStatus.className = 'status';
+    days.slice().reverse().forEach(d => {
+      const row = document.createElement('div');
+      row.className = 'log-row';
+      const statusSlugged = statusSlug(d.status || 'Absent');
+      const timeInfo = d.firstIn ? `${d.firstIn}${d.lastOut ? ' – ' + d.lastOut : ''}` : '';
+      row.innerHTML = `<span>${d.date}${timeInfo ? ' <span class="hint" style="display:inline;">(' + timeInfo + ')</span>' : ''}</span><span class="day-status day-status-${statusSlugged}">${d.status || '—'}</span>`;
+      list.appendChild(row);
+    });
+  }
 
-    pricingCall({
-      action: 'savePricingConfig',
-      adminKey: sessionAdminKey,
-      tiers: JSON.stringify(tiers),
-      yearlyDiscountPercent: yearlyDiscountInput.value
-    })
-      .then(function (data) {
-        savePricingBtn.disabled = false;
-        if (data && data.success) {
-          renderPricing(data.tiers, data.yearlyDiscountPercent);
-          pricingStatus.textContent = 'Pricing saved. Register.html will pick it up automatically.';
-          pricingStatus.className = 'status success';
-        } else {
-          pricingStatus.textContent = 'Save failed: ' + (data && data.error ? data.error : 'unknown error');
-          pricingStatus.className = 'status error';
-          if (data && data.error === 'Not authorized.') {
-            // Wrong/missing key — send them back to unlock so they don't
-            // keep hammering Save with a bad key.
-            sessionAdminKey = null;
-            pricingCard.style.display = 'none';
-            pricingLoginCard.style.display = 'block';
-            pricingKeyInput.value = '';
-          }
-        }
-      })
-      .catch(function () {
-        savePricingBtn.disabled = false;
-        pricingStatus.textContent = 'Save failed. Check your connection.';
-        pricingStatus.className = 'status error';
-      });
+  document.getElementById('thisMonthTab').addEventListener('click', () => {
+    document.getElementById('thisMonthTab').classList.add('active');
+    document.getElementById('lastMonthTab').classList.remove('active');
+    document.getElementById('monthlyTitle').textContent = "This Month's Attendance";
+    loadMonthlyLog(0);
   });
+  document.getElementById('lastMonthTab').addEventListener('click', () => {
+    document.getElementById('lastMonthTab').classList.add('active');
+    document.getElementById('thisMonthTab').classList.remove('active');
+    document.getElementById('monthlyTitle').textContent = "Last Month's Attendance";
+    loadMonthlyLog(1);
+  });
+
+  // ---- Auto-restore session on page load / reload ----
+  (async function restoreSession() {
+    const saved = loadSavedSession();
+    if (!saved) return;
+
+    document.getElementById('pageSubtitle').textContent = 'Logging you back in…';
+    try {
+      const data = await jsonp({ action: 'getStatus', employeeId: saved.employeeId, password: saved.password });
+      if (data.success) {
+        enterDashboard(saved.employeeId, saved.password, data);
+      } else {
+        clearSavedSession();
+        document.getElementById('pageSubtitle').textContent = 'Log in to mark your status.';
+      }
+    } catch (err) {
+      document.getElementById('pageSubtitle').textContent = 'Log in to mark your status.';
+    }
+  })();
 </script>
 </body>
 </html>
