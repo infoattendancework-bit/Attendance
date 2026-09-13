@@ -1163,16 +1163,17 @@
     return ranges;
   }
   let _threeMonthCache = [];
-  async function loadThreeMonthOverview() {
+   async function loadThreeMonthOverview() {
     const grid = document.getElementById('threeMonthGrid');
     if (!grid) return;
-    grid.innerHTML = '<div class="empty" style="grid-column:1/-1;">Loading…</div>';
+    if (grid.dataset.loaded !== '1') grid.innerHTML = '<div class="empty" style="grid-column:1/-1;">Loading…</div>';
     const toISO = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     const ranges = getPastMonthsAdRanges(3);
     try {
       const results = await Promise.all(ranges.map(r => jsonp({ action: 'exportAttendance', adminEmail: session.adminEmail, adminPassword: session.adminPassword, startDate: toISO(r.start), endDate: toISO(r.end) })));
       grid.innerHTML = '';
       _threeMonthCache = [];
+      grid.dataset.loaded = '1';
       results.forEach((data, i) => {
         const label = ranges[i].label;
         let present = 0, leave = 0, absent = 0;
@@ -1275,9 +1276,9 @@
   document.getElementById('monthModalOverlay').addEventListener('click', (e) => { if (e.target.id === 'monthModalOverlay') document.getElementById('monthModalOverlay').classList.remove('open'); });
 
   // ---- Attendance Trend (last 7 days), built from getCompanyDayView ----
-  async function loadAttendanceTrend() {
+    async function loadAttendanceTrend() {
     const wrap = document.getElementById('trendChartWrap');
-    wrap.innerHTML = '<div class="empty">Loading…</div>';
+    if (wrap.dataset.loaded !== '1') wrap.innerHTML = '<div class="empty">Loading…</div>';
     const toISO = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     const dates = [];
     for (let i = 6; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); dates.push(d); }
@@ -1299,6 +1300,7 @@
         wrap.innerHTML = '<div class="empty">Day-by-day report isn\'t available from the backend yet.</div>';
         return;
       }
+      wrap.dataset.loaded = '1';
       renderTrendSvg(points);
     } catch (err) {
       wrap.innerHTML = `<div class="empty">${err.message}</div>`;
