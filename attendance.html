@@ -65,6 +65,29 @@
   .log-row { display:flex; justify-content:space-between; font-size:0.85rem; padding:6px 0; border-bottom:1px solid var(--border); }
   .log-empty { font-size:0.85rem; color:var(--muted); text-align:center; padding:10px 0; }
 
+  /* ---------- Notices (highlighted cards) ---------- */
+  .notices-title-row { display:flex; align-items:center; gap:8px; margin:20px 0 8px; }
+  .notices-title-row .log-title { margin:0; }
+  .notice-badge { background:var(--danger); color:#fff; font-size:0.68rem; font-weight:700; padding:1px 7px; border-radius:999px; display:none; }
+  .notice-badge.show { display:inline-block; }
+  .notice-item {
+    background:linear-gradient(135deg,#fff8ea,#fef3c7);
+    border-left:4px solid var(--warn);
+    border-radius:10px;
+    padding:12px 14px;
+    margin-bottom:10px;
+    box-shadow:0 1px 4px rgba(0,0,0,0.06);
+  }
+  .notice-item .notice-subject { font-weight:700; color:#92400e; font-size:0.92rem; margin-bottom:4px; }
+  .notice-item .notice-message { white-space:pre-wrap; color:#1f2937; font-size:0.87rem; line-height:1.45; }
+  .notice-item .notice-time { font-size:0.72rem; color:#92400e; opacity:0.8; margin-top:8px; }
+  @keyframes noticePulse {
+    0% { box-shadow:0 0 0 0 rgba(217,119,6,0.55); }
+    70% { box-shadow:0 0 0 12px rgba(217,119,6,0); }
+    100% { box-shadow:0 0 0 0 rgba(217,119,6,0); }
+  }
+  #noticesList.notices-flash .notice-item:first-child { animation:noticePulse 0.9s ease-out 2; }
+
   .monthly-title-row { display:flex; justify-content:space-between; align-items:center; margin:20px 0 8px; cursor:pointer; user-select:none; }
   .monthly-title-row .log-title { margin:0; }
   .monthly-title-row .chevron { font-size:1.1rem; color:var(--primary); line-height:1; transition:transform 0.2s ease; display:inline-block; }
@@ -140,10 +163,16 @@
       <div class="msg" id="statusMsg"></div>
       <div class="hint" style="text-align:center;">Your location is recorded when you tap a status button. Allow location access if your browser asks.</div>
 
-      <div class="log-title">Today's activity</div>
-      <div id="logList"></div>
+      <!-- Today's activity log is intentionally hidden from view, but still -->
+      <!-- kept in the DOM and updated normally in case you want to re-enable -->
+      <!-- it later — just remove the display:none below. -->
+      <div class="log-title" style="display:none;">Today's activity</div>
+      <div id="logList" style="display:none;"></div>
 
-      <div class="log-title">Notices</div>
+      <div class="notices-title-row">
+        <div class="log-title">Notices</div>
+        <span class="notice-badge" id="noticeBadge">NEW</span>
+      </div>
       <div id="noticesList"><div class="log-empty">Loading…</div></div>
 
       <div class="month-tabs">
@@ -237,30 +266,71 @@
     // lazily the first time the user opens the "Monthly Attendance" panel.
   }
 
+  // ---- Notices: highlighted cards + sound/flash on a genuinely new one ----
+  // _lastNoticeId is only set once loadNotices has run at least once in this
+  // page session, so the very first load (right after login) never plays a
+  // sound for notices that already existed — only a notice that arrives
+  // AFTER that point triggers the alert.
+  let _lastNoticeId = null;
+
+  function playNoticeSound() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(880, ctx.currentTime);
+      o.frequency.setValueAtTime(660, ctx.currentTime + 0.12);
+      g.gain.setValueAtTime(0.18, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(); o.stop(ctx.currentTime + 0.45);
+    } catch (e) { /* audio unavailable/blocked — silently skip */ }
+  }
+
   async function loadNotices() {
     const list = document.getElementById('noticesList');
+    const badge = document.getElementById('noticeBadge');
     if (!session) return;
     try {
       const data = await jsonp({ action: 'getNotices', employeeId: session.employeeId, password: session.password });
       if (!data.success || !data.notices || !data.notices.length) {
         list.innerHTML = '<div class="log-empty">No notices yet.</div>';
+        badge.classList.remove('show');
         return;
       }
+
+      const topId = data.notices[0].id;
+      const isGenuinelyNew = _lastNoticeId !== null && topId !== _lastNoticeId;
+      if (isGenuinelyNew) {
+        playNoticeSound();
+        badge.classList.add('show');
+      }
+      _lastNoticeId = topId;
+
       list.innerHTML = '';
       data.notices.forEach(n => {
         const row = document.createElement('div');
-        row.className = 'log-row';
-        row.style.flexDirection = 'column';
-        row.style.alignItems = 'flex-start';
-        row.innerHTML = `<div style="font-weight:700;">${n.subject}</div>
-          <div style="white-space:pre-wrap;">${n.message}</div>
-          <div class="hint">${n.timestamp}</div>`;
+        row.className = 'notice-item';
+        row.innerHTML = `<div class="notice-subject">${n.subject}</div>
+          <div class="notice-message">${n.message}</div>
+          <div class="notice-time">${n.timestamp}</div>`;
         list.appendChild(row);
       });
+
+      if (isGenuinelyNew) {
+        list.classList.add('notices-flash');
+        setTimeout(() => list.classList.remove('notices-flash'), 2000);
+      }
     } catch (err) {
       list.innerHTML = `<div class="log-empty">${err.message}</div>`;
     }
   }
+
+  // Tapping/looking at the notices clears the "NEW" badge.
+  document.getElementById('noticesList').addEventListener('click', () => {
+    document.getElementById('noticeBadge').classList.remove('show');
+  });
 
   document.getElementById('loginBtn').addEventListener('click', async () => {
     const employeeId = document.getElementById('employeeId').value.trim();
