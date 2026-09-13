@@ -1662,9 +1662,9 @@
       updateCycleInfoTag();
     }
     buildOptions();
-    calSel.addEventListener('change', () => { _cycleCalendar = calSel.value; localStorage.setItem('cycleCalendar', _cycleCalendar); _cycleYear = null; _cycleMonth = null; buildOptions(); renderEmpListRows(); });
-    monthSel.addEventListener('change', () => { _cycleMonth = parseInt(monthSel.value); updateCycleInfoTag(); renderEmpListRows(); });
-    yearSel.addEventListener('change', () => { _cycleYear = parseInt(yearSel.value); updateCycleInfoTag(); renderEmpListRows(); });
+    calSel.addEventListener('change', () => { _cycleCalendar = calSel.value; localStorage.setItem('cycleCalendar', _cycleCalendar); _cycleYear = null; _cycleMonth = null; buildOptions(); loadEmployees(); });
+    monthSel.addEventListener('change', () => { _cycleMonth = parseInt(monthSel.value); updateCycleInfoTag(); loadEmployees(); });
+    yearSel.addEventListener('change', () => { _cycleYear = parseInt(yearSel.value); updateCycleInfoTag(); loadEmployees(); });
   }
 
   function updateCycleInfoTag() {
