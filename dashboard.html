@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Company Dashboard — Attendance System</title>
-<link rel="icon" type="image/png" href="https://raw.githubusercontent.com/infoattendancework-bit/Attendance/main/logo%20(1).png">
+<link rel="icon" type="image/png" href="https://infoattendancework-bit.github.io/Attendance/logo%20(1).png">
 <style>
   :root {
     --primary:#3D4FE0; --primary-dark:#2E3BB5; --primary-light:#EEF0FE; --primary-ring:rgba(61,79,224,0.16);
@@ -52,10 +52,15 @@
   #restoreScreen { display:none; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; gap:14px; color:var(--muted); }
   .spinner { width:32px; height:32px; border-radius:50%; border:3px solid var(--border); border-top-color:var(--primary); animation:spin .7s linear infinite; }
   @keyframes spin { to { transform:rotate(360deg); } }
-  #loginScreen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:40px 16px; }
+
+  /* ---------- Site top bar (matches index.html / register.html header) ---------- */
+  .site-topbar { width:100%; padding:16px 26px; background:#fff; border-bottom:1px solid var(--border); display:flex; align-items:center; }
+  .site-logo { width:28px; height:28px; object-fit:contain; border-radius:6px; cursor:pointer; transition:transform .15s var(--ease); }
+  .site-logo:hover { transform:scale(1.05); }
+
+  #loginScreen { display:none; flex-direction:column; min-height:100vh; padding:0; }
+  .login-center { display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; padding:40px 16px; }
   #loginCard { max-width:420px; width:100%; box-shadow:var(--shadow-lg); }
-  .login-logo { width:44px; height:44px; object-fit:contain; margin-bottom:10px; border-radius:10px; cursor:pointer; transition:transform .15s var(--ease); }
-  .login-logo:hover { transform:scale(1.05); }
   footer.support { margin-top:24px; width:100%; max-width:420px; text-align:center; font-size:0.8rem; color:var(--muted); border-top:1px solid var(--border); padding-top:16px; }
   footer.support .support-title { font-weight:700; color:var(--text); margin-bottom:6px; font-size:0.82rem; }
   footer.support a { color:var(--primary-dark); text-decoration:none; font-weight:500; }
@@ -355,29 +360,33 @@
   <div id="restoreScreen"><div class="spinner"></div><div>Loading your dashboard…</div></div>
 
   <div id="loginScreen">
-    <img class="login-logo" src="https://raw.githubusercontent.com/infoattendancework-bit/Attendance/main/logo%20(1).png" alt="Attendance System logo" title="Refresh page" onclick="location.reload()">
-    <h1>Company Dashboard</h1>
-    <div class="subtitle">Log in to manage your employees.</div>
-    <div class="card" id="loginCard">
-      <label for="adminEmail">Admin Email</label>
-      <input type="email" id="adminEmail" placeholder="you@company.com">
-      <label for="adminPassword">Password</label>
-      <input type="password" id="adminPassword" placeholder="Your password">
-      <button class="action" id="loginBtn">Log In</button>
-      <div class="msg" id="loginMsg"></div>
-      <div style="text-align:center; margin-top:12px;"><a href="forgot-password.html" style="color:var(--primary-dark); font-size:0.88rem; font-weight:600; text-decoration:none;">Forgot password?</a></div>
+    <header class="site-topbar">
+      <img class="site-logo" src="https://infoattendancework-bit.github.io/Attendance/logo%20(1).png" alt="Attendance System logo" title="Refresh page" onclick="location.reload()">
+    </header>
+    <div class="login-center">
+      <h1>Company Dashboard</h1>
+      <div class="subtitle">Log in to manage your employees.</div>
+      <div class="card" id="loginCard">
+        <label for="adminEmail">Admin Email</label>
+        <input type="email" id="adminEmail" placeholder="you@company.com">
+        <label for="adminPassword">Password</label>
+        <input type="password" id="adminPassword" placeholder="Your password">
+        <button class="action" id="loginBtn">Log In</button>
+        <div class="msg" id="loginMsg"></div>
+        <div style="text-align:center; margin-top:12px;"><a href="forgot-password.html" style="color:var(--primary-dark); font-size:0.88rem; font-weight:600; text-decoration:none;">Forgot password?</a></div>
+      </div>
+      <footer class="support">
+        <div class="support-title">Need help?</div>
+        <div>Email: <a href="mailto:info.attendance.work@gmail.com">info.attendance.work@gmail.com</a></div>
+        <div>Phone: <a href="tel:+9999999999">9999999999</a></div>
+      </footer>
     </div>
-    <footer class="support">
-      <div class="support-title">Need help?</div>
-      <div>Email: <a href="mailto:info.attendance.work@gmail.com">info.attendance.work@gmail.com</a></div>
-      <div>Phone: <a href="tel:+9999999999">9999999999</a></div>
-    </footer>
   </div>
 
   <div id="appShell">
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-brand">
-        <img src="https://raw.githubusercontent.com/infoattendancework-bit/Attendance/main/logo%20(1).png" alt="logo" onclick="location.reload()">
+        <img src="https://infoattendancework-bit.github.io/Attendance/logo%20(1).png" alt="logo" onclick="location.reload()">
         <div>
           <div class="sidebar-brand-text">Attendance</div>
           <div class="sidebar-brand-sub">Company Dashboard</div>
