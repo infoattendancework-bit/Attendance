@@ -2,32 +2,38 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Admin - Banner Settings</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin - Banner Settings</title>
 <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/infoattendancework-bit/Attendance/main/logo%20(1).png">
 <style>
-  :root { --primary:#2563eb; --primary-dark:#1d4ed8; --bg:#f4f6f9; --card:#fff; --text:#1f2937; --muted:#6b7280; --border:#e5e7eb; --header-h:60px; --danger:#dc2626; --success:#16a34a; --warn:#d97706; }
+  :root { --primary:#2563eb; --primary-dark:#1d4ed8; --bg:#f4f6f9; --card:#fff; --text:#1f2937; --muted:#6b7280; --border:#e5e7eb; --header-h:64px; --danger:#dc2626; --success:#16a34a; --warn:#d97706; }
   * { box-sizing: border-box; }
-  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:24px 16px; padding-top:calc(var(--header-h) + 24px); }
-  header.top-bar { position:fixed; top:0; left:0; right:0; height:var(--header-h); background:#fff; display:flex; align-items:center; padding:0 16px; box-shadow:0 1px 4px rgba(0,0,0,0.08); z-index:1000; }
-  header.top-bar img.logo { width:38px; height:38px; object-fit:contain; cursor:pointer; }
-  h1 { font-size:1.5rem; margin-bottom:4px; text-align:center; }
-  .subtitle { color:var(--muted); font-size:0.9rem; margin-bottom:28px; text-align:center; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+  header.top-bar { position:fixed; top:0; left:0; right:0; height:var(--header-h); background:#fff; display:flex; align-items:center; gap:12px; padding:0 28px; box-shadow:0 1px 4px rgba(0,0,0,0.08); z-index:1000; }
+  header.top-bar img.logo { width:36px; height:36px; object-fit:contain; cursor:pointer; }
+  header.top-bar .brand { font-size:1.05rem; font-weight:700; color:var(--text); }
+  header.top-bar .brand-sub { font-size:0.8rem; color:var(--muted); margin-left:4px; }
+
+  .page { max-width:1280px; margin:0 auto; padding:32px 32px 64px; padding-top:calc(var(--header-h) + 32px); }
+
+  h1 { font-size:1.7rem; margin:0 0 6px; text-align:center; }
+  .subtitle { color:var(--muted); font-size:0.95rem; margin-bottom:36px; text-align:center; }
   h2 { font-size:1.1rem; margin:0 0 4px; }
 
-  .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:22px 20px; width:100%; max-width:400px; box-shadow:0 2px 8px rgba(0,0,0,0.05); }
-  .card + .card { margin-top:18px; }
-  .field-label { font-weight:600; font-size:0.9rem; margin-bottom:8px; display:block; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:26px 28px; width:100%; box-shadow:0 2px 8px rgba(0,0,0,0.05); }
+  .field-label { font-weight:600; font-size:0.92rem; margin-bottom:8px; display:block; }
 
-  .preview-wrap { width:100%; border:1px dashed var(--border); border-radius:10px; background:var(--bg); min-height:120px; display:flex; align-items:center; justify-content:center; overflow:hidden; margin-bottom:14px; }
-  .preview-wrap img { width:100%; display:block; }
-  .preview-empty { color:var(--muted); font-size:0.85rem; padding:24px; text-align:center; }
+  .preview-wrap { width:100%; border:1px dashed var(--border); border-radius:10px; background:var(--bg); min-height:220px; max-height:320px; display:flex; align-items:center; justify-content:center; overflow:hidden; margin-bottom:16px; }
+  .preview-wrap img { max-width:100%; max-height:320px; width:auto; display:block; }
+  .preview-empty { color:var(--muted); font-size:0.9rem; padding:24px; text-align:center; }
 
-  input[type="file"] { width:100%; font-size:0.85rem; margin-bottom:14px; }
-  input[type="url"] { width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-size:0.9rem; margin-bottom:6px; font-family:inherit; }
-  .hint { color:var(--muted); font-size:0.75rem; margin-bottom:14px; }
+  input[type="file"] { width:100%; font-size:0.9rem; margin-bottom:14px; }
+  input[type="url"] { width:100%; padding:11px 13px; border:1px solid var(--border); border-radius:8px; font-size:0.92rem; margin-bottom:6px; font-family:inherit; }
+  .hint { color:var(--muted); font-size:0.78rem; margin-bottom:14px; }
 
   .btn-row { display:flex; gap:10px; margin-top:4px; }
-  button { flex:1; border:none; border-radius:8px; padding:11px 14px; font-size:0.9rem; font-weight:600; cursor:pointer; transition:filter 0.15s ease; }
+  button { flex:1; border:none; border-radius:8px; padding:12px 16px; font-size:0.92rem; font-weight:600; cursor:pointer; transition:filter 0.15s ease; }
   button:hover { filter:brightness(0.95); }
   .btn-primary { background:var(--primary); color:#fff; }
   .btn-danger { background:#fff; color:var(--danger); border:1px solid var(--danger); }
@@ -36,25 +42,39 @@
   .status.success { color:var(--success); }
   .status.error { color:var(--danger); }
 
-  a.back-link { display:inline-block; margin-top:20px; color:var(--muted); font-size:0.8rem; text-decoration:none; }
+  a.back-link { display:block; text-align:center; margin-top:8px; color:var(--muted); font-size:0.85rem; text-decoration:none; grid-column:1 / -1; }
   a.back-link:hover { text-decoration:underline; }
 
-  @media (min-width: 640px) { .card { max-width:460px; } }
+  /* Initial password gate — a single centered card, not a full dashboard yet */
+  .gate-wrap { max-width:440px; margin:0 auto; }
 
-  /* Subscription Pricing section */
-  input[type="password"], input[type="number"], input[type="text"] { width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-size:0.9rem; font-family:inherit; }
-  .tier-row { display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:6px; align-items:center; margin-bottom:8px; }
-  .tier-row input { padding:8px 9px; font-size:0.82rem; }
-  .tier-row .tier-remove { flex:none; background:#fff; color:var(--danger); border:1px solid var(--danger); border-radius:8px; padding:0; width:32px; height:32px; font-size:1rem; line-height:1; }
-  .tier-head { display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:6px; margin-bottom:6px; }
+  /* Desktop dashboard layout: banner settings on the left, pricing +
+     company management stacked on the right, using the full page width
+     instead of a single narrow mobile-style column. */
+  #adminApp { display:grid; grid-template-columns:440px 1fr; gap:28px; align-items:start; }
+  .col { display:flex; flex-direction:column; gap:24px; min-width:0; }
+
+  @media (max-width: 860px) {
+    #adminApp { grid-template-columns:1fr; }
+  }
+
+  input[type="password"], input[type="number"], input[type="text"] { width:100%; padding:11px 13px; border:1px solid var(--border); border-radius:8px; font-size:0.92rem; font-family:inherit; }
+  .tier-row { display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:8px; align-items:center; margin-bottom:8px; }
+  .tier-row input { padding:9px 10px; font-size:0.85rem; }
+  .tier-row .tier-remove { flex:none; background:#fff; color:var(--danger); border:1px solid var(--danger); border-radius:8px; padding:0; width:34px; height:34px; font-size:1rem; line-height:1; }
+  .tier-head { display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:8px; margin-bottom:6px; }
   .tier-head span { font-size:0.72rem; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.02em; }
   .btn-secondary { background:#fff; color:var(--primary); border:1px solid var(--primary); }
   .discount-field { display:flex; align-items:center; gap:8px; margin-top:16px; }
-  .discount-field input { max-width:100px; }
+  .discount-field input { max-width:120px; }
+  .discount-field .field-label { margin-bottom:0; }
   .pricing-locked-hint { color:var(--muted); font-size:0.78rem; margin-top:6px; }
 
-  /* Company Management section */
-  .company-card { border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-bottom:10px; background:var(--bg); }
+  /* Company Management: cards flow in a responsive grid so multiple
+     companies sit side by side on wide screens instead of one long
+     vertical list. */
+  #companiesList { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:14px; }
+  .company-card { border:1px solid var(--border); border-radius:10px; padding:14px 16px; background:var(--bg); }
   .company-card.status-pending { border-color:var(--warn); background:#fff8e1; }
   .company-card.status-approved { border-color:var(--success); background:#eef7ee; }
   .company-card.status-rejected { border-color:var(--danger); background:#fdecea; opacity:0.8; }
@@ -64,108 +84,119 @@
   .company-card .btn-row { margin-top:10px; }
   .company-card .btn-approve { background:var(--success); color:#fff; }
   .company-card .btn-reject { background:#fff; color:var(--danger); border:1px solid var(--danger); }
-  .company-empty { color:var(--muted); font-size:0.85rem; text-align:center; padding:14px 0; }
+  .company-empty { color:var(--muted); font-size:0.85rem; text-align:center; padding:14px 0; grid-column:1 / -1; }
 </style>
 </head>
 <body>
 <header class="top-bar">
-    <img class="logo" src="https://raw.githubusercontent.com/infoattendancework-bit/Attendance/main/logo%20(1).png" alt="Attendance System logo" title="Refresh page" onclick="location.reload()">
-  </header>
+  <img class="logo" src="https://raw.githubusercontent.com/infoattendancework-bit/Attendance/main/logo%20(1).png" alt="Attendance System logo" title="Refresh page" onclick="location.reload()">
+  <span class="brand">Attendance System</span>
+  <span class="brand-sub">Admin</span>
+</header>
+
+<div class="page">
   <h1>Banner Settings</h1>
   <div class="subtitle">Upload an image to show on the homepage banner.</div>
 
-  <div class="card" id="loginCard">
-    <span class="field-label">Admin password</span>
-    <input type="password" id="passwordInput" placeholder="Enter password" autocomplete="off">
-    <div class="btn-row">
-      <button class="btn-primary" id="unlockBtn" style="flex:none; width:100%;">Unlock</button>
+  <div class="gate-wrap">
+    <div class="card" id="loginCard">
+      <span class="field-label">Admin password</span>
+      <input type="password" id="passwordInput" placeholder="Enter password" autocomplete="off">
+      <div class="btn-row">
+        <button class="btn-primary" id="unlockBtn" style="flex:none; width:100%;">Unlock</button>
+      </div>
+      <div class="status" id="loginStatus"></div>
     </div>
-    <div class="status" id="loginStatus"></div>
   </div>
 
-  <div id="adminApp" style="display:none; width:100%; max-width:400px; margin:0 auto;">
-  <div class="card">
-    <span class="field-label">Current banner</span>
-    <div class="preview-wrap" id="previewWrap">
-      <div class="preview-empty" id="previewEmpty">No banner set</div>
-      <img id="previewImg" style="display:none;" alt="Banner preview">
+  <div id="adminApp" style="display:none;">
+    <div class="col col-left">
+      <div class="card">
+        <span class="field-label">Current banner</span>
+        <div class="preview-wrap" id="previewWrap">
+          <div class="preview-empty" id="previewEmpty">No banner set</div>
+          <img id="previewImg" style="display:none;" alt="Banner preview">
+        </div>
+
+        <span class="field-label">Upload new image</span>
+        <input type="file" id="fileInput" accept="image/*">
+        <div class="hint">PNG or JPG recommended. Large images are resized automatically.</div>
+
+        <span class="field-label">Link when tapped (optional)</span>
+        <input type="url" id="linkInput" placeholder="https://example.com">
+        <div class="hint">Leave blank if the banner shouldn't be clickable.</div>
+
+        <span class="field-label">Caption text (optional)</span>
+        <input type="text" id="captionInput" placeholder="e.g. Support Disaster Relief in Nepal...">
+        <div class="hint">Shown in green under the banner image, like the ShopSlipper example.</div>
+
+        <div class="btn-row">
+          <button class="btn-primary" id="saveBtn">Save Banner</button>
+          <button class="btn-danger" id="removeBtn">Remove Banner</button>
+        </div>
+        <div class="status" id="statusMsg"></div>
+      </div>
     </div>
 
-    <span class="field-label">Upload new image</span>
-    <input type="file" id="fileInput" accept="image/*">
-    <div class="hint">PNG or JPG recommended. Large images are resized automatically.</div>
+    <div class="col col-right">
+      <div class="card" id="pricingLoginCard">
+        <span class="field-label">Subscription Pricing</span>
+        <div class="hint">Sets the per-employee rate tiers and yearly discount used on the company registration page. Requires the platform's SUPER_ADMIN_KEY, not the banner password above.</div>
+        <input type="password" id="pricingKeyInput" placeholder="Enter SUPER_ADMIN_KEY" autocomplete="off">
+        <div class="btn-row" style="margin-top:10px;">
+          <button class="btn-primary" id="pricingUnlockBtn" style="flex:none; width:100%;">Unlock Pricing</button>
+        </div>
+        <div class="status" id="pricingLoginStatus"></div>
+      </div>
 
-    <span class="field-label">Link when tapped (optional)</span>
-    <input type="url" id="linkInput" placeholder="https://example.com">
-    <div class="hint">Leave blank if the banner shouldn't be clickable.</div>
+      <div class="card" id="pricingCard" style="display:none;">
+        <span class="field-label">Subscription Pricing</span>
+        <div class="hint">Per-employee rate by headcount. Tiers must cover increasing, non-overlapping ranges — leave "Max" blank on the top tier for "and above".</div>
 
-    <span class="field-label">Caption text (optional)</span>
-    <input type="text" id="captionInput" placeholder="e.g. Support Disaster Relief in Nepal...">
-    <div class="hint">Shown in green under the banner image, like the ShopSlipper example.</div>
+        <div class="tier-head">
+          <span>Min emp.</span><span>Max emp.</span><span>Rate (₹)</span><span></span>
+        </div>
+        <div id="tierRows"></div>
+        <div class="btn-row">
+          <button class="btn-secondary" id="addTierBtn" type="button">+ Add tier</button>
+        </div>
 
-    <div class="btn-row">
-      <button class="btn-primary" id="saveBtn">Save Banner</button>
-      <button class="btn-danger" id="removeBtn">Remove Banner</button>
+        <div class="discount-field">
+          <span class="field-label">Yearly discount</span>
+          <input type="number" id="yearlyDiscountInput" min="0" max="100" step="0.1">
+          <span>%</span>
+        </div>
+
+        <div class="btn-row" style="margin-top:18px;">
+          <button class="btn-primary" id="savePricingBtn">Save Pricing</button>
+        </div>
+        <div class="status" id="pricingStatus"></div>
+      </div>
+
+      <div class="card" id="companiesLoginCard">
+        <span class="field-label">Company Management</span>
+        <div class="hint">Review registered companies and approve or reject pending subscriptions. Requires the platform's SUPER_ADMIN_KEY, same as pricing above.</div>
+        <input type="password" id="companiesKeyInput" placeholder="Enter SUPER_ADMIN_KEY" autocomplete="off">
+        <div class="btn-row" style="margin-top:10px;">
+          <button class="btn-primary" id="companiesUnlockBtn" style="flex:none; width:100%;">Unlock Companies</button>
+        </div>
+        <div class="status" id="companiesLoginStatus"></div>
+      </div>
+
+      <div class="card" id="companiesCard" style="display:none;">
+        <span class="field-label">Company Management</span>
+        <div class="hint">Pending companies show Approve/Reject actions. Approving or rejecting emails the company automatically.</div>
+        <div class="btn-row" style="margin-bottom:14px;">
+          <button class="btn-secondary" id="refreshCompaniesBtn" type="button">Refresh</button>
+        </div>
+        <div id="companiesList"><div class="company-empty">Loading...</div></div>
+        <div class="status" id="companiesStatus"></div>
+      </div>
     </div>
-    <div class="status" id="statusMsg"></div>
+
+    <a class="back-link" href="index.html">&larr; Back to home</a>
   </div>
-
-  <div class="card" id="pricingLoginCard">
-    <span class="field-label">Subscription Pricing</span>
-    <div class="hint">Sets the per-employee rate tiers and yearly discount used on the company registration page. Requires the platform's SUPER_ADMIN_KEY, not the banner password above.</div>
-    <input type="password" id="pricingKeyInput" placeholder="Enter SUPER_ADMIN_KEY" autocomplete="off">
-    <div class="btn-row" style="margin-top:10px;">
-      <button class="btn-primary" id="pricingUnlockBtn" style="flex:none; width:100%;">Unlock Pricing</button>
-    </div>
-    <div class="status" id="pricingLoginStatus"></div>
-  </div>
-
-  <div class="card" id="pricingCard" style="display:none; max-width:400px; margin:18px auto 0;">
-    <span class="field-label">Subscription Pricing</span>
-    <div class="hint">Per-employee rate by headcount. Tiers must cover increasing, non-overlapping ranges — leave "Max" blank on the top tier for "and above".</div>
-
-    <div class="tier-head">
-      <span>Min emp.</span><span>Max emp.</span><span>Rate (₹)</span><span></span>
-    </div>
-    <div id="tierRows"></div>
-    <div class="btn-row">
-      <button class="btn-secondary" id="addTierBtn" type="button">+ Add tier</button>
-    </div>
-
-    <div class="discount-field">
-      <span class="field-label" style="margin-bottom:0;">Yearly discount</span>
-      <input type="number" id="yearlyDiscountInput" min="0" max="100" step="0.1">
-      <span>%</span>
-    </div>
-
-    <div class="btn-row" style="margin-top:18px;">
-      <button class="btn-primary" id="savePricingBtn">Save Pricing</button>
-    </div>
-    <div class="status" id="pricingStatus"></div>
-  </div>
-
-  <div class="card" id="companiesLoginCard" style="margin-top:18px;">
-    <span class="field-label">Company Management</span>
-    <div class="hint">Review registered companies and approve or reject pending subscriptions. Requires the platform's SUPER_ADMIN_KEY, same as pricing above.</div>
-    <input type="password" id="companiesKeyInput" placeholder="Enter SUPER_ADMIN_KEY" autocomplete="off">
-    <div class="btn-row" style="margin-top:10px;">
-      <button class="btn-primary" id="companiesUnlockBtn" style="flex:none; width:100%;">Unlock Companies</button>
-    </div>
-    <div class="status" id="companiesLoginStatus"></div>
-  </div>
-
-  <div class="card" id="companiesCard" style="display:none; max-width:400px; margin:18px auto 0;">
-    <span class="field-label">Company Management</span>
-    <div class="hint">Pending companies show Approve/Reject actions. Approving or rejecting emails the company automatically.</div>
-    <div class="btn-row" style="margin-bottom:14px;">
-      <button class="btn-secondary" id="refreshCompaniesBtn" type="button">Refresh</button>
-    </div>
-    <div id="companiesList"><div class="company-empty">Loading...</div></div>
-    <div class="status" id="companiesStatus"></div>
-  </div>
-
-  <a class="back-link" href="index.html">&larr; Back to home</a>
-  </div>
+</div>
 
 <script>
   // Paste the same Google Apps Script Web App URL used in index.html (see Code.gs)
@@ -260,7 +291,7 @@
         if (data && data.success) {
           sessionPassword = pwd;
           loginCard.style.display = 'none';
-          adminApp.style.display = 'block';
+          adminApp.style.display = 'grid';
           loadCurrentBanner();
         } else {
           loginStatus.textContent = 'Incorrect password.';
