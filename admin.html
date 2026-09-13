@@ -5,13 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Admin - Banner Settings</title>
 <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/infoattendancework-bit/Attendance/main/logo%20(1).png">
 <style>
-  :root { --primary:#2563eb; --primary-dark:#1d4ed8; --bg:#f4f6f9; --card:#fff; --text:#1f2937; --muted:#6b7280; --border:#e5e7eb; --header-h:60px; --danger:#dc2626; --success:#16a34a; }
+  :root { --primary:#2563eb; --primary-dark:#1d4ed8; --bg:#f4f6f9; --card:#fff; --text:#1f2937; --muted:#6b7280; --border:#e5e7eb; --header-h:60px; --danger:#dc2626; --success:#16a34a; --warn:#d97706; }
   * { box-sizing: border-box; }
   body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:24px 16px; padding-top:calc(var(--header-h) + 24px); }
   header.top-bar { position:fixed; top:0; left:0; right:0; height:var(--header-h); background:#fff; display:flex; align-items:center; padding:0 16px; box-shadow:0 1px 4px rgba(0,0,0,0.08); z-index:1000; }
   header.top-bar img.logo { width:38px; height:38px; object-fit:contain; cursor:pointer; }
   h1 { font-size:1.5rem; margin-bottom:4px; text-align:center; }
   .subtitle { color:var(--muted); font-size:0.9rem; margin-bottom:28px; text-align:center; }
+  h2 { font-size:1.1rem; margin:0 0 4px; }
 
   .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:22px 20px; width:100%; max-width:400px; box-shadow:0 2px 8px rgba(0,0,0,0.05); }
   .card + .card { margin-top:18px; }
@@ -51,6 +52,19 @@
   .discount-field { display:flex; align-items:center; gap:8px; margin-top:16px; }
   .discount-field input { max-width:100px; }
   .pricing-locked-hint { color:var(--muted); font-size:0.78rem; margin-top:6px; }
+
+  /* Company Management section */
+  .company-card { border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-bottom:10px; background:var(--bg); }
+  .company-card.status-pending { border-color:var(--warn); background:#fff8e1; }
+  .company-card.status-approved { border-color:var(--success); background:#eef7ee; }
+  .company-card.status-rejected { border-color:var(--danger); background:#fdecea; opacity:0.8; }
+  .company-card .company-title { font-weight:700; font-size:0.95rem; }
+  .company-card .badge { font-size:0.72rem; font-weight:600; padding:2px 9px; border-radius:999px; background:#fff; margin-left:6px; text-transform:capitalize; }
+  .company-card .company-meta { font-size:0.8rem; color:var(--muted); margin-top:4px; line-height:1.5; }
+  .company-card .btn-row { margin-top:10px; }
+  .company-card .btn-approve { background:var(--success); color:#fff; }
+  .company-card .btn-reject { background:#fff; color:var(--danger); border:1px solid var(--danger); }
+  .company-empty { color:var(--muted); font-size:0.85rem; text-align:center; padding:14px 0; }
 </style>
 </head>
 <body>
@@ -130,6 +144,26 @@
     <div class="status" id="pricingStatus"></div>
   </div>
 
+  <div class="card" id="companiesLoginCard" style="margin-top:18px;">
+    <span class="field-label">Company Management</span>
+    <div class="hint">Review registered companies and approve or reject pending subscriptions. Requires the platform's SUPER_ADMIN_KEY, same as pricing above.</div>
+    <input type="password" id="companiesKeyInput" placeholder="Enter SUPER_ADMIN_KEY" autocomplete="off">
+    <div class="btn-row" style="margin-top:10px;">
+      <button class="btn-primary" id="companiesUnlockBtn" style="flex:none; width:100%;">Unlock Companies</button>
+    </div>
+    <div class="status" id="companiesLoginStatus"></div>
+  </div>
+
+  <div class="card" id="companiesCard" style="display:none; max-width:400px; margin:18px auto 0;">
+    <span class="field-label">Company Management</span>
+    <div class="hint">Pending companies show Approve/Reject actions. Approving or rejecting emails the company automatically.</div>
+    <div class="btn-row" style="margin-bottom:14px;">
+      <button class="btn-secondary" id="refreshCompaniesBtn" type="button">Refresh</button>
+    </div>
+    <div id="companiesList"><div class="company-empty">Loading...</div></div>
+    <div class="status" id="companiesStatus"></div>
+  </div>
+
   <a class="back-link" href="index.html">&larr; Back to home</a>
   </div>
 
@@ -138,8 +172,8 @@
   var BANNER_API_URL = 'https://script.google.com/macros/s/AKfycby56HpmJx2LxPzrT_RjaQ6zFmbT3YhIIiLm2uNA7-i7C8xJnypKPakzMtwGUwPhfaCRSA/exec';
   // The ATTENDANCE SYSTEM's Apps Script Web App URL — same one used in
   // register.html/dashboard.html/attendance.html. This is a DIFFERENT
-  // deployment from BANNER_API_URL above; pricing lives in that backend,
-  // not the banner one.
+  // deployment from BANNER_API_URL above; pricing and company management
+  // live in that backend, not the banner one.
   var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzYiUzTQijI7gJwVIu6RWPVNS8IQGIOJkIYKfkgjdmAb_3JXhP_Z6ANDDoEhOs8wkSO/exec';
   var MAX_DIMENSION = 1200;
 
@@ -497,6 +531,183 @@
         pricingStatus.textContent = 'Save failed. Check your connection.';
         pricingStatus.className = 'status error';
       });
+  });
+
+  // ---------------------------------------------------------------
+  // Company Management (talks to APPS_SCRIPT_URL, same backend and
+  // key as Subscription Pricing above — kept as its own unlock step
+  // so this panel can be reviewed without also exposing pricing edits)
+  // ---------------------------------------------------------------
+  var companiesLoginCard = document.getElementById('companiesLoginCard');
+  var companiesCard = document.getElementById('companiesCard');
+  var companiesKeyInput = document.getElementById('companiesKeyInput');
+  var companiesUnlockBtn = document.getElementById('companiesUnlockBtn');
+  var companiesLoginStatus = document.getElementById('companiesLoginStatus');
+  var refreshCompaniesBtn = document.getElementById('refreshCompaniesBtn');
+  var companiesListEl = document.getElementById('companiesList');
+  var companiesStatus = document.getElementById('companiesStatus');
+
+  var sessionCompaniesKey = null; // kept in memory only for this page load, never stored
+
+  function companiesApiConfigured() {
+    if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('PASTE_YOUR') === 0) {
+      companiesLoginStatus.textContent = 'Set APPS_SCRIPT_URL in the code first (the attendance system deployment, not the banner one).';
+      companiesLoginStatus.className = 'status error';
+      return false;
+    }
+    return true;
+  }
+
+  function companiesCall(payload) {
+    return fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // avoids CORS preflight on Apps Script
+      body: JSON.stringify(payload)
+    }).then(function (res) { return res.json(); });
+  }
+
+  function renderCompanies(companies) {
+    companiesListEl.innerHTML = '';
+    if (!companies || !companies.length) {
+      companiesListEl.innerHTML = '<div class="company-empty">No companies registered yet.</div>';
+      return;
+    }
+
+    companies.forEach(function (c) {
+      var card = document.createElement('div');
+      card.className = 'company-card status-' + c.status;
+
+      var title = document.createElement('div');
+      title.className = 'company-title';
+      title.textContent = c.companyName + ' (' + c.companyCode + ')';
+      var badge = document.createElement('span');
+      badge.className = 'badge';
+      badge.textContent = c.status;
+      title.appendChild(badge);
+      card.appendChild(title);
+
+      var meta = document.createElement('div');
+      meta.className = 'company-meta';
+      meta.innerHTML =
+        'Admin: ' + escapeHtml(c.adminEmail) + '<br>' +
+        'Phone: ' + escapeHtml(c.phoneNumber) + '<br>' +
+        'Employees: ' + c.employeeCount + ' &middot; ' + escapeHtml(c.billingCycle) +
+        ' &middot; Est. cost: ' + c.estimatedCost + '<br>' +
+        'Registered: ' + (c.registeredDate ? new Date(c.registeredDate).toLocaleString() : '—');
+      card.appendChild(meta);
+
+      if (c.status === 'pending') {
+        var actions = document.createElement('div');
+        actions.className = 'btn-row';
+
+        var approveBtn = document.createElement('button');
+        approveBtn.className = 'btn-approve';
+        approveBtn.type = 'button';
+        approveBtn.textContent = 'Approve';
+        approveBtn.addEventListener('click', function () {
+          setCompanyStatus(c.companyCode, 'approved', approveBtn, rejectBtn);
+        });
+
+        var rejectBtn = document.createElement('button');
+        rejectBtn.className = 'btn-reject';
+        rejectBtn.type = 'button';
+        rejectBtn.textContent = 'Reject';
+        rejectBtn.addEventListener('click', function () {
+          setCompanyStatus(c.companyCode, 'rejected', approveBtn, rejectBtn);
+        });
+
+        actions.appendChild(approveBtn);
+        actions.appendChild(rejectBtn);
+        card.appendChild(actions);
+      }
+
+      companiesListEl.appendChild(card);
+    });
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function loadCompanies() {
+    companiesStatus.textContent = '';
+    companiesStatus.className = 'status';
+    companiesListEl.innerHTML = '<div class="company-empty">Loading...</div>';
+
+    companiesCall({ action: 'listCompanies', adminKey: sessionCompaniesKey })
+      .then(function (data) {
+        if (data && data.success) {
+          renderCompanies(data.companies);
+        } else {
+          companiesListEl.innerHTML = '<div class="company-empty">Could not load companies.</div>';
+          companiesStatus.textContent = (data && data.error) ? data.error : 'Unknown error.';
+          companiesStatus.className = 'status error';
+          if (data && data.error === 'Not authorized.') {
+            // Wrong/missing key — send them back to unlock.
+            sessionCompaniesKey = null;
+            companiesCard.style.display = 'none';
+            companiesLoginCard.style.display = 'block';
+            companiesKeyInput.value = '';
+          }
+        }
+      })
+      .catch(function () {
+        companiesListEl.innerHTML = '<div class="company-empty">Could not reach the server.</div>';
+        companiesStatus.textContent = 'Check your connection.';
+        companiesStatus.className = 'status error';
+      });
+  }
+
+  function setCompanyStatus(companyCode, status, approveBtn, rejectBtn) {
+    approveBtn.disabled = true;
+    rejectBtn.disabled = true;
+    companiesStatus.textContent = 'Saving...';
+    companiesStatus.className = 'status';
+
+    companiesCall({ action: 'approveCompany', adminKey: sessionCompaniesKey, companyCode: companyCode, status: status })
+      .then(function (data) {
+        if (data && data.success) {
+          companiesStatus.textContent = companyCode + ' marked ' + status + '.';
+          companiesStatus.className = 'status success';
+          loadCompanies();
+        } else {
+          approveBtn.disabled = false;
+          rejectBtn.disabled = false;
+          companiesStatus.textContent = 'Failed: ' + (data && data.error ? data.error : 'unknown error');
+          companiesStatus.className = 'status error';
+        }
+      })
+      .catch(function () {
+        approveBtn.disabled = false;
+        rejectBtn.disabled = false;
+        companiesStatus.textContent = 'Failed. Check your connection.';
+        companiesStatus.className = 'status error';
+      });
+  }
+
+  companiesUnlockBtn.addEventListener('click', function () {
+    if (!companiesApiConfigured()) return;
+    var key = companiesKeyInput.value;
+    if (!key) {
+      companiesLoginStatus.textContent = 'Enter the SUPER_ADMIN_KEY.';
+      companiesLoginStatus.className = 'status error';
+      return;
+    }
+    // Same as Pricing: no separate "check key" action — the key is
+    // verified for real on the first listCompanies call below.
+    sessionCompaniesKey = key;
+    companiesLoginCard.style.display = 'none';
+    companiesCard.style.display = 'block';
+    loadCompanies();
+  });
+
+  companiesKeyInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') companiesUnlockBtn.click();
+  });
+
+  refreshCompaniesBtn.addEventListener('click', function () {
+    loadCompanies();
   });
 </script>
 </body>
