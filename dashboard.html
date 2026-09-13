@@ -880,10 +880,18 @@
     el.innerHTML = html;
   }
 
-  let _autoRefreshTimer = null;
-  function startAutoRefresh(intervalMs = 2000) {
+    let _autoRefreshTimer = null;
+  let _slowRefreshTimer = null;
+  function startAutoRefresh(intervalMs = 2000, slowIntervalMs = 8000) {
     if (_autoRefreshTimer) clearInterval(_autoRefreshTimer);
+    if (_slowRefreshTimer) clearInterval(_slowRefreshTimer);
     _autoRefreshTimer = setInterval(() => { if (!document.hidden) loadEmployees(); }, intervalMs);
+    _slowRefreshTimer = setInterval(() => {
+      if (document.hidden) return;
+      loadAttendanceTrend();
+      loadThreeMonthOverview();
+      loadMonthlyLeaveByDate();
+    }, slowIntervalMs);
   }
 
   (async function initSession() {
