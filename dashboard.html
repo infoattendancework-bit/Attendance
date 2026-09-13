@@ -567,7 +567,11 @@
             <input type="text" id="noticeSubject" placeholder="e.g. Office closed tomorrow">
             <label for="noticeMessage">Message</label>
             <textarea id="noticeMessage" rows="4" placeholder="Type your notice here…" style="width:100%; padding:11px 12px; border-radius:8px; border:1.5px solid var(--border); font-size:1rem; font-family:inherit; resize:vertical;"></textarea>
-            <button class="action" id="noticeSendBtn">Send to All Employees</button>
+            <label style="display:flex; align-items:center; gap:8px; font-weight:600; margin-top:14px;">
+            <input type="checkbox" id="noticeAlsoEmail" style="width:auto;">
+              Also send by email (uses your daily email quota)
+            </label>
+            <button class="action" id="noticeSendBtn">Post Notice</button>
             <div class="msg" id="noticeMsg"></div>
           </div>
         </section>
@@ -967,19 +971,26 @@
   document.getElementById('noticeSendBtn').addEventListener('click', async () => {
     const subject = document.getElementById('noticeSubject').value.trim();
     const message = document.getElementById('noticeMessage').value.trim();
+    const alsoEmail = document.getElementById('noticeAlsoEmail').checked;
     const msg = document.getElementById('noticeMsg');
     const btn = document.getElementById('noticeSendBtn');
     if (!message) { showMsg(msg, 'Type a message before sending.', 'error'); return; }
-    btn.disabled = true; btn.textContent = 'Sending...';
+    btn.disabled = true; btn.textContent = 'Posting...';
     try {
-      const data = await jsonp({ action: 'sendNotice', adminEmail: session.adminEmail, adminPassword: session.adminPassword, subject, message });
+      const data = await jsonp({ action: 'sendNotice', adminEmail: session.adminEmail, adminPassword: session.adminPassword, subject, message, alsoEmail });
       if (data.success) {
-        const failedNote = data.failed && data.failed.length ? ` (${data.failed.length} failed to send)` : '';
-        showMsg(msg, `Sent to ${data.sentCount} of ${data.totalEmployees} employees.${failedNote}`, data.failed && data.failed.length ? 'info' : 'success');
-        document.getElementById('noticeSubject').value = ''; document.getElementById('noticeMessage').value = '';
-      } else { showMsg(msg, data.error || 'Could not send notice.', 'error'); }
+        let text = 'Notice posted — employees will see it in their attendance app.';
+        if (data.alsoEmail) {
+          const failedNote = data.failed && data.failed.length ? ` (${data.failed.length} failed)` : '';
+          text += ` Also emailed ${data.sentCount} of ${data.totalEmployees}.${failedNote}`;
+        }
+        showMsg(msg, text, 'success');
+        document.getElementById('noticeSubject').value = '';
+        document.getElementById('noticeMessage').value = '';
+        document.getElementById('noticeAlsoEmail').checked = false;
+      } else { showMsg(msg, data.error || 'Could not post notice.', 'error'); }
     } catch (err) { showMsg(msg, err.message, 'error'); }
-    btn.disabled = false; btn.textContent = 'Send to All Employees';
+    btn.disabled = false; btn.textContent = 'Post Notice';
   });
 
   const BUCKET_META = {
