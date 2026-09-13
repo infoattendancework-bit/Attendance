@@ -3,25 +3,68 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin - Banner Settings</title>
+<title>Admin - Attendance System</title>
 <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/infoattendancework-bit/Attendance/main/logo%20(1).png">
 <style>
-  :root { --primary:#2563eb; --primary-dark:#1d4ed8; --bg:#f4f6f9; --card:#fff; --text:#1f2937; --muted:#6b7280; --border:#e5e7eb; --header-h:64px; --danger:#dc2626; --success:#16a34a; --warn:#d97706; }
+  :root {
+    --sidebar-bg: #101a2e;
+    --sidebar-bg-hover: #182545;
+    --sidebar-active: #2563eb;
+    --sidebar-text: #aab4cc;
+    --sidebar-text-active: #ffffff;
+    --bg: #f4f6fb;
+    --card: #ffffff;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --border: #e6e9f0;
+    --danger: #dc2626;
+    --success: #16a34a;
+    --warn: #d97706;
+    --sidebar-w: 240px;
+  }
   * { box-sizing: border-box; }
-  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--text); }
 
-  header.top-bar { position:fixed; top:0; left:0; right:0; height:var(--header-h); background:#fff; display:flex; align-items:center; gap:12px; padding:0 28px; box-shadow:0 1px 4px rgba(0,0,0,0.08); z-index:1000; }
-  header.top-bar img.logo { width:36px; height:36px; object-fit:contain; cursor:pointer; }
-  header.top-bar .brand { font-size:1.05rem; font-weight:700; color:var(--text); }
-  header.top-bar .brand-sub { font-size:0.8rem; color:var(--muted); margin-left:4px; }
+  /* ---------- Sidebar ---------- */
+  .sidebar {
+    position:fixed; top:0; left:0; bottom:0; width:var(--sidebar-w);
+    background:var(--sidebar-bg); display:flex; flex-direction:column;
+    padding:22px 14px; z-index:1000;
+  }
+  .sidebar .brand { display:flex; align-items:center; gap:10px; padding:0 8px 22px; border-bottom:1px solid rgba(255,255,255,0.08); margin-bottom:18px; }
+  .sidebar .brand img { width:32px; height:32px; object-fit:contain; cursor:pointer; border-radius:7px; background:#fff; padding:3px; }
+  .sidebar .brand-text { line-height:1.25; }
+  .sidebar .brand-text .name { color:#fff; font-weight:700; font-size:0.98rem; }
+  .sidebar .brand-text .sub { color:var(--sidebar-text); font-size:0.74rem; }
 
-  .page { max-width:1280px; margin:0 auto; padding:32px 32px 64px; padding-top:calc(var(--header-h) + 32px); }
+  .nav-item {
+    display:flex; align-items:center; gap:11px; padding:11px 12px; border-radius:9px;
+    color:var(--sidebar-text); font-size:0.9rem; font-weight:600; cursor:pointer;
+    margin-bottom:4px; user-select:none; transition:background 0.15s ease, color 0.15s ease;
+  }
+  .nav-item .dot { width:7px; height:7px; border-radius:50%; background:currentColor; opacity:0.55; flex:none; }
+  .nav-item:hover { background:var(--sidebar-bg-hover); color:#fff; }
+  .nav-item.active { background:var(--sidebar-active); color:#fff; }
+  .nav-item.active .dot { opacity:1; }
 
-  h1 { font-size:1.7rem; margin:0 0 6px; text-align:center; }
-  .subtitle { color:var(--muted); font-size:0.95rem; margin-bottom:36px; text-align:center; }
-  h2 { font-size:1.1rem; margin:0 0 4px; }
+  .sidebar-foot { margin-top:auto; padding-top:14px; border-top:1px solid rgba(255,255,255,0.08); }
+  .sidebar-foot a { display:block; color:var(--sidebar-text); font-size:0.82rem; text-decoration:none; padding:8px 12px; }
+  .sidebar-foot a:hover { color:#fff; }
 
-  .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:26px 28px; width:100%; box-shadow:0 2px 8px rgba(0,0,0,0.05); }
+  /* ---------- Main area ---------- */
+  .main { margin-left:var(--sidebar-w); min-height:100vh; }
+  .topbar {
+    height:64px; background:#fff; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; padding:0 32px; position:sticky; top:0; z-index:900;
+  }
+  .topbar h1 { font-size:1.1rem; margin:0; }
+  .topbar .subtitle { color:var(--muted); font-size:0.82rem; margin-left:12px; }
+
+  .content { max-width:760px; margin:0 auto; padding:32px 28px 64px; }
+  .panel { display:none; }
+  .panel.active { display:block; }
+
+  .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:26px 28px; width:100%; box-shadow:0 1px 3px rgba(16,26,46,0.05); }
   .field-label { font-weight:600; font-size:0.92rem; margin-bottom:8px; display:block; }
 
   .preview-wrap { width:100%; border:1px dashed var(--border); border-radius:10px; background:var(--bg); min-height:220px; max-height:320px; display:flex; align-items:center; justify-content:center; overflow:hidden; margin-bottom:16px; }
@@ -29,51 +72,32 @@
   .preview-empty { color:var(--muted); font-size:0.9rem; padding:24px; text-align:center; }
 
   input[type="file"] { width:100%; font-size:0.9rem; margin-bottom:14px; }
-  input[type="url"] { width:100%; padding:11px 13px; border:1px solid var(--border); border-radius:8px; font-size:0.92rem; margin-bottom:6px; font-family:inherit; }
+  input[type="url"], input[type="password"], input[type="number"], input[type="text"] {
+    width:100%; padding:11px 13px; border:1px solid var(--border); border-radius:8px; font-size:0.92rem; margin-bottom:6px; font-family:inherit;
+  }
   .hint { color:var(--muted); font-size:0.78rem; margin-bottom:14px; }
 
   .btn-row { display:flex; gap:10px; margin-top:4px; }
   button { flex:1; border:none; border-radius:8px; padding:12px 16px; font-size:0.92rem; font-weight:600; cursor:pointer; transition:filter 0.15s ease; }
   button:hover { filter:brightness(0.95); }
-  .btn-primary { background:var(--primary); color:#fff; }
+  .btn-primary { background:var(--sidebar-active); color:#fff; }
   .btn-danger { background:#fff; color:var(--danger); border:1px solid var(--danger); }
+  .btn-secondary { background:#fff; color:var(--sidebar-active); border:1px solid var(--sidebar-active); }
 
   .status { margin-top:14px; font-size:0.85rem; text-align:center; min-height:1.2em; }
   .status.success { color:var(--success); }
   .status.error { color:var(--danger); }
 
-  a.back-link { display:block; text-align:center; margin-top:8px; color:var(--muted); font-size:0.85rem; text-decoration:none; grid-column:1 / -1; }
-  a.back-link:hover { text-decoration:underline; }
-
-  /* Initial password gate — a single centered card, not a full dashboard yet */
-  .gate-wrap { max-width:440px; margin:0 auto; }
-
-  /* Desktop dashboard layout: banner settings on the left, pricing +
-     company management stacked on the right, using the full page width
-     instead of a single narrow mobile-style column. */
-  #adminApp { display:grid; grid-template-columns:440px 1fr; gap:28px; align-items:start; }
-  .col { display:flex; flex-direction:column; gap:24px; min-width:0; }
-
-  @media (max-width: 860px) {
-    #adminApp { grid-template-columns:1fr; }
-  }
-
-  input[type="password"], input[type="number"], input[type="text"] { width:100%; padding:11px 13px; border:1px solid var(--border); border-radius:8px; font-size:0.92rem; font-family:inherit; }
   .tier-row { display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:8px; align-items:center; margin-bottom:8px; }
-  .tier-row input { padding:9px 10px; font-size:0.85rem; }
+  .tier-row input { padding:9px 10px; font-size:0.85rem; margin-bottom:0; }
   .tier-row .tier-remove { flex:none; background:#fff; color:var(--danger); border:1px solid var(--danger); border-radius:8px; padding:0; width:34px; height:34px; font-size:1rem; line-height:1; }
   .tier-head { display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:8px; margin-bottom:6px; }
   .tier-head span { font-size:0.72rem; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.02em; }
-  .btn-secondary { background:#fff; color:var(--primary); border:1px solid var(--primary); }
   .discount-field { display:flex; align-items:center; gap:8px; margin-top:16px; }
-  .discount-field input { max-width:120px; }
+  .discount-field input { max-width:120px; margin-bottom:0; }
   .discount-field .field-label { margin-bottom:0; }
-  .pricing-locked-hint { color:var(--muted); font-size:0.78rem; margin-top:6px; }
 
-  /* Company Management: cards flow in a responsive grid so multiple
-     companies sit side by side on wide screens instead of one long
-     vertical list. */
-  #companiesList { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:14px; }
+  #companiesList { display:flex; flex-direction:column; gap:14px; margin-bottom:14px; }
   .company-card { border:1px solid var(--border); border-radius:10px; padding:14px 16px; background:var(--bg); }
   .company-card.status-pending { border-color:var(--warn); background:#fff8e1; }
   .company-card.status-approved { border-color:var(--success); background:#eef7ee; }
@@ -84,34 +108,55 @@
   .company-card .btn-row { margin-top:10px; }
   .company-card .btn-approve { background:var(--success); color:#fff; }
   .company-card .btn-reject { background:#fff; color:var(--danger); border:1px solid var(--danger); }
-  .company-empty { color:var(--muted); font-size:0.85rem; text-align:center; padding:14px 0; grid-column:1 / -1; }
+  .company-empty { color:var(--muted); font-size:0.85rem; text-align:center; padding:14px 0; }
+
+  @media (max-width: 780px) {
+    :root { --sidebar-w: 0px; }
+    .sidebar { transform:translateX(-100%); }
+    .main { margin-left:0; }
+  }
 </style>
 </head>
 <body>
-<header class="top-bar">
-  <img class="logo" src="https://raw.githubusercontent.com/infoattendancework-bit/Attendance/main/logo%20(1).png" alt="Attendance System logo" title="Refresh page" onclick="location.reload()">
-  <span class="brand">Attendance System</span>
-  <span class="brand-sub">Admin</span>
-</header>
 
-<div class="page">
-  <h1>Banner Settings</h1>
-  <div class="subtitle">Upload an image to show on the homepage banner.</div>
-
-  <div class="gate-wrap">
-    <div class="card" id="loginCard">
-      <span class="field-label">Admin password</span>
-      <input type="password" id="passwordInput" placeholder="Enter password" autocomplete="off">
-      <div class="btn-row">
-        <button class="btn-primary" id="unlockBtn" style="flex:none; width:100%;">Unlock</button>
-      </div>
-      <div class="status" id="loginStatus"></div>
+<nav class="sidebar">
+  <div class="brand">
+    <img src="https://raw.githubusercontent.com/infoattendancework-bit/Attendance/main/logo%20(1).png" alt="Attendance System logo" title="Refresh current view" onclick="refreshCurrentPanel()">
+    <div class="brand-text">
+      <div class="name">Attendance System</div>
+      <div class="sub">Admin</div>
     </div>
   </div>
 
-  <div id="adminApp" style="display:none;">
-    <div class="col col-left">
-      <div class="card">
+  <div class="nav-item active" data-target="banner"><span class="dot"></span>Banner Settings</div>
+  <div class="nav-item" data-target="pricing"><span class="dot"></span>Subscription Pricing</div>
+  <div class="nav-item" data-target="companies"><span class="dot"></span>Company Management</div>
+
+  <div class="sidebar-foot">
+    <a href="index.html">&larr; Back to home</a>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="topbar">
+    <h1 id="pageTitle">Banner Settings</h1>
+    <span class="subtitle" id="pageSubtitle">Upload an image to show on the homepage banner.</span>
+  </div>
+
+  <div class="content">
+
+    <!-- ================= Banner Settings ================= -->
+    <section class="panel active" id="panel-banner">
+      <div class="card" id="loginCard">
+        <span class="field-label">Admin password</span>
+        <input type="password" id="passwordInput" placeholder="Enter password" autocomplete="off">
+        <div class="btn-row">
+          <button class="btn-primary" id="unlockBtn" style="flex:none; width:100%;">Unlock</button>
+        </div>
+        <div class="status" id="loginStatus"></div>
+      </div>
+
+      <div class="card" id="bannerCard" style="display:none;">
         <span class="field-label">Current banner</span>
         <div class="preview-wrap" id="previewWrap">
           <div class="preview-empty" id="previewEmpty">No banner set</div>
@@ -136,12 +181,13 @@
         </div>
         <div class="status" id="statusMsg"></div>
       </div>
-    </div>
+    </section>
 
-    <div class="col col-right">
+    <!-- ================= Subscription Pricing ================= -->
+    <section class="panel" id="panel-pricing">
       <div class="card" id="pricingLoginCard">
         <span class="field-label">Subscription Pricing</span>
-        <div class="hint">Sets the per-employee rate tiers and yearly discount used on the company registration page. Requires the platform's SUPER_ADMIN_KEY, not the banner password above.</div>
+        <div class="hint">Sets the per-employee rate tiers and yearly discount used on the company registration page. Requires the platform's SUPER_ADMIN_KEY, not the banner password.</div>
         <input type="password" id="pricingKeyInput" placeholder="Enter SUPER_ADMIN_KEY" autocomplete="off">
         <div class="btn-row" style="margin-top:10px;">
           <button class="btn-primary" id="pricingUnlockBtn" style="flex:none; width:100%;">Unlock Pricing</button>
@@ -172,10 +218,13 @@
         </div>
         <div class="status" id="pricingStatus"></div>
       </div>
+    </section>
 
+    <!-- ================= Company Management ================= -->
+    <section class="panel" id="panel-companies">
       <div class="card" id="companiesLoginCard">
         <span class="field-label">Company Management</span>
-        <div class="hint">Review registered companies and approve or reject pending subscriptions. Requires the platform's SUPER_ADMIN_KEY, same as pricing above.</div>
+        <div class="hint">Review registered companies and approve or reject pending subscriptions. Requires the platform's SUPER_ADMIN_KEY, same as pricing.</div>
         <input type="password" id="companiesKeyInput" placeholder="Enter SUPER_ADMIN_KEY" autocomplete="off">
         <div class="btn-row" style="margin-top:10px;">
           <button class="btn-primary" id="companiesUnlockBtn" style="flex:none; width:100%;">Unlock Companies</button>
@@ -192,13 +241,66 @@
         <div id="companiesList"><div class="company-empty">Loading...</div></div>
         <div class="status" id="companiesStatus"></div>
       </div>
-    </div>
+    </section>
 
-    <a class="back-link" href="index.html">&larr; Back to home</a>
   </div>
 </div>
 
 <script>
+  // ---------------------------------------------------------------
+  // Sidebar navigation — three topics, click to open that panel only
+  // ---------------------------------------------------------------
+  var pageMeta = {
+    banner:    { title: 'Banner Settings',       subtitle: "Upload an image to show on the homepage banner." },
+    pricing:   { title: 'Subscription Pricing',  subtitle: "Set per-employee rates used on the registration page." },
+    companies: { title: 'Company Management',    subtitle: "Review, approve, or reject registered companies." }
+  };
+  var navItems = document.querySelectorAll('.nav-item');
+  var panels = document.querySelectorAll('.panel');
+  var pageTitleEl = document.getElementById('pageTitle');
+  var pageSubtitleEl = document.getElementById('pageSubtitle');
+
+  navItems.forEach(function (item) {
+    item.addEventListener('click', function () {
+      var target = item.getAttribute('data-target');
+
+      navItems.forEach(function (n) { n.classList.remove('active'); });
+      item.classList.add('active');
+
+      panels.forEach(function (p) { p.classList.remove('active'); });
+      document.getElementById('panel-' + target).classList.add('active');
+
+      pageTitleEl.textContent = pageMeta[target].title;
+      pageSubtitleEl.textContent = pageMeta[target].subtitle;
+
+      // Lazy-load company list the first time that panel is opened
+      if (target === 'companies' && sessionCompaniesKey) {
+        loadCompanies();
+      }
+    });
+  });
+
+  function activePanelTarget() {
+    var active = document.querySelector('.nav-item.active');
+    return active ? active.getAttribute('data-target') : 'banner';
+  }
+
+  // Refreshes just the data on whichever panel is currently open — never
+  // reloads the page, so the unlocked session and active tab are kept.
+  function refreshCurrentPanel() {
+    var target = activePanelTarget();
+    if (target === 'banner') {
+      if (sessionPassword) loadCurrentBanner();
+    } else if (target === 'pricing') {
+      if (sessionAdminKey) loadPricingForEditing();
+    } else if (target === 'companies') {
+      if (sessionCompaniesKey) loadCompanies();
+    }
+  }
+
+  // ---------------------------------------------------------------
+  // Banner Settings
+  // ---------------------------------------------------------------
   // Paste the same Google Apps Script Web App URL used in index.html (see Code.gs)
   var BANNER_API_URL = 'https://script.google.com/macros/s/AKfycby56HpmJx2LxPzrT_RjaQ6zFmbT3YhIIiLm2uNA7-i7C8xJnypKPakzMtwGUwPhfaCRSA/exec';
   // The ATTENDANCE SYSTEM's Apps Script Web App URL — same one used in
@@ -218,7 +320,7 @@
   var statusMsg = document.getElementById('statusMsg');
 
   var loginCard = document.getElementById('loginCard');
-  var adminApp = document.getElementById('adminApp');
+  var bannerCard = document.getElementById('bannerCard');
   var passwordInput = document.getElementById('passwordInput');
   var unlockBtn = document.getElementById('unlockBtn');
   var loginStatus = document.getElementById('loginStatus');
@@ -291,7 +393,7 @@
         if (data && data.success) {
           sessionPassword = pwd;
           loginCard.style.display = 'none';
-          adminApp.style.display = 'grid';
+          bannerCard.style.display = 'block';
           loadCurrentBanner();
         } else {
           loginStatus.textContent = 'Incorrect password.';
@@ -661,19 +763,23 @@
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
-  function loadCompanies() {
-    companiesStatus.textContent = '';
-    companiesStatus.className = 'status';
-    companiesListEl.innerHTML = '<div class="company-empty">Loading...</div>';
+  function loadCompanies(silent) {
+    if (!silent) {
+      companiesStatus.textContent = '';
+      companiesStatus.className = 'status';
+      companiesListEl.innerHTML = '<div class="company-empty">Loading...</div>';
+    }
 
     companiesCall({ action: 'listCompanies', adminKey: sessionCompaniesKey })
       .then(function (data) {
         if (data && data.success) {
           renderCompanies(data.companies);
         } else {
-          companiesListEl.innerHTML = '<div class="company-empty">Could not load companies.</div>';
-          companiesStatus.textContent = (data && data.error) ? data.error : 'Unknown error.';
-          companiesStatus.className = 'status error';
+          if (!silent) {
+            companiesListEl.innerHTML = '<div class="company-empty">Could not load companies.</div>';
+            companiesStatus.textContent = (data && data.error) ? data.error : 'Unknown error.';
+            companiesStatus.className = 'status error';
+          }
           if (data && data.error === 'Not authorized.') {
             // Wrong/missing key — send them back to unlock.
             sessionCompaniesKey = null;
@@ -684,9 +790,11 @@
         }
       })
       .catch(function () {
-        companiesListEl.innerHTML = '<div class="company-empty">Could not reach the server.</div>';
-        companiesStatus.textContent = 'Check your connection.';
-        companiesStatus.className = 'status error';
+        if (!silent) {
+          companiesListEl.innerHTML = '<div class="company-empty">Could not reach the server.</div>';
+          companiesStatus.textContent = 'Check your connection.';
+          companiesStatus.className = 'status error';
+        }
       });
   }
 
@@ -740,6 +848,16 @@
   refreshCompaniesBtn.addEventListener('click', function () {
     loadCompanies();
   });
+
+  // Auto-refresh: while the Company Management panel is open and
+  // unlocked, quietly re-check every 3s so newly registered companies
+  // show up on their own, without needing a manual refresh.
+  setInterval(function () {
+    if (activePanelTarget() === 'companies' && sessionCompaniesKey) {
+      loadCompanies(true);
+    }
+  }, 3000);
+
 </script>
 </body>
 </html>
