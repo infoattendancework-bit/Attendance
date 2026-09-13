@@ -812,7 +812,7 @@
 
       <div class="highlight-note">
         <span class="highlight-swatch"></span>
-        <span>Employees whose leave days exceed the holidays given will be highlighted in brand color on the report.</span>
+        <span>Employees whose leave + absent days exceed the holidays given will be highlighted in brand color on the report.</span>
       </div>
 
       <button class="action" id="payrollGenerateBtn">Generate Report</button>
@@ -1934,13 +1934,16 @@
     const brandLight = resolvedColor('--primary-light');
     const rowsHtml = employees.map(r => {
       const leave = r.leave || 0;
-      const overLeave = leave > holidays;
+      const absent = r.absent || 0;
+      const daysOff = leave + absent;
+      const overLeave = daysOff > holidays;
       const rowStyle = overLeave ? ` style="background:${brandLight};"` : '';
       const nameStyle = overLeave ? ` style="color:${brand};font-weight:700;"` : '';
       const flag = overLeave ? ` <span style="color:${brand};font-weight:700;font-size:11px;">&#9679; over holiday quota</span>` : '';
+      const cellStyle = overLeave ? `color:${brand};font-weight:700;` : '';
       return `<tr${rowStyle}><td>${r.employeeId}</td><td${nameStyle}>${r.name}${flag}</td><td>${emailById[r.employeeId] || ''}</td>
-        <td style="text-align:center;">${r.present || 0}</td><td style="text-align:center;${overLeave ? `color:${brand};font-weight:700;` : ''}">${leave}</td>
-        <td style="text-align:center;">${r.absent || 0}</td><td style="text-align:center;">${r.totalDays || 0}</td></tr>`;
+        <td style="text-align:center;">${r.present || 0}</td><td style="text-align:center;${cellStyle}">${leave}</td>
+        <td style="text-align:center;${cellStyle}">${absent}</td><td style="text-align:center;">${r.totalDays || 0}</td></tr>`;
     }).join('');
     const calLabel = _payrollCal === 'BS' ? 'Nepali (BS)' : 'English (AD)';
     const html = `<html><head><title>Attendance Payroll ${startDate} to ${endDate}</title>
@@ -1953,7 +1956,7 @@
       @media print { button{display:none;} }</style></head><body>
       <h2>Attendance for Payroll</h2><p>${startDate} to ${endDate}</p>
       <div class="meta">Calendar: ${calLabel} &nbsp;•&nbsp; Holidays given this cycle: ${holidays}</div>
-      <div class="legend"><span class="swatch"></span> Highlighted rows: leave days exceed the ${holidays} holiday(s) given this cycle</div>
+      <div class="legend"><span class="swatch"></span> Highlighted rows: leave + absent days exceed the ${holidays} holiday(s) given this cycle</div>
       <button onclick="window.print()" style="margin-bottom:16px;">Print / Save as PDF</button>
       <table><thead><tr><th>Employee ID</th><th>Name</th><th>Email</th><th>Attendance Days</th><th>On Leave Days</th><th>Absent Days</th><th>Total Days</th></tr></thead>
       <tbody>${rowsHtml}</tbody></table></body></html>`;
