@@ -91,11 +91,11 @@
   .notice-delete-btn:hover:not(:disabled) { background:#fff; border-color:var(--danger); color:var(--danger); }
   .notice-delete-btn:disabled { opacity:0.6; cursor:not-allowed; }
   @keyframes noticePulse {
-    0% { box-shadow:0 0 0 0 rgba(217,119,6,0.55); }
-    70% { box-shadow:0 0 0 12px rgba(217,119,6,0); }
+    0% { box-shadow:0 0 0 0 rgba(217,119,6,0.35); }
+    50% { box-shadow:0 0 0 8px rgba(217,119,6,0); }
     100% { box-shadow:0 0 0 0 rgba(217,119,6,0); }
   }
-  #noticesList.notices-flash .notice-item:first-child { animation:noticePulse 0.9s ease-out 2; }
+  #noticesList.notices-flash .notice-item:first-child { animation:noticePulse 1.4s ease-out 1; }
 
   .monthly-title-row { display:flex; justify-content:space-between; align-items:center; margin:20px 0 8px; cursor:pointer; user-select:none; }
   .monthly-title-row .log-title { margin:0; }
@@ -274,8 +274,36 @@
     }
     renderState(data.status, data.log);
     loadNotices();
+    startNoticesPolling();
     // Monthly attendance is no longer fetched automatically — it loads
     // lazily the first time the user opens the "Monthly Attendance" panel.
+  }
+
+  // ---- Notices: auto-poll every 1 second while logged in ----
+  // NOTE: 1 second is very aggressive — every tick hits the Apps Script
+  // backend (which opens the spreadsheet and reads the Notices sheet),
+  // and Apps Script's daily execution-time quota is shared across every
+  // user of this deployment. With several employees logged in at once
+  // this can burn through that quota quickly and start failing OTHER
+  // actions (status taps, admin dashboard, etc). Raise NOTICES_POLL_MS
+  // below (e.g. 20000-30000) if you see quota errors.
+  const NOTICES_POLL_MS = 1000;
+  let noticesPollTimer = null;
+  let noticesRequestInFlight = false; // guards against overlapping calls if a request runs long
+
+  function startNoticesPolling() {
+    stopNoticesPolling();
+    noticesPollTimer = setInterval(() => {
+      if (noticesRequestInFlight || !session) return;
+      loadNotices();
+    }, NOTICES_POLL_MS);
+  }
+
+  function stopNoticesPolling() {
+    if (noticesPollTimer) {
+      clearInterval(noticesPollTimer);
+      noticesPollTimer = null;
+    }
   }
 
   // ---- Today's activity: collapsed by default, toggled open on tap ----
@@ -308,25 +336,49 @@
     } catch (e) { /* audio unavailable/blocked — silently skip */ }
   }
 
+  // Fingerprint of what's currently rendered, so a poll tick that comes
+  // back with identical data skips touching the DOM entirely — that's
+  // what was causing the visible "blink" every second once notices
+  // started auto-polling.
+  let _lastNoticesFingerprint = null;
+
+  // Set right before a delete's own loadNotices() call so that call
+  // doesn't mistake the new top-of-list id (shifted up by the deletion)
+  // for a genuinely new incoming notice and play the alert sound.
+  let _suppressNextNoticeAlert = false;
+
   async function loadNotices() {
     const list = document.getElementById('noticesList');
     const badge = document.getElementById('noticeBadge');
-    if (!session) return;
+    if (!session || noticesRequestInFlight) return;
+    noticesRequestInFlight = true;
     try {
       const data = await jsonp({ action: 'getNotices', employeeId: session.employeeId, password: session.password });
       if (!data.success || !data.notices || !data.notices.length) {
-        list.innerHTML = '<div class="log-empty">No notices yet.</div>';
-        badge.classList.remove('show');
+        if (_lastNoticesFingerprint !== 'empty') {
+          list.innerHTML = '<div class="log-empty">No notices yet.</div>';
+          badge.classList.remove('show');
+          _lastNoticesFingerprint = 'empty';
+        }
+        _lastNoticeId = null;
         return;
       }
 
       const topId = data.notices[0].id;
-      const isGenuinelyNew = _lastNoticeId !== null && topId !== _lastNoticeId;
+      const isGenuinelyNew = !_suppressNextNoticeAlert && _lastNoticeId !== null && topId !== _lastNoticeId;
+      _lastNoticeId = topId;
+      _suppressNextNoticeAlert = false;
+
+      // Nothing changed since the last render — skip the rebuild so the
+      // list doesn't flicker on every 1-second poll tick.
+      const fingerprint = JSON.stringify(data.notices.map(n => n.id));
+      if (fingerprint === _lastNoticesFingerprint) return;
+      _lastNoticesFingerprint = fingerprint;
+
       if (isGenuinelyNew) {
         playNoticeSound();
         badge.classList.add('show');
       }
-      _lastNoticeId = topId;
 
       list.innerHTML = '';
       data.notices.forEach(n => {
@@ -349,10 +401,12 @@
 
       if (isGenuinelyNew) {
         list.classList.add('notices-flash');
-        setTimeout(() => list.classList.remove('notices-flash'), 2000);
+        setTimeout(() => list.classList.remove('notices-flash'), 1400);
       }
     } catch (err) {
       list.innerHTML = `<div class="log-empty">${err.message}</div>`;
+    } finally {
+      noticesRequestInFlight = false;
     }
   }
 
@@ -367,6 +421,7 @@
     try {
       const data = await jsonp({ action: 'deleteNotice', employeeId: session.employeeId, password: session.password, id });
       if (data.success) {
+        _suppressNextNoticeAlert = true;
         loadNotices();
       } else {
         alert(data.error || 'Could not delete notice.');
