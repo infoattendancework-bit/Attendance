@@ -334,6 +334,19 @@
   }
   .mobile-toggle { display:none; align-items:center; justify-content:center; width:36px; height:36px; border-radius:8px; border:1px solid var(--border); background:#fff; cursor:pointer; transition:all .15s var(--ease); }
   .mobile-toggle:hover { background:var(--bg); border-color:var(--border-strong); }
+
+  /* ---------- Payroll export options modal ---------- */
+  .payroll-modal-box { background:#fff; border-radius:var(--r-xl); padding:24px; width:100%; max-width:420px; box-shadow:var(--shadow-lg); max-height:90vh; overflow-y:auto; }
+  .payroll-modal-title { font-weight:700; font-size:1.1rem; color:var(--ink); }
+  .payroll-modal-sub { font-size:0.82rem; color:var(--muted); margin-bottom:6px; }
+  .cal-toggle { display:flex; gap:8px; margin:14px 0 4px; }
+  .cal-toggle-btn { flex:1; padding:9px; border-radius:var(--r-sm); border:1.5px solid var(--border); background:#fff; font-size:0.85rem; font-weight:700; color:var(--muted); cursor:pointer; transition:all .15s var(--ease); }
+  .cal-toggle-btn.active { background:var(--primary-light); border-color:var(--primary); color:var(--primary-dark); }
+  .payroll-row-2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .payroll-modal-box select, .payroll-modal-box input[type="number"] { padding:10px 12px; border-radius:var(--r-sm); border:1.5px solid var(--border); font-size:0.9rem; background:#fff; width:100%; }
+  .payroll-day-range-note { font-size:0.76rem; color:var(--primary-dark); background:var(--primary-light); padding:8px 10px; border-radius:var(--r-xs); margin-top:8px; }
+  .highlight-note { display:flex; gap:8px; align-items:flex-start; font-size:0.78rem; color:var(--muted); background:var(--bg); border-radius:var(--r-xs); padding:9px 10px; margin-top:14px; }
+  .highlight-swatch { width:12px; height:12px; border-radius:3px; background:var(--primary); flex-shrink:0; margin-top:2px; }
 </style>
 </head>
 <body>
@@ -751,6 +764,59 @@
         <button class="modal-close" id="statDetailModalClose">&times;</button>
       </div>
       <div id="statDetailModalBody"><div class="modal-loading">Loading…</div></div>
+    </div>
+  </div>
+
+  <!-- ============ PAYROLL EXPORT OPTIONS MODAL ============ -->
+  <div class="month-modal-overlay" id="payrollModalOverlay">
+    <div class="payroll-modal-box">
+      <div class="modal-header">
+        <div>
+          <div class="payroll-modal-title">Payroll Export Options</div>
+          <div class="payroll-modal-sub">Choose the calendar, date range and holidays for this cycle.</div>
+        </div>
+        <button class="modal-close" id="payrollModalClose">&times;</button>
+      </div>
+
+      <label>Calendar System</label>
+      <div class="cal-toggle">
+        <button type="button" class="cal-toggle-btn active" id="payrollCalAD">English (AD)</button>
+        <button type="button" class="cal-toggle-btn" id="payrollCalBS">Nepali (BS)</button>
+      </div>
+
+      <div class="payroll-row-2">
+        <div>
+          <label for="payrollMonth">Month</label>
+          <select id="payrollMonth"></select>
+        </div>
+        <div>
+          <label for="payrollYear">Year</label>
+          <select id="payrollYear"></select>
+        </div>
+      </div>
+
+      <div class="payroll-row-2">
+        <div>
+          <label for="payrollFromDay">From Day</label>
+          <select id="payrollFromDay"></select>
+        </div>
+        <div>
+          <label for="payrollToDay">To Day</label>
+          <select id="payrollToDay"></select>
+        </div>
+      </div>
+      <div class="payroll-day-range-note" id="payrollRangeNote">—</div>
+
+      <label for="payrollHolidays">Holidays given by company this month</label>
+      <input type="number" id="payrollHolidays" min="0" step="1" value="0" placeholder="e.g. 4">
+
+      <div class="highlight-note">
+        <span class="highlight-swatch"></span>
+        <span>Employees whose leave days exceed the holidays given will be highlighted in brand color on the report.</span>
+      </div>
+
+      <button class="action" id="payrollGenerateBtn">Generate Report</button>
+      <div class="msg" id="payrollModalMsg"></div>
     </div>
   </div>
 
@@ -1387,37 +1453,6 @@
       <div class="month-summary-cell month-summary-absent"><div class="msc-num">${absent}</div><div class="msc-lbl">Absent</div></div>`;
   }
 
-  async function exportAttendanceForPayroll() {
-    const btn = document.getElementById('exportAttendanceBtn');
-    const originalHtml = btn.innerHTML;
-    btn.disabled = true; btn.innerHTML = 'Preparing report…';
-    try {
-      const range = getCycleAdRange();
-      const toISO = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-      const startDate = toISO(range.start), endDate = toISO(range.end);
-      const data = await jsonp({ action: 'exportAttendance', adminEmail: session.adminEmail, adminPassword: session.adminPassword, startDate, endDate });
-      if (!data.success || !Array.isArray(data.employees)) {
-        alert('Payroll export isn\'t set up on the backend yet.'); return;
-      }
-      const emailById = {}; _allEmployees.forEach(e => { emailById[e.employeeId] = e.email || ''; });
-      const rowsHtml = data.employees.map(r => `<tr><td>${r.employeeId}</td><td>${r.name}</td><td>${emailById[r.employeeId] || ''}</td>
-        <td style="text-align:center;">${r.present || 0}</td><td style="text-align:center;">${r.leave || 0}</td>
-        <td style="text-align:center;">${r.absent || 0}</td><td style="text-align:center;">${r.totalDays || 0}</td></tr>`).join('');
-      const html = `<html><head><title>Attendance Payroll ${startDate} to ${endDate}</title>
-        <style>body{font-family:Arial,sans-serif;padding:32px;color:#1C2036;} h2{margin:0 0 4px;} p{color:#667085;margin:0 0 20px;}
-        table{border-collapse:collapse;width:100%;} th,td{border:1px solid #E5E7F0;padding:10px 12px;font-size:13.5px;text-align:left;}
-        th{background:#F5F6FA;} button{background:#3D4FE0;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-weight:600;cursor:pointer;}
-        @media print { button{display:none;} }</style></head><body>
-        <h2>Attendance for Payroll</h2><p>${startDate} to ${endDate}</p>
-        <button onclick="window.print()" style="margin-bottom:16px;">Print / Save as PDF</button>
-        <table><thead><tr><th>Employee ID</th><th>Name</th><th>Email</th><th>Attendance Days</th><th>On Leave Days</th><th>Absent Days</th><th>Total Days</th></tr></thead>
-        <tbody>${rowsHtml}</tbody></table></body></html>`;
-      const win = window.open('', '_blank'); win.document.write(html); win.document.close();
-    } catch (err) { alert('Could not export attendance report: ' + err.message); }
-    finally { btn.disabled = false; btn.innerHTML = originalHtml; }
-  }
-  document.getElementById('exportAttendanceBtn').addEventListener('click', exportAttendanceForPayroll);
-
   document.getElementById('modalClose').addEventListener('click', () => document.getElementById('modalOverlay').classList.remove('open'));
   document.getElementById('modalOverlay').addEventListener('click', (e) => { if (e.target.id === 'modalOverlay') document.getElementById('modalOverlay').classList.remove('open'); });
 
@@ -1441,7 +1476,7 @@
   document.querySelectorAll('.nav-item').forEach(btn => {
     btn.addEventListener('click', () => {
       switchView(btn.dataset.view);
-      if (btn.dataset.export) setTimeout(exportAttendanceForPayroll, 400);
+      if (btn.dataset.export) setTimeout(openPayrollModal, 400);
     });
   });
   document.getElementById('qaAddEmployee').addEventListener('click', () => { switchView('dashboard'); document.getElementById('empName').scrollIntoView({behavior:'smooth', block:'center'}); document.getElementById('empName').focus(); });
@@ -1565,9 +1600,10 @@
   const BS_MONTHS_EN = ['Baisakh','Jestha','Ashadh','Shrawan','Bhadra','Ashwin','Kartik','Mangsir','Poush','Magh','Falgun','Chaitra'];
   const AD_MONTHS_EN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
+  const BS_REF_AD = new Date(1943, 3, 13);
   function adToBS(adDate) {
-    const refAD = new Date(1943, 3, 13); let refBSY = 2000, refBSM = 1, refBSD = 1;
-    const diffDays = Math.floor((adDate - refAD) / 86400000);
+    let refBSY = 2000, refBSM = 1, refBSD = 1;
+    const diffDays = Math.floor((adDate - BS_REF_AD) / 86400000);
     let bsY = refBSY, bsM = refBSM, bsD = refBSD, days = diffDays;
     while (days > 0) {
       const ml = BS_MONTH_DATA[bsY]; if (!ml) break;
@@ -1577,17 +1613,16 @@
     return { year: bsY, month: bsM, day: bsD };
   }
   function bsDaysInMonth(bsY, bsM) { return (BS_MONTH_DATA[bsY] || Array(12).fill(30))[bsM - 1]; }
-  function bsMonthRange(bsY, bsM) {
-    const refAD = new Date(1943, 3, 13);
-    function bsToAD(y, m, d) {
-      let ty = 2000, tm = 1, td = 1, count = 0;
-      while (ty < y || (ty === y && tm < m) || (ty === y && tm === m && td < d)) {
-        td++; count++;
-        const ml = BS_MONTH_DATA[ty]; const mLen = ml ? ml[tm-1] : 30;
-        if (td > mLen) { td = 1; tm++; if (tm > 12) { tm = 1; ty++; } }
-      }
-      const out = new Date(refAD); out.setDate(refAD.getDate() + count); return out;
+  function bsToAD(y, m, d) {
+    let ty = 2000, tm = 1, td = 1, count = 0;
+    while (ty < y || (ty === y && tm < m) || (ty === y && tm === m && td < d)) {
+      td++; count++;
+      const ml = BS_MONTH_DATA[ty]; const mLen = ml ? ml[tm-1] : 30;
+      if (td > mLen) { td = 1; tm++; if (tm > 12) { tm = 1; ty++; } }
     }
+    const out = new Date(BS_REF_AD); out.setDate(BS_REF_AD.getDate() + count); return out;
+  }
+  function bsMonthRange(bsY, bsM) {
     const start = bsToAD(bsY, bsM, 1);
     const totalDays = bsDaysInMonth(bsY, bsM);
     const end = bsToAD(bsY, bsM, totalDays);
@@ -1770,6 +1805,160 @@
   document.getElementById('listFilterBtn').addEventListener('click', applyFilters);
   document.getElementById('listSearch').addEventListener('keydown', e => { if (e.key === 'Enter') applyFilters(); });
   document.getElementById('listResetBtn').addEventListener('click', () => { document.getElementById('listSearch').value = ''; document.getElementById('listStatusFilter').value = ''; applyFilters(); });
+
+  // ============ PAYROLL EXPORT OPTIONS MODAL ============
+  let _payrollCal = 'AD';
+  let _payrollYear = null, _payrollMonth = null;
+
+  function payrollDaysInMonth() {
+    if (_payrollCal === 'BS') return bsDaysInMonth(_payrollYear, _payrollMonth);
+    return new Date(_payrollYear, _payrollMonth, 0).getDate();
+  }
+
+  function payrollBuildMonthYearOptions() {
+    const monthSel = document.getElementById('payrollMonth');
+    const yearSel = document.getElementById('payrollYear');
+    monthSel.innerHTML = ''; yearSel.innerHTML = '';
+    const months = _payrollCal === 'BS' ? BS_MONTHS_EN : AD_MONTHS_EN;
+    months.forEach((m, i) => { const o = document.createElement('option'); o.value = i + 1; o.textContent = m; monthSel.appendChild(o); });
+    const today = new Date();
+    if (_payrollCal === 'BS') {
+      const bs = adToBS(today);
+      _payrollYear = _payrollYear || bs.year; _payrollMonth = _payrollMonth || bs.month;
+      for (let y = bs.year - 2; y <= bs.year + 2; y++) { const o = document.createElement('option'); o.value = y; o.textContent = y + ' BS'; yearSel.appendChild(o); }
+    } else {
+      _payrollYear = _payrollYear || today.getFullYear(); _payrollMonth = _payrollMonth || (today.getMonth() + 1);
+      for (let y = today.getFullYear() - 2; y <= today.getFullYear() + 1; y++) { const o = document.createElement('option'); o.value = y; o.textContent = y; yearSel.appendChild(o); }
+    }
+    monthSel.value = _payrollMonth; yearSel.value = _payrollYear;
+  }
+
+  function payrollBuildDayOptions() {
+    const fromSel = document.getElementById('payrollFromDay');
+    const toSel = document.getElementById('payrollToDay');
+    const prevFrom = parseInt(fromSel.value) || 1;
+    const prevTo = parseInt(toSel.value) || 0;
+    const totalDays = payrollDaysInMonth();
+    fromSel.innerHTML = ''; toSel.innerHTML = '';
+    for (let d = 1; d <= totalDays; d++) {
+      const o1 = document.createElement('option'); o1.value = d; o1.textContent = d; fromSel.appendChild(o1);
+      const o2 = document.createElement('option'); o2.value = d; o2.textContent = d; toSel.appendChild(o2);
+    }
+    fromSel.value = Math.min(prevFrom, totalDays) || 1;
+    toSel.value = (prevTo && prevTo <= totalDays) ? prevTo : totalDays;
+    payrollUpdateRangeNote();
+  }
+
+  function payrollGetAdRange() {
+    const from = parseInt(document.getElementById('payrollFromDay').value);
+    const to = parseInt(document.getElementById('payrollToDay').value);
+    let start, end;
+    if (_payrollCal === 'BS') {
+      start = bsToAD(_payrollYear, _payrollMonth, from);
+      end = bsToAD(_payrollYear, _payrollMonth, to);
+    } else {
+      start = new Date(_payrollYear, _payrollMonth - 1, from);
+      end = new Date(_payrollYear, _payrollMonth - 1, to);
+    }
+    return { start, end };
+  }
+
+  function payrollUpdateRangeNote() {
+    const note = document.getElementById('payrollRangeNote');
+    const from = parseInt(document.getElementById('payrollFromDay').value) || 1;
+    const to = parseInt(document.getElementById('payrollToDay').value) || 1;
+    const totalDays = payrollDaysInMonth();
+    const { start, end } = payrollGetAdRange();
+    const opts = { month:'short', day:'numeric', year:'numeric' };
+    const calLabel = _payrollCal === 'BS' ? 'Nepali (BS)' : 'English (AD)';
+    const monthLabel = (_payrollCal === 'BS' ? BS_MONTHS_EN : AD_MONTHS_EN)[_payrollMonth - 1];
+    note.textContent = `${calLabel}: ${monthLabel} ${_payrollYear}, day ${from}–${to} of ${totalDays} → ${start.toLocaleDateString('en-US', opts)} to ${end.toLocaleDateString('en-US', opts)}`;
+  }
+
+  function payrollSetCalendar(cal) {
+    _payrollCal = cal;
+    document.getElementById('payrollCalAD').classList.toggle('active', cal === 'AD');
+    document.getElementById('payrollCalBS').classList.toggle('active', cal === 'BS');
+    _payrollYear = null; _payrollMonth = null;
+    payrollBuildMonthYearOptions();
+    payrollBuildDayOptions();
+  }
+
+  function openPayrollModal() {
+    const overlay = document.getElementById('payrollModalOverlay');
+    document.getElementById('payrollModalMsg').className = 'msg';
+    document.getElementById('payrollModalMsg').textContent = '';
+    payrollSetCalendar(_payrollCal);
+    overlay.classList.add('open');
+  }
+  document.getElementById('exportAttendanceBtn').addEventListener('click', openPayrollModal);
+  document.getElementById('payrollModalClose').addEventListener('click', () => document.getElementById('payrollModalOverlay').classList.remove('open'));
+  document.getElementById('payrollModalOverlay').addEventListener('click', (e) => { if (e.target.id === 'payrollModalOverlay') document.getElementById('payrollModalOverlay').classList.remove('open'); });
+  document.getElementById('payrollCalAD').addEventListener('click', () => payrollSetCalendar('AD'));
+  document.getElementById('payrollCalBS').addEventListener('click', () => payrollSetCalendar('BS'));
+  document.getElementById('payrollMonth').addEventListener('change', (e) => { _payrollMonth = parseInt(e.target.value); payrollBuildDayOptions(); });
+  document.getElementById('payrollYear').addEventListener('change', (e) => { _payrollYear = parseInt(e.target.value); payrollBuildDayOptions(); });
+  document.getElementById('payrollFromDay').addEventListener('change', payrollUpdateRangeNote);
+  document.getElementById('payrollToDay').addEventListener('change', payrollUpdateRangeNote);
+
+  document.getElementById('payrollGenerateBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('payrollGenerateBtn');
+    const msgEl = document.getElementById('payrollModalMsg');
+    const from = parseInt(document.getElementById('payrollFromDay').value);
+    const to = parseInt(document.getElementById('payrollToDay').value);
+    const holidays = Math.max(0, parseInt(document.getElementById('payrollHolidays').value) || 0);
+    if (to < from) { showMsg(msgEl, 'To Day must be on or after From Day.', 'error'); return; }
+    const { start, end } = payrollGetAdRange();
+    const toISO = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const startDate = toISO(start), endDate = toISO(end);
+    btn.disabled = true; btn.textContent = 'Preparing report…';
+    try {
+      const data = await jsonp({ action: 'exportAttendance', adminEmail: session.adminEmail, adminPassword: session.adminPassword, startDate, endDate });
+      if (!data.success || !Array.isArray(data.employees)) {
+        showMsg(msgEl, data.error || "Payroll export isn't set up on the backend yet.", 'error');
+        return;
+      }
+      renderPayrollReport(data.employees, { startDate, endDate, holidays });
+      document.getElementById('payrollModalOverlay').classList.remove('open');
+    } catch (err) {
+      showMsg(msgEl, err.message, 'error');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Generate Report';
+    }
+  });
+
+  function renderPayrollReport(employees, opts) {
+    const { startDate, endDate, holidays } = opts;
+    const emailById = {}; _allEmployees.forEach(e => { emailById[e.employeeId] = e.email || ''; });
+    const brand = resolvedColor('--primary');
+    const brandLight = resolvedColor('--primary-light');
+    const rowsHtml = employees.map(r => {
+      const leave = r.leave || 0;
+      const overLeave = leave > holidays;
+      const rowStyle = overLeave ? ` style="background:${brandLight};"` : '';
+      const nameStyle = overLeave ? ` style="color:${brand};font-weight:700;"` : '';
+      const flag = overLeave ? ` <span style="color:${brand};font-weight:700;font-size:11px;">&#9679; over holiday quota</span>` : '';
+      return `<tr${rowStyle}><td>${r.employeeId}</td><td${nameStyle}>${r.name}${flag}</td><td>${emailById[r.employeeId] || ''}</td>
+        <td style="text-align:center;">${r.present || 0}</td><td style="text-align:center;${overLeave ? `color:${brand};font-weight:700;` : ''}">${leave}</td>
+        <td style="text-align:center;">${r.absent || 0}</td><td style="text-align:center;">${r.totalDays || 0}</td></tr>`;
+    }).join('');
+    const calLabel = _payrollCal === 'BS' ? 'Nepali (BS)' : 'English (AD)';
+    const html = `<html><head><title>Attendance Payroll ${startDate} to ${endDate}</title>
+      <style>body{font-family:Arial,sans-serif;padding:32px;color:#1C2036;} h2{margin:0 0 4px;} p{color:#667085;margin:0 0 6px;}
+      .meta{color:#667085;font-size:13px;margin-bottom:18px;}
+      table{border-collapse:collapse;width:100%;} th,td{border:1px solid #E5E7F0;padding:10px 12px;font-size:13.5px;text-align:left;}
+      th{background:#F5F6FA;} button{background:${brand};color:#fff;border:none;border-radius:8px;padding:9px 18px;font-weight:600;cursor:pointer;}
+      .legend{display:flex;align-items:center;gap:8px;font-size:12.5px;color:#667085;margin-bottom:14px;}
+      .swatch{width:12px;height:12px;border-radius:3px;background:${brandLight};border:1px solid ${brand};display:inline-block;}
+      @media print { button{display:none;} }</style></head><body>
+      <h2>Attendance for Payroll</h2><p>${startDate} to ${endDate}</p>
+      <div class="meta">Calendar: ${calLabel} &nbsp;•&nbsp; Holidays given this cycle: ${holidays}</div>
+      <div class="legend"><span class="swatch"></span> Highlighted rows: leave days exceed the ${holidays} holiday(s) given this cycle</div>
+      <button onclick="window.print()" style="margin-bottom:16px;">Print / Save as PDF</button>
+      <table><thead><tr><th>Employee ID</th><th>Name</th><th>Email</th><th>Attendance Days</th><th>On Leave Days</th><th>Absent Days</th><th>Total Days</th></tr></thead>
+      <tbody>${rowsHtml}</tbody></table></body></html>`;
+    const win = window.open('', '_blank'); win.document.write(html); win.document.close();
+  }
 </script>
 </body>
 </html>
