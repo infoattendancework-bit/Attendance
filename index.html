@@ -50,7 +50,7 @@
   .banner {
     width:100%;
     max-width:340px;
-    margin-bottom:24px;
+    margin-top:28px;
     border-radius:12px;
     overflow:hidden;
     box-shadow:0 2px 8px rgba(0,0,0,0.05);
@@ -62,11 +62,11 @@
   .banner a { display:block; }
   .banner-media {
     width:100%;
-    /* Fixed aspect-ratio reserves the space up front on every device
-       (phone, tablet, laptop, desktop) so the page never jumps once the
-       real image loads, and keeps any banner image — tall or wide —
-       looking consistent instead of stretched. */
-    aspect-ratio: 16 / 9;
+    /* Was 16/9; height cut by 60% (new height = 40% of old) at the
+       same width means the ratio widens by 1/0.4 = 2.5x → 16/9 * 2.5
+       = 40/9. Still fixed up front so there's no layout jump once the
+       real image loads, on any device. */
+    aspect-ratio: 40 / 9;
     background:var(--bg);
     position:relative;
     overflow:hidden;
@@ -126,10 +126,32 @@
   <h1 style="margin-top:8px;">Attendance System</h1>
   <div class="subtitle">Choose where you need to go.</div>
 
-  <!-- Banner now sits ABOVE the login/register links, and its own
-       fetch is kicked off (see script right below it) before the
-       links or footer even get to a browser paint, so it has the
-       earliest possible head start on the network request. -->
+  <div class="links">
+    <a class="link-card" href="register.html">
+      <div class="title">Register Your Company</div>
+      <div class="desc">New company or organization? Create an account here.</div>
+    </a>
+    <a class="link-card" href="dashboard.html">
+      <div class="title">Company Dashboard</div>
+      <div class="desc">Already registered? Log in to add and manage employees.</div>
+    </a>
+    <a class="link-card" href="attendance.html">
+      <div class="title">Employee Attendance</div>
+      <div class="desc">Employees: check in or out with your ID and password.</div>
+    </a>
+  </div>
+
+  <footer class="support">
+    <div class="support-title">Need help?</div>
+    <div class="contact-row">Email: <a href="mailto:info.attendance.work@gmail.com">info.attendance.work@gmail.com</a></div>
+    <div class="contact-row">Phone: <a href="tel:+9999999999">9999999999</a></div>
+    <div class="admin-link"><a href="admin.html">Admin</a></div>
+  </footer>
+
+  <!-- Banner fetch fires early (right after the elements it needs exist)
+       so the request is already in flight well before the user scrolls
+       down to see it — the DISPLAY position at the bottom of the page
+       doesn't have to mean a late-starting network request. -->
   <div class="banner" id="bannerSection">
     <a id="bannerLink" href="#" target="_blank" rel="noopener">
       <div class="banner-media skeleton" id="bannerMedia">
@@ -184,27 +206,5 @@
         .catch(function (err) { console.error('Banner load failed:', err); });
     })();
   </script>
-
-  <div class="links">
-    <a class="link-card" href="register.html">
-      <div class="title">Register Your Company</div>
-      <div class="desc">New company or organization? Create an account here.</div>
-    </a>
-    <a class="link-card" href="dashboard.html">
-      <div class="title">Company Dashboard</div>
-      <div class="desc">Already registered? Log in to add and manage employees.</div>
-    </a>
-    <a class="link-card" href="attendance.html">
-      <div class="title">Employee Attendance</div>
-      <div class="desc">Employees: check in or out with your ID and password.</div>
-    </a>
-  </div>
-
-  <footer class="support">
-    <div class="support-title">Need help?</div>
-    <div class="contact-row">Email: <a href="mailto:info.attendance.work@gmail.com">info.attendance.work@gmail.com</a></div>
-    <div class="contact-row">Phone: <a href="tel:+9999999999">9999999999</a></div>
-    <div class="admin-link"><a href="admin.html">Admin</a></div>
-  </footer>
 </body>
 </html>
