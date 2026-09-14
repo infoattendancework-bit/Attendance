@@ -912,14 +912,19 @@
     const saved = loadSavedSession();
     if (!saved) { showScreen('login'); return; }
     showScreen('restore');
-    try {
-      const data = await jsonp({ action: 'companyLogin', adminEmail: saved.adminEmail, password: saved.adminPassword });
-      if (data.success) {
-        const s = { adminEmail: saved.adminEmail, adminPassword: saved.adminPassword, companyName: data.companyName, companyCode: data.companyCode };
-        saveSession(s); enterDashboard(s);
-      } else { clearSession(); showScreen('login'); }
-    } catch (err) { enterDashboard(saved); }
+    // No password is ever persisted, so there's nothing to re-login with here.
+    // We trust the cached token; any action call with an expired/invalid token
+    // will fail server-side and should route the user back to login (see
+    // handleAuthFailure below — wire this into your backend's error contract).
+    if (!saved.token) { clearSession(); showScreen('login'); return; }
+    enterDashboard(saved);
   })();
+
+  // Call this from any jsonp() action handler when the backend reports the
+  // token is invalid/expired, e.g.: if (data.error === 'invalid_session') handleAuthFailure();
+  function handleAuthFailure() {
+    clearSession(); session = null; showScreen('login');
+  }
 
   function jsonp(params) {
     return new Promise((resolve, reject) => {
@@ -945,9 +950,12 @@
     if (!adminEmail || !password) { showMsg(msg, 'Enter email and password.', 'error'); return; }
     btn.disabled = true; btn.textContent = 'Logging in...';
     try {
-      const data = await jsonp({ action: 'companyLogin', adminEmail, password });
+      const data = await jsonp({ action: 'companyLogin', adminEmail, password }); // password sent only here, once
       if (data.success) {
-        const s = { adminEmail, adminPassword: password, companyName: data.companyName, companyCode: data.companyCode };
+        // Backend must return a `token` field from companyLogin — a random,
+        // short-lived session id it can look up and expire server-side.
+        // Never store or resend the raw password again after this point.
+        const s = { adminEmail, token: data.token, companyName: data.companyName, companyCode: data.companyCode };
         saveSession(s); enterDashboard(s);
       } else { showMsg(msg, data.error || 'Login failed.', 'error'); }
     } catch (err) { showMsg(msg, err.message, 'error'); }
@@ -967,7 +975,7 @@
     if (!name || !email) { showMsg(msg, 'Enter employee name and email.', 'error'); return; }
     btn.disabled = true; btn.textContent = 'Adding...';
     try {
-      const data = await jsonp({ action: 'addEmployee', adminEmail: session.adminEmail, adminPassword: session.adminPassword, name, email });
+      const data = await jsonp({ action: 'addEmployee', token: session.token, name, email });
       if (data.success) {
         showMsg(msg, data.emailSent ? `Added ${data.employeeId} — credentials emailed to ${email}.` : `Added ${data.employeeId}, but ${data.error}`, data.emailSent ? 'success' : 'info');
         document.getElementById('empName').value = ''; document.getElementById('empEmail').value = '';
@@ -986,7 +994,7 @@
     if (!message) { showMsg(msg, 'Type a message before sending.', 'error'); return; }
     btn.disabled = true; btn.textContent = 'Posting...';
     try {
-      const data = await jsonp({ action: 'sendNotice', adminEmail: session.adminEmail, adminPassword: session.adminPassword, subject, message, alsoEmail });
+      const data = await jsonp({ action: 'sendNotice', token: session.token, subject, message, alsoEmail });
       if (data.success) {
         let text = 'Notice posted — employees will see it in their attendance app.';
         if (data.alsoEmail) {
@@ -1054,7 +1062,7 @@
 
   async function loadEmployees() {
     try {
-      const data = await jsonp({ action: 'listEmployees', adminEmail: session.adminEmail, adminPassword: session.adminPassword });
+      const data = await jsonp({ action: 'listEmployees', token: session.token });
       if (data.success && data.summary) {
         document.getElementById('statTotal').textContent = (data.employees || []).length;
         document.getElementById('statPresent').textContent = data.summary.online + data.summary.break;
@@ -1114,7 +1122,7 @@
     const monthEnd = toISO(now);
     const monthLabel = now.toLocaleDateString('en-US', { month: 'short' });
     try {
-      const data = await jsonp({ action: 'exportAttendance', adminEmail: session.adminEmail, adminPassword: session.adminPassword, startDate: monthStart, endDate: monthEnd });
+      const data = await jsonp({ action: 'exportAttendance', token: session.token, startDate: monthStart, endDate: monthEnd });
       if (!data.success || !Array.isArray(data.leaveByDate)) {
         if (subtitleEl) subtitleEl.textContent = 'This month, by date';
         if (countEl) countEl.textContent = '0';
@@ -1152,7 +1160,7 @@
     body.innerHTML = '<div class="modal-loading">Loading…</div>';
     overlay.classList.add('open');
     try {
-      const data = await jsonp({ action: 'getCompanyDayView', adminEmail: session.adminEmail, adminPassword: session.adminPassword, date: dateStr });
+      const data = await jsonp({ action: 'getCompanyDayView', token: session.token, date: dateStr });
       if (!data.success || !Array.isArray(data.employees)) {
         body.innerHTML = `<div class="modal-log-empty">${data.error || "Couldn't load leave details for this date."}</div>`;
         return;
@@ -1191,7 +1199,7 @@
     const toISO = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     const ranges = getPastMonthsAdRanges(3);
     try {
-      const results = await Promise.all(ranges.map(r => jsonp({ action: 'exportAttendance', adminEmail: session.adminEmail, adminPassword: session.adminPassword, startDate: toISO(r.start), endDate: toISO(r.end) })));
+      const results = await Promise.all(ranges.map(r => jsonp({ action: 'exportAttendance', token: session.token, startDate: toISO(r.start), endDate: toISO(r.end) })));
       grid.innerHTML = '';
       _threeMonthCache = [];
       grid.dataset.loaded = '1';
@@ -1304,7 +1312,7 @@
     const dates = [];
     for (let i = 6; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); dates.push(d); }
     try {
-      const results = await Promise.all(dates.map(d => jsonp({ action: 'getCompanyDayView', adminEmail: session.adminEmail, adminPassword: session.adminPassword, date: toISO(d) })));
+      const results = await Promise.all(dates.map(d => jsonp({ action: 'getCompanyDayView', token: session.token, date: toISO(d) })));
       const points = results.map((data, i) => {
         let present = 0, leave = 0, absent = 0;
         if (data.success && Array.isArray(data.employees)) {
@@ -1391,7 +1399,7 @@
     document.getElementById('modalLogDateLabel').textContent = "Today's activity";
     overlay.classList.add('open');
     try {
-      const data = await jsonp({ action: 'getEmployeeDetail', adminEmail: session.adminEmail, adminPassword: session.adminPassword, employeeId });
+      const data = await jsonp({ action: 'getEmployeeDetail', token: session.token, employeeId });
       if (!data.success) {
         document.getElementById('modalName').textContent = 'Error';
         document.getElementById('modalLogList').innerHTML = `<div class="modal-loading">${data.error || 'Could not load employee.'}</div>`;
@@ -1420,7 +1428,7 @@
     const newStatus = document.getElementById('modalStatusSelect').value;
     btn.disabled = true; btn.textContent = 'Saving…'; msgEl.style.color = 'var(--muted)'; msgEl.textContent = '';
     try {
-      const data = await jsonp({ action: 'setEmployeeStatus', adminEmail: session.adminEmail, adminPassword: session.adminPassword, employeeId: _modalEmployeeId, status: newStatus });
+      const data = await jsonp({ action: 'setEmployeeStatus', token: session.token, employeeId: _modalEmployeeId, status: newStatus });
       if (data.success) {
         msgEl.style.color = 'var(--success)'; msgEl.textContent = 'Updated';
         const bucket = newStatus === 'On Leave' ? 'leave' : newStatus === 'Break' ? 'break' : newStatus === 'Online' ? 'online' : 'offline';
@@ -1465,7 +1473,7 @@
     const today = toISODate(new Date());
     document.getElementById('modalLogDateLabel').textContent = dateStr === today ? "Today's activity" : `Activity for ${dateStr}`;
     try {
-      const data = await jsonp({ action: 'getEmployeeDayLog', adminEmail: session.adminEmail, adminPassword: session.adminPassword, employeeId, date: dateStr });
+      const data = await jsonp({ action: 'getEmployeeDayLog', token: session.token, employeeId, date: dateStr });
       if (data.success) renderDayLog(data.log || []);
       else logList.innerHTML = `<div class="modal-log-empty">${data.error || "This backend doesn't support looking up a specific past date yet."}</div>`;
     } catch (err) { logList.innerHTML = `<div class="modal-log-empty">${err.message}</div>`; }
@@ -1542,7 +1550,7 @@
     body.innerHTML = ''; empty.style.display = 'none';
     strip.innerHTML = '<div class="empty">Loading…</div>';
     try {
-      const data = await jsonp({ action: 'getCompanyDayView', adminEmail: session.adminEmail, adminPassword: session.adminPassword, date: dateStr });
+      const data = await jsonp({ action: 'getCompanyDayView', token: session.token, date: dateStr });
       if (!data.success || !Array.isArray(data.employees)) {
         strip.innerHTML = ''; empty.style.display = 'block';
         empty.textContent = data.error || "This backend doesn't support day-by-day company reports yet.";
@@ -1810,7 +1818,7 @@
     const btn = document.getElementById('delModalConfirm');
     btn.disabled = true; btn.textContent = 'Deleting…';
     try {
-      const data = await jsonp({ action: 'deleteEmployee', adminEmail: session.adminEmail, adminPassword: session.adminPassword, employeeId: _deleteTarget.employeeId });
+      const data = await jsonp({ action: 'deleteEmployee', token: session.token, employeeId: _deleteTarget.employeeId });
       document.getElementById('delModalOverlay').classList.remove('open'); _deleteTarget = null;
       if (data.success) loadEmployees(); else alert(data.error || 'Could not delete employee.');
     } catch (err) { alert('Delete failed: ' + err.message); }
@@ -1944,7 +1952,7 @@
     const startDate = toISO(start), endDate = toISO(end);
     btn.disabled = true; btn.textContent = 'Preparing report…';
     try {
-      const data = await jsonp({ action: 'exportAttendance', adminEmail: session.adminEmail, adminPassword: session.adminPassword, startDate, endDate });
+      const data = await jsonp({ action: 'exportAttendance', token: session.token, startDate, endDate });
       if (!data.success || !Array.isArray(data.employees)) {
         showMsg(msgEl, data.error || "Payroll export isn't set up on the backend yet.", 'error');
         return;
