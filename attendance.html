@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Employee Attendance</title>
 <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/infoattendancework-bit/Attendance/main/logo%20(1).png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2563eb">
 <style>
   :root { --primary:#2563eb; --primary-dark:#1d4ed8; --success:#16a34a; --danger:#dc2626; --warn:#d97706; --leave:#7c3aed; --bg:#f4f6f9; --card:#fff; --text:#1f2937; --muted:#6b7280; --border:#e5e7eb; --header-h:60px; }
   * { box-sizing: border-box; }
@@ -205,6 +207,9 @@
       <div style="text-align:center; margin-top:18px;">
         <a href="#" id="logoutLink" class="logout-link">Log out</a>
       </div>
+      <button id="installBtn" class="logout-btn" style="display:none; margin-top:10px; width:100%;">
+        📲 Add to Home Screen (for notifications)
+      </button>
     </div>
   </div>
 
@@ -220,6 +225,64 @@
 
   let session = null; // { employeeId, password }
   let monthlyLoaded = false; // tracks whether the monthly panel has fetched data yet
+
+  // ============ PWA install + service worker + OS notifications ============
+  let swRegistration = null;
+  let deferredInstallPrompt = null;
+
+  // Register the service worker as soon as the page loads.
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', async () => {
+      try {
+        swRegistration = await navigator.serviceWorker.register('sw.js');
+      } catch (e) {
+        console.warn('Service worker registration failed:', e);
+      }
+    });
+  }
+
+  // Capture the "Add to Home Screen" prompt so we can trigger it from our
+  // own button instead of waiting for the browser's native mini-banner.
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    const btn = document.getElementById('installBtn');
+    if (btn) btn.style.display = 'block';
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const installBtn = document.getElementById('installBtn');
+    if (!installBtn) return;
+    installBtn.addEventListener('click', async () => {
+      if (!deferredInstallPrompt) return;
+      deferredInstallPrompt.prompt();
+      await deferredInstallPrompt.userChoice;
+      deferredInstallPrompt = null;
+      installBtn.style.display = 'none';
+      requestNotificationPermission();
+    });
+  });
+
+  // Ask for notification permission once (called from enterDashboard()).
+  function requestNotificationPermission() {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }
+
+  // Shows a real OS notification via the service worker, with fallback to
+  // the existing in-page beep if the service worker isn't ready yet.
+  function showOsNotification(id, subject, message) {
+    if (swRegistration && 'Notification' in window && Notification.permission === 'granted') {
+      navigator.serviceWorker.ready.then((reg) => {
+        reg.active.postMessage({ type: 'SHOW_NOTICE', id, subject, message });
+      });
+    } else {
+      playNoticeSound(); // existing in-page beep fallback
+    }
+  }
+  // ============ end PWA block ============
 
   // ---- Session persistence (localStorage) ----
   const SESSION_KEY = 'attendanceSession';
@@ -275,6 +338,7 @@
     renderState(data.status, data.log);
     loadNotices();
     startNoticesPolling();
+    requestNotificationPermission();
     // Monthly attendance is no longer fetched automatically — it loads
     // lazily the first time the user opens the "Monthly Attendance" panel.
   }
@@ -376,7 +440,7 @@
       _lastNoticesFingerprint = fingerprint;
 
       if (isGenuinelyNew) {
-        playNoticeSound();
+        showOsNotification(topId, data.notices[0].subject, data.notices[0].message);
         badge.classList.add('show');
       }
 
