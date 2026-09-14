@@ -55,14 +55,21 @@
   .main { margin-left:var(--sidebar-w); min-height:100vh; }
   .topbar {
     height:64px; background:#fff; border-bottom:1px solid var(--border);
-    display:flex; align-items:center; padding:0 32px; position:sticky; top:0; z-index:900;
+    display:flex; align-items:center; justify-content:space-between; padding:0 32px; position:sticky; top:0; z-index:900;
   }
+  .topbar-left { display:flex; align-items:center; }
   .topbar h1 { font-size:1.1rem; margin:0; }
   .topbar .subtitle { color:var(--muted); font-size:0.82rem; margin-left:12px; }
+  .lock-btn {
+    background:transparent; color:var(--muted); border:1px solid var(--border); border-radius:8px;
+    padding:7px 13px; font-size:0.8rem; font-weight:600; cursor:pointer; display:none; flex:none;
+  }
+  .lock-btn:hover { background:var(--bg); color:var(--text); }
 
   .content { max-width:760px; margin:0 auto; padding:32px 28px 64px; }
   .panel { display:none; }
-  .panel.active { display:block; }
+  .panel.active { display:block; animation: panel-in 0.18s ease; }
+  @keyframes panel-in { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
 
   .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:26px 28px; width:100%; box-shadow:0 1px 3px rgba(16,26,46,0.05); }
   .field-label { font-weight:600; font-size:0.92rem; margin-bottom:8px; display:block; }
@@ -72,14 +79,21 @@
   .preview-empty { color:var(--muted); font-size:0.9rem; padding:24px; text-align:center; }
 
   input[type="file"] { width:100%; font-size:0.9rem; margin-bottom:14px; }
-  input[type="url"], input[type="password"], input[type="number"], input[type="text"] {
+  input[type="url"], input[type="password"], input[type="number"], input[type="text"], input[type="search"] {
     width:100%; padding:11px 13px; border:1px solid var(--border); border-radius:8px; font-size:0.92rem; margin-bottom:6px; font-family:inherit;
+    transition:border-color 0.15s ease;
+  }
+  input[type="url"]:focus, input[type="password"]:focus, input[type="number"]:focus,
+  input[type="text"]:focus, input[type="search"]:focus {
+    outline:none; border-color:var(--sidebar-active);
   }
   .hint { color:var(--muted); font-size:0.78rem; margin-bottom:14px; }
 
   .btn-row { display:flex; gap:10px; margin-top:4px; }
   button { flex:1; border:none; border-radius:8px; padding:12px 16px; font-size:0.92rem; font-weight:600; cursor:pointer; transition:filter 0.15s ease; }
   button:hover { filter:brightness(0.95); }
+  button:disabled { opacity:0.6; cursor:not-allowed; }
+  button:focus-visible { outline:2px solid var(--sidebar-active); outline-offset:2px; }
   .btn-primary { background:var(--sidebar-active); color:#fff; }
   .btn-danger { background:#fff; color:var(--danger); border:1px solid var(--danger); }
   .btn-secondary { background:#fff; color:var(--sidebar-active); border:1px solid var(--sidebar-active); }
@@ -97,18 +111,43 @@
   .discount-field input { max-width:120px; margin-bottom:0; }
   .discount-field .field-label { margin-bottom:0; }
 
+  /* ---- Company management: filters + search ---- */
+  .companies-toolbar { display:flex; flex-direction:column; gap:12px; margin-bottom:16px; }
+  .companies-filters { display:flex; gap:6px; flex-wrap:wrap; }
+  .filter-chip {
+    flex:none; background:#fff; color:var(--muted); border:1px solid var(--border); border-radius:999px;
+    padding:7px 14px; font-size:0.8rem; font-weight:600; cursor:pointer;
+  }
+  .filter-chip .count { color:inherit; opacity:0.7; margin-left:5px; }
+  .filter-chip:hover { background:var(--bg); }
+  .filter-chip.active { background:var(--sidebar-active); border-color:var(--sidebar-active); color:#fff; }
+  .companies-search-row { display:flex; gap:8px; }
+  .companies-search-row input { margin-bottom:0; flex:1; }
+  .companies-search-row button { flex:none; width:auto; padding:11px 16px; }
+
   #companiesList { display:flex; flex-direction:column; gap:14px; margin-bottom:14px; }
-  .company-card { border:1px solid var(--border); border-radius:10px; padding:14px 16px; background:var(--bg); }
+  .company-card { border:1px solid var(--border); border-radius:10px; padding:14px 16px; background:var(--bg); transition:opacity 0.15s ease; }
   .company-card.status-pending { border-color:var(--warn); background:#fff8e1; }
   .company-card.status-approved { border-color:var(--success); background:#eef7ee; }
   .company-card.status-rejected { border-color:var(--danger); background:#fdecea; opacity:0.8; }
-  .company-card .company-title { font-weight:700; font-size:0.95rem; }
+  .company-card .company-title { font-weight:700; font-size:0.95rem; display:flex; align-items:center; flex-wrap:wrap; gap:2px; }
   .company-card .badge { font-size:0.72rem; font-weight:600; padding:2px 9px; border-radius:999px; background:#fff; margin-left:6px; text-transform:capitalize; }
   .company-card .company-meta { font-size:0.8rem; color:var(--muted); margin-top:4px; line-height:1.5; }
+  .company-card .company-meta a { color:var(--sidebar-active); text-decoration:none; }
+  .company-card .company-meta a:hover { text-decoration:underline; }
   .company-card .btn-row { margin-top:10px; }
   .company-card .btn-approve { background:var(--success); color:#fff; }
   .company-card .btn-reject { background:#fff; color:var(--danger); border:1px solid var(--danger); }
   .company-empty { color:var(--muted); font-size:0.85rem; text-align:center; padding:14px 0; }
+
+  /* ---- Confirm dialog ---- */
+  .confirm-overlay {
+    position:fixed; inset:0; background:rgba(16,26,46,0.45); display:flex; align-items:center; justify-content:center;
+    z-index:2000; padding:20px;
+  }
+  .confirm-box { background:#fff; border-radius:12px; padding:22px 24px; max-width:340px; width:100%; box-shadow:0 8px 30px rgba(16,26,46,0.25); }
+  .confirm-box p { margin:0 0 18px; font-size:0.92rem; line-height:1.5; }
+  .confirm-box .btn-row button { padding:10px 14px; }
 
   @media (max-width: 780px) {
     :root { --sidebar-w: 0px; }
@@ -139,8 +178,11 @@
 
 <div class="main">
   <div class="topbar">
-    <h1 id="pageTitle">Banner Settings</h1>
-    <span class="subtitle" id="pageSubtitle">Upload an image to show on the homepage banner.</span>
+    <div class="topbar-left">
+      <h1 id="pageTitle">Banner Settings</h1>
+      <span class="subtitle" id="pageSubtitle">Upload an image to show on the homepage banner.</span>
+    </div>
+    <button class="lock-btn" id="lockBtn" type="button">Lock</button>
   </div>
 
   <div class="content">
@@ -235,9 +277,20 @@
       <div class="card" id="companiesCard" style="display:none;">
         <span class="field-label">Company Management</span>
         <div class="hint">Pending companies show Approve/Reject actions. Approving or rejecting emails the company automatically.</div>
-        <div class="btn-row" style="margin-bottom:14px;">
-          <button class="btn-secondary" id="refreshCompaniesBtn" type="button">Refresh</button>
+
+        <div class="companies-toolbar">
+          <div class="companies-filters" id="companiesFilters">
+            <button class="filter-chip active" data-status="all" type="button">All <span class="count" id="countAll">0</span></button>
+            <button class="filter-chip" data-status="pending" type="button">Pending <span class="count" id="countPending">0</span></button>
+            <button class="filter-chip" data-status="approved" type="button">Approved <span class="count" id="countApproved">0</span></button>
+            <button class="filter-chip" data-status="rejected" type="button">Rejected <span class="count" id="countRejected">0</span></button>
+          </div>
+          <div class="companies-search-row">
+            <input type="search" id="companiesSearchInput" placeholder="Search by name, code, or email...">
+            <button class="btn-secondary" id="refreshCompaniesBtn" type="button">Refresh</button>
+          </div>
         </div>
+
         <div id="companiesList"><div class="company-empty">Loading...</div></div>
         <div class="status" id="companiesStatus"></div>
       </div>
@@ -259,6 +312,7 @@
   var panels = document.querySelectorAll('.panel');
   var pageTitleEl = document.getElementById('pageTitle');
   var pageSubtitleEl = document.getElementById('pageSubtitle');
+  var lockBtn = document.getElementById('lockBtn');
 
   navItems.forEach(function (item) {
     item.addEventListener('click', function () {
@@ -272,6 +326,7 @@
 
       pageTitleEl.textContent = pageMeta[target].title;
       pageSubtitleEl.textContent = pageMeta[target].subtitle;
+      updateLockButton(target);
 
       // Lazy-load company list the first time that panel is opened
       if (target === 'companies' && sessionCompaniesKey) {
@@ -284,6 +339,37 @@
     var active = document.querySelector('.nav-item.active');
     return active ? active.getAttribute('data-target') : 'banner';
   }
+
+  // Shows/hides the topbar "Lock" button depending on whether the
+  // currently open panel has an active unlocked session.
+  function updateLockButton(target) {
+    var unlocked =
+      (target === 'banner' && !!sessionPassword) ||
+      (target === 'pricing' && !!sessionAdminKey) ||
+      (target === 'companies' && !!sessionCompaniesKey);
+    lockBtn.style.display = unlocked ? 'inline-block' : 'none';
+  }
+
+  lockBtn.addEventListener('click', function () {
+    var target = activePanelTarget();
+    if (target === 'banner') {
+      sessionPassword = null;
+      bannerCard.style.display = 'none';
+      loginCard.style.display = 'block';
+      passwordInput.value = '';
+    } else if (target === 'pricing') {
+      sessionAdminKey = null;
+      pricingCard.style.display = 'none';
+      pricingLoginCard.style.display = 'block';
+      pricingKeyInput.value = '';
+    } else if (target === 'companies') {
+      sessionCompaniesKey = null;
+      companiesCard.style.display = 'none';
+      companiesLoginCard.style.display = 'block';
+      companiesKeyInput.value = '';
+    }
+    updateLockButton(target);
+  });
 
   // Refreshes just the data on whichever panel is currently open — never
   // reloads the page, so the unlocked session and active tab are kept.
@@ -394,6 +480,7 @@
           sessionPassword = pwd;
           loginCard.style.display = 'none';
           bannerCard.style.display = 'block';
+          updateLockButton('banner');
           loadCurrentBanner();
         } else {
           loginStatus.textContent = 'Incorrect password.';
@@ -540,6 +627,23 @@
     }).then(function (res) { return res.json(); });
   }
 
+  function tierRangesOverlapOrGap(tiers) {
+    // Sort a copy by min and check that ranges are contiguous and ordered,
+    // catching a mistake before it's sent to the server.
+    var sorted = tiers.slice().sort(function (a, b) { return a.min - b.min; });
+    for (var i = 0; i < sorted.length; i++) {
+      var t = sorted[i];
+      if (t.max !== null && t.max < t.min) return 'Tier starting at ' + t.min + ' has a max below its min.';
+      if (i > 0) {
+        var prev = sorted[i - 1];
+        if (prev.max === null) return 'Only the last (highest) tier can have an open-ended max.';
+        if (t.min <= prev.max) return 'Tiers ' + prev.min + '–' + prev.max + ' and ' + t.min + ' overlap.';
+        if (t.min > prev.max + 1) return 'There\'s a gap between ' + prev.max + ' and ' + t.min + ' with no tier covering it.';
+      }
+    }
+    return null;
+  }
+
   function addTierRow(min, max, rate) {
     var row = document.createElement('div');
     row.className = 'tier-row';
@@ -597,6 +701,7 @@
     sessionAdminKey = key;
     pricingLoginCard.style.display = 'none';
     pricingCard.style.display = 'block';
+    updateLockButton('pricing');
     loadPricingForEditing();
   });
 
@@ -630,6 +735,13 @@
       return;
     }
 
+    var rangeProblem = tierRangesOverlapOrGap(tiers);
+    if (rangeProblem) {
+      pricingStatus.textContent = rangeProblem;
+      pricingStatus.className = 'status error';
+      return;
+    }
+
     savePricingBtn.disabled = true;
     pricingStatus.textContent = 'Saving...';
     pricingStatus.className = 'status';
@@ -656,6 +768,7 @@
             pricingCard.style.display = 'none';
             pricingLoginCard.style.display = 'block';
             pricingKeyInput.value = '';
+            updateLockButton('pricing');
           }
         }
       })
@@ -679,8 +792,13 @@
   var refreshCompaniesBtn = document.getElementById('refreshCompaniesBtn');
   var companiesListEl = document.getElementById('companiesList');
   var companiesStatus = document.getElementById('companiesStatus');
+  var companiesSearchInput = document.getElementById('companiesSearchInput');
+  var companiesFilters = document.getElementById('companiesFilters');
 
   var sessionCompaniesKey = null; // kept in memory only for this page load, never stored
+  var allCompanies = [];          // last full list fetched from the server
+  var activeStatusFilter = 'all';
+  var actionInFlight = false;     // pauses silent auto-refresh mid approve/reject
 
   function companiesApiConfigured() {
     if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('PASTE_YOUR') === 0) {
@@ -699,10 +817,63 @@
     }).then(function (res) { return res.json(); });
   }
 
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function updateFilterCounts(companies) {
+    var counts = { all: companies.length, pending: 0, approved: 0, rejected: 0 };
+    companies.forEach(function (c) {
+      if (counts[c.status] !== undefined) counts[c.status]++;
+    });
+    document.getElementById('countAll').textContent = counts.all;
+    document.getElementById('countPending').textContent = counts.pending;
+    document.getElementById('countApproved').textContent = counts.approved;
+    document.getElementById('countRejected').textContent = counts.rejected;
+  }
+
+  // Applies the active status filter + search text on top of the last
+  // fetched list, then renders — so filtering/searching never needs a
+  // fresh server round-trip.
+  function applyFiltersAndRender() {
+    var query = companiesSearchInput.value.trim().toLowerCase();
+    var filtered = allCompanies.filter(function (c) {
+      if (activeStatusFilter !== 'all' && c.status !== activeStatusFilter) return false;
+      if (!query) return true;
+      return (c.companyName || '').toLowerCase().indexOf(query) !== -1 ||
+             (c.companyCode || '').toLowerCase().indexOf(query) !== -1 ||
+             (c.adminEmail || '').toLowerCase().indexOf(query) !== -1;
+    });
+    // Pending companies need attention first; within a group, newest first.
+    filtered.sort(function (a, b) {
+      var pendingA = a.status === 'pending' ? 0 : 1;
+      var pendingB = b.status === 'pending' ? 0 : 1;
+      if (pendingA !== pendingB) return pendingA - pendingB;
+      return new Date(b.registeredDate || 0) - new Date(a.registeredDate || 0);
+    });
+    renderCompanies(filtered);
+  }
+
+  companiesFilters.addEventListener('click', function (e) {
+    var chip = e.target.closest('.filter-chip');
+    if (!chip) return;
+    companiesFilters.querySelectorAll('.filter-chip').forEach(function (c) { c.classList.remove('active'); });
+    chip.classList.add('active');
+    activeStatusFilter = chip.getAttribute('data-status');
+    applyFiltersAndRender();
+  });
+
+  companiesSearchInput.addEventListener('input', function () {
+    applyFiltersAndRender();
+  });
+
   function renderCompanies(companies) {
     companiesListEl.innerHTML = '';
     if (!companies || !companies.length) {
-      companiesListEl.innerHTML = '<div class="company-empty">No companies registered yet.</div>';
+      companiesListEl.innerHTML = allCompanies.length
+        ? '<div class="company-empty">No companies match this filter.</div>'
+        : '<div class="company-empty">No companies registered yet.</div>';
       return;
     }
 
@@ -722,7 +893,7 @@
       var meta = document.createElement('div');
       meta.className = 'company-meta';
       meta.innerHTML =
-        'Admin: ' + escapeHtml(c.adminEmail) + '<br>' +
+        'Admin: <a href="mailto:' + escapeHtml(c.adminEmail) + '">' + escapeHtml(c.adminEmail) + '</a><br>' +
         'Phone: ' + escapeHtml(c.phoneNumber) + '<br>' +
         'Employees: ' + c.employeeCount + ' &middot; ' + escapeHtml(c.billingCycle) +
         ' &middot; Est. cost: ' + c.estimatedCost + '<br>' +
@@ -738,7 +909,11 @@
         approveBtn.type = 'button';
         approveBtn.textContent = 'Approve';
         approveBtn.addEventListener('click', function () {
-          setCompanyStatus(c.companyCode, 'approved', approveBtn, rejectBtn);
+          confirmAction(
+            'Approve ' + c.companyName + '? This will email the company right away.',
+            'Approve',
+            function () { setCompanyStatus(c.companyCode, 'approved', approveBtn, rejectBtn); }
+          );
         });
 
         var rejectBtn = document.createElement('button');
@@ -746,7 +921,11 @@
         rejectBtn.type = 'button';
         rejectBtn.textContent = 'Reject';
         rejectBtn.addEventListener('click', function () {
-          setCompanyStatus(c.companyCode, 'rejected', approveBtn, rejectBtn);
+          confirmAction(
+            'Reject ' + c.companyName + '? This will email the company right away and can\'t be undone from here.',
+            'Reject',
+            function () { setCompanyStatus(c.companyCode, 'rejected', approveBtn, rejectBtn); }
+          );
         });
 
         actions.appendChild(approveBtn);
@@ -758,12 +937,47 @@
     });
   }
 
-  function escapeHtml(s) {
-    return String(s == null ? '' : s)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  // Lightweight confirm dialog for the two destructive/notifying actions
+  // (approve/reject both send an email immediately, so a stray click
+  // shouldn't be able to trigger them).
+  function confirmAction(message, actionLabel, onConfirm) {
+    var overlay = document.createElement('div');
+    overlay.className = 'confirm-overlay';
+    var box = document.createElement('div');
+    box.className = 'confirm-box';
+    var p = document.createElement('p');
+    p.textContent = message;
+    var row = document.createElement('div');
+    row.className = 'btn-row';
+    var cancelBtn = document.createElement('button');
+    cancelBtn.className = 'btn-secondary';
+    cancelBtn.type = 'button';
+    cancelBtn.textContent = 'Cancel';
+    var confirmBtn = document.createElement('button');
+    confirmBtn.className = 'btn-primary';
+    confirmBtn.type = 'button';
+    confirmBtn.textContent = actionLabel;
+
+    function close() { overlay.remove(); document.removeEventListener('keydown', onKey); }
+    function onKey(e) { if (e.key === 'Escape') close(); }
+
+    cancelBtn.addEventListener('click', close);
+    overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });
+    confirmBtn.addEventListener('click', function () { close(); onConfirm(); });
+    document.addEventListener('keydown', onKey);
+
+    row.appendChild(cancelBtn);
+    row.appendChild(confirmBtn);
+    box.appendChild(p);
+    box.appendChild(row);
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+    confirmBtn.focus();
   }
 
   function loadCompanies(silent) {
+    if (actionInFlight) return; // don't clobber the list mid approve/reject
+
     if (!silent) {
       companiesStatus.textContent = '';
       companiesStatus.className = 'status';
@@ -773,7 +987,9 @@
     companiesCall({ action: 'listCompanies', adminKey: sessionCompaniesKey })
       .then(function (data) {
         if (data && data.success) {
-          renderCompanies(data.companies);
+          allCompanies = data.companies || [];
+          updateFilterCounts(allCompanies);
+          applyFiltersAndRender();
         } else {
           if (!silent) {
             companiesListEl.innerHTML = '<div class="company-empty">Could not load companies.</div>';
@@ -786,6 +1002,7 @@
             companiesCard.style.display = 'none';
             companiesLoginCard.style.display = 'block';
             companiesKeyInput.value = '';
+            updateLockButton('companies');
           }
         }
       })
@@ -801,11 +1018,13 @@
   function setCompanyStatus(companyCode, status, approveBtn, rejectBtn) {
     approveBtn.disabled = true;
     rejectBtn.disabled = true;
+    actionInFlight = true;
     companiesStatus.textContent = 'Saving...';
     companiesStatus.className = 'status';
 
     companiesCall({ action: 'approveCompany', adminKey: sessionCompaniesKey, companyCode: companyCode, status: status })
       .then(function (data) {
+        actionInFlight = false;
         if (data && data.success) {
           companiesStatus.textContent = companyCode + ' marked ' + status + '.';
           companiesStatus.className = 'status success';
@@ -818,6 +1037,7 @@
         }
       })
       .catch(function () {
+        actionInFlight = false;
         approveBtn.disabled = false;
         rejectBtn.disabled = false;
         companiesStatus.textContent = 'Failed. Check your connection.';
@@ -838,6 +1058,7 @@
     sessionCompaniesKey = key;
     companiesLoginCard.style.display = 'none';
     companiesCard.style.display = 'block';
+    updateLockButton('companies');
     loadCompanies();
   });
 
@@ -851,7 +1072,8 @@
 
   // Auto-refresh: while the Company Management panel is open and
   // unlocked, quietly re-check every 3s so newly registered companies
-  // show up on their own, without needing a manual refresh.
+  // show up on their own, without needing a manual refresh. Skipped
+  // while an approve/reject call is in flight to avoid clobbering it.
   setInterval(function () {
     if (activePanelTarget() === 'companies' && sessionCompaniesKey) {
       loadCompanies(true);
