@@ -149,6 +149,17 @@
   .confirm-box p { margin:0 0 18px; font-size:0.92rem; line-height:1.5; }
   .confirm-box .btn-row button { padding:10px 14px; }
 
+  /* ---- Forgot password / key links + inline panels ---- */
+  .forgot-link {
+    display:inline-block; margin-top:2px; margin-bottom:14px; font-size:0.82rem;
+    color:var(--sidebar-active); text-decoration:none; cursor:pointer; background:none; border:none; padding:0; font-family:inherit;
+  }
+  .forgot-link:hover { text-decoration:underline; }
+  .reset-panel { display:none; margin-top:6px; padding-top:14px; border-top:1px dashed var(--border); }
+  .reset-panel.step-2 .reset-step-1 { display:none; }
+  .reset-panel:not(.step-2) .reset-step-2 { display:none; }
+  .reset-panel .hint { margin-top:-2px; }
+
   @media (max-width: 780px) {
     :root { --sidebar-w: 0px; }
     .sidebar { transform:translateX(-100%); }
@@ -196,6 +207,26 @@
           <button class="btn-primary" id="unlockBtn" style="flex:none; width:100%;">Unlock</button>
         </div>
         <div class="status" id="loginStatus"></div>
+
+        <button type="button" class="forgot-link" id="bannerForgotLink">Forgot password?</button>
+        <div class="reset-panel" id="bannerResetPanel">
+          <div class="reset-step-1">
+            <div class="hint">Sends a one-time reset code to the site owner's email, if the banner backend supports it.</div>
+            <div class="btn-row">
+              <button class="btn-secondary" id="bannerRequestResetBtn" type="button">Send reset code</button>
+            </div>
+          </div>
+          <div class="reset-step-2">
+            <span class="field-label">Reset code</span>
+            <input type="text" id="bannerResetCodeInput" placeholder="Code from email">
+            <span class="field-label">New password</span>
+            <input type="password" id="bannerNewPasswordInput" placeholder="New password">
+            <div class="btn-row">
+              <button class="btn-primary" id="bannerConfirmResetBtn" type="button">Set new password</button>
+            </div>
+          </div>
+          <div class="status" id="bannerResetStatus"></div>
+        </div>
       </div>
 
       <div class="card" id="bannerCard" style="display:none;">
@@ -235,6 +266,26 @@
           <button class="btn-primary" id="pricingUnlockBtn" style="flex:none; width:100%;">Unlock Pricing</button>
         </div>
         <div class="status" id="pricingLoginStatus"></div>
+
+        <button type="button" class="forgot-link" id="superAdminForgotLinkPricing">Forgot key?</button>
+        <div class="reset-panel" id="superAdminResetPanelPricing" data-partner="superAdminResetPanelCompanies">
+          <div class="reset-step-1">
+            <div class="hint">Sends a one-time reset code to the platform's configured owner email.</div>
+            <div class="btn-row">
+              <button class="btn-secondary superadmin-request-reset" type="button">Send reset code</button>
+            </div>
+          </div>
+          <div class="reset-step-2">
+            <span class="field-label">Reset code</span>
+            <input type="text" class="superadmin-reset-code" placeholder="Code from email">
+            <span class="field-label">New Super Admin Key</span>
+            <input type="password" class="superadmin-new-key" placeholder="At least 8 characters">
+            <div class="btn-row">
+              <button class="btn-primary superadmin-confirm-reset" type="button">Set new key</button>
+            </div>
+          </div>
+          <div class="status superadmin-reset-status"></div>
+        </div>
       </div>
 
       <div class="card" id="pricingCard" style="display:none;">
@@ -272,6 +323,26 @@
           <button class="btn-primary" id="companiesUnlockBtn" style="flex:none; width:100%;">Unlock Companies</button>
         </div>
         <div class="status" id="companiesLoginStatus"></div>
+
+        <button type="button" class="forgot-link" id="superAdminForgotLinkCompanies">Forgot key?</button>
+        <div class="reset-panel" id="superAdminResetPanelCompanies" data-partner="superAdminResetPanelPricing">
+          <div class="reset-step-1">
+            <div class="hint">Sends a one-time reset code to the platform's configured owner email.</div>
+            <div class="btn-row">
+              <button class="btn-secondary superadmin-request-reset" type="button">Send reset code</button>
+            </div>
+          </div>
+          <div class="reset-step-2">
+            <span class="field-label">Reset code</span>
+            <input type="text" class="superadmin-reset-code" placeholder="Code from email">
+            <span class="field-label">New Super Admin Key</span>
+            <input type="password" class="superadmin-new-key" placeholder="At least 8 characters">
+            <div class="btn-row">
+              <button class="btn-primary superadmin-confirm-reset" type="button">Set new key</button>
+            </div>
+          </div>
+          <div class="status superadmin-reset-status"></div>
+        </div>
       </div>
 
       <div class="card" id="companiesCard" style="display:none;">
@@ -496,6 +567,99 @@
 
   passwordInput.addEventListener('keydown', function (e) {
     if (e.key === 'Enter') unlockBtn.click();
+  });
+
+  // ---- Banner "Forgot password?" flow ----
+  // NOTE: this calls action 'requestPasswordReset' / 'resetBannerPassword'
+  // on BANNER_API_URL. That backend is a separate Apps Script project not
+  // covered by this update — add matching handlers there (mirroring the
+  // requestSuperAdminReset/resetSuperAdminKey pattern used below for
+  // APPS_SCRIPT_URL) before this will actually work end-to-end. Until then
+  // this will show whatever error that backend returns for an unknown
+  // action, or "Could not reach the server" if it 404s.
+  var bannerForgotLink = document.getElementById('bannerForgotLink');
+  var bannerResetPanel = document.getElementById('bannerResetPanel');
+  var bannerRequestResetBtn = document.getElementById('bannerRequestResetBtn');
+  var bannerConfirmResetBtn = document.getElementById('bannerConfirmResetBtn');
+  var bannerResetCodeInput = document.getElementById('bannerResetCodeInput');
+  var bannerNewPasswordInput = document.getElementById('bannerNewPasswordInput');
+  var bannerResetStatus = document.getElementById('bannerResetStatus');
+
+  bannerForgotLink.addEventListener('click', function () {
+    var isOpen = bannerResetPanel.style.display === 'block';
+    bannerResetPanel.style.display = isOpen ? 'none' : 'block';
+    bannerForgotLink.textContent = isOpen ? 'Forgot password?' : 'Hide reset form';
+    if (isOpen) {
+      bannerResetPanel.classList.remove('step-2');
+      bannerResetStatus.textContent = '';
+      bannerResetStatus.className = 'status';
+    }
+  });
+
+  bannerRequestResetBtn.addEventListener('click', function () {
+    if (!apiConfigured()) return;
+    bannerRequestResetBtn.disabled = true;
+    bannerResetStatus.textContent = 'Sending...';
+    bannerResetStatus.className = 'status';
+    fetch(BANNER_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'requestPasswordReset' })
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        bannerRequestResetBtn.disabled = false;
+        if (data && data.success) {
+          bannerResetPanel.classList.add('step-2');
+          bannerResetStatus.textContent = 'If configured, a reset code was sent. Check the owner inbox.';
+          bannerResetStatus.className = 'status success';
+        } else {
+          bannerResetStatus.textContent = (data && data.error) ? data.error : 'Could not request a reset code.';
+          bannerResetStatus.className = 'status error';
+        }
+      })
+      .catch(function () {
+        bannerRequestResetBtn.disabled = false;
+        bannerResetStatus.textContent = 'Could not reach the server.';
+        bannerResetStatus.className = 'status error';
+      });
+  });
+
+  bannerConfirmResetBtn.addEventListener('click', function () {
+    if (!apiConfigured()) return;
+    var code = bannerResetCodeInput.value.trim();
+    var newPwd = bannerNewPasswordInput.value;
+    if (!code || !newPwd) {
+      bannerResetStatus.textContent = 'Enter the code and a new password.';
+      bannerResetStatus.className = 'status error';
+      return;
+    }
+    bannerConfirmResetBtn.disabled = true;
+    bannerResetStatus.textContent = 'Saving...';
+    bannerResetStatus.className = 'status';
+    fetch(BANNER_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'resetBannerPassword', resetToken: code, newPassword: newPwd })
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        bannerConfirmResetBtn.disabled = false;
+        if (data && data.success) {
+          bannerResetStatus.textContent = 'Password updated. You can log in with it now.';
+          bannerResetStatus.className = 'status success';
+          bannerResetCodeInput.value = '';
+          bannerNewPasswordInput.value = '';
+        } else {
+          bannerResetStatus.textContent = (data && data.error) ? data.error : 'Could not reset password.';
+          bannerResetStatus.className = 'status error';
+        }
+      })
+      .catch(function () {
+        bannerConfirmResetBtn.disabled = false;
+        bannerResetStatus.textContent = 'Could not reach the server.';
+        bannerResetStatus.className = 'status error';
+      });
   });
 
   fileInput.addEventListener('change', function (e) {
@@ -1079,6 +1243,107 @@
       loadCompanies(true);
     }
   }, 3000);
+
+  // ---------------------------------------------------------------
+  // SUPER_ADMIN_KEY "Forgot key?" flow — shared logic for both the
+  // Pricing and Company Management login cards, since both gate on the
+  // same platform-wide key. Calls requestSuperAdminReset / resetSuperAdminKey
+  // on APPS_SCRIPT_URL (see Code.gs).
+  // ---------------------------------------------------------------
+  document.getElementById('superAdminForgotLinkPricing').addEventListener('click', function () {
+    toggleSuperAdminResetPanel('superAdminResetPanelPricing', this);
+  });
+  document.getElementById('superAdminForgotLinkCompanies').addEventListener('click', function () {
+    toggleSuperAdminResetPanel('superAdminResetPanelCompanies', this);
+  });
+
+  function toggleSuperAdminResetPanel(panelId, linkEl) {
+    var panel = document.getElementById(panelId);
+    var isOpen = panel.style.display === 'block';
+    panel.style.display = isOpen ? 'none' : 'block';
+    linkEl.textContent = isOpen ? 'Forgot key?' : 'Hide reset form';
+    if (isOpen) {
+      panel.classList.remove('step-2');
+      var statusEl = panel.querySelector('.superadmin-reset-status');
+      statusEl.textContent = '';
+      statusEl.className = 'status superadmin-reset-status';
+    }
+  }
+
+  document.querySelectorAll('.superadmin-request-reset').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      if (!pricingApiConfigured()) return; // same APPS_SCRIPT_URL check works for either panel
+      var panel = btn.closest('.reset-panel');
+      var statusEl = panel.querySelector('.superadmin-reset-status');
+      btn.disabled = true;
+      statusEl.textContent = 'Sending...';
+      statusEl.className = 'status superadmin-reset-status';
+
+      pricingCall({ action: 'requestSuperAdminReset' })
+        .then(function (data) {
+          btn.disabled = false;
+          if (data && data.success) {
+            panel.classList.add('step-2');
+            statusEl.textContent = 'Reset code sent to the configured owner email.';
+            statusEl.className = 'status superadmin-reset-status success';
+          } else {
+            statusEl.textContent = (data && data.error) ? data.error : 'Could not send reset code.';
+            statusEl.className = 'status superadmin-reset-status error';
+          }
+        })
+        .catch(function () {
+          btn.disabled = false;
+          statusEl.textContent = 'Could not reach the server.';
+          statusEl.className = 'status superadmin-reset-status error';
+        });
+    });
+  });
+
+  document.querySelectorAll('.superadmin-confirm-reset').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      if (!pricingApiConfigured()) return;
+      var panel = btn.closest('.reset-panel');
+      var codeInput = panel.querySelector('.superadmin-reset-code');
+      var newKeyInput = panel.querySelector('.superadmin-new-key');
+      var statusEl = panel.querySelector('.superadmin-reset-status');
+
+      var code = codeInput.value.trim();
+      var newKey = newKeyInput.value;
+      if (!code || !newKey) {
+        statusEl.textContent = 'Enter the code and a new key.';
+        statusEl.className = 'status superadmin-reset-status error';
+        return;
+      }
+      if (newKey.length < 8) {
+        statusEl.textContent = 'New key should be at least 8 characters.';
+        statusEl.className = 'status superadmin-reset-status error';
+        return;
+      }
+
+      btn.disabled = true;
+      statusEl.textContent = 'Saving...';
+      statusEl.className = 'status superadmin-reset-status';
+
+      pricingCall({ action: 'resetSuperAdminKey', resetToken: code, newKey: newKey })
+        .then(function (data) {
+          btn.disabled = false;
+          if (data && data.success) {
+            statusEl.textContent = 'Key updated. Use the new key to unlock Pricing or Company Management.';
+            statusEl.className = 'status superadmin-reset-status success';
+            codeInput.value = '';
+            newKeyInput.value = '';
+          } else {
+            statusEl.textContent = (data && data.error) ? data.error : 'Could not reset key.';
+            statusEl.className = 'status superadmin-reset-status error';
+          }
+        })
+        .catch(function () {
+          btn.disabled = false;
+          statusEl.textContent = 'Could not reach the server.';
+          statusEl.className = 'status superadmin-reset-status error';
+        });
+    });
+  });
 
 </script>
 </body>
