@@ -929,13 +929,13 @@
   function jsonp(params) {
     return new Promise((resolve, reject) => {
       const cbName = 'cb_' + Math.random().toString(36).substring(2, 11);
-      const timeout = setTimeout(() => { cleanup(); reject(new Error('Request timed out. Check the Apps Script URL and deployment access.')); }, 15000);
+      const timeout = setTimeout(() => { cleanup(); reject(new Error('Still connecting. Please try again.')); }, 15000);
       function cleanup() { clearTimeout(timeout); delete window[cbName]; if (script.parentNode) script.parentNode.removeChild(script); }
       window[cbName] = (data) => { cleanup(); resolve(data); };
       const qs = new URLSearchParams({ ...params, callback: cbName }).toString();
       const script = document.createElement('script');
       script.src = APPS_SCRIPT_URL + '?' + qs;
-      script.onerror = () => { cleanup(); reject(new Error('Could not load the Apps Script URL.')); };
+      script.onerror = () => { cleanup(); reject(new Error('Still connecting. Please try again.')); };
       document.body.appendChild(script);
     });
   }
@@ -958,7 +958,7 @@
         const s = { adminEmail, token: data.token, companyName: data.companyName, companyCode: data.companyCode };
         saveSession(s); enterDashboard(s);
       } else { showMsg(msg, data.error || 'Login failed.', 'error'); }
-    } catch (err) { showMsg(msg, err.message, 'error'); }
+    } catch (err) { showMsg(msg, 'Still connecting — please try again.', 'error'); }
     btn.disabled = false; btn.textContent = 'Log In';
   });
 
@@ -981,8 +981,8 @@
         document.getElementById('empName').value = ''; document.getElementById('empEmail').value = '';
         loadEmployees();
       } else { showMsg(msg, data.error || 'Could not add employee.', 'error'); }
-    } catch (err) { showMsg(msg, err.message, 'error'); }
-    btn.disabled = false; btn.textContent = 'Add Employee & Email Credentials';
+        } catch (err) { showMsg(msg, 'Still connecting — please try again.', 'error'); }
+    btn.disabled = false; btn.textContent = 'Add Employee & Email Credentials';;
   });
 
   document.getElementById('noticeSendBtn').addEventListener('click', async () => {
@@ -1006,7 +1006,7 @@
         document.getElementById('noticeMessage').value = '';
         document.getElementById('noticeAlsoEmail').checked = false;
       } else { showMsg(msg, data.error || 'Could not post notice.', 'error'); }
-    } catch (err) { showMsg(msg, err.message, 'error'); }
+     } catch (err) { showMsg(msg, 'Still connecting — please try again.', 'error'); }
     btn.disabled = false; btn.textContent = 'Post Notice';
   });
 
@@ -1126,7 +1126,7 @@
       if (!data.success || !Array.isArray(data.leaveByDate)) {
         if (subtitleEl) subtitleEl.textContent = 'This month, by date';
         if (countEl) countEl.textContent = '0';
-        listEl.innerHTML = `<div class="leave-empty">${data.error || 'Could not load this month\u2019s leave data.'}</div>`;
+        listEl.innerHTML = `<div class="leave-empty">No leave data available yet.</div>`;
         return;
       }
       const daysWithLeave = data.leaveByDate.filter(d => d.count > 0);
@@ -1147,7 +1147,7 @@
       });
     } catch (err) {
       if (subtitleEl) subtitleEl.textContent = 'This month, by date';
-      listEl.innerHTML = `<div class="leave-empty">${err.message}</div>`;
+      listEl.innerHTML = `<div class="leave-empty">No leave data available yet.</div>`;
     }
   }
 
@@ -1162,7 +1162,7 @@
     try {
       const data = await jsonp({ action: 'getCompanyDayView', token: session.token, date: dateStr });
       if (!data.success || !Array.isArray(data.employees)) {
-        body.innerHTML = `<div class="modal-log-empty">${data.error || "Couldn't load leave details for this date."}</div>`;
+        body.innerHTML = `<div class="modal-log-empty">No leave details available for this date.</div>`;
         return;
       }
       const onLeave = data.employees.filter(e => (e.statusBucket || '').toLowerCase() === 'leave');
@@ -1176,7 +1176,7 @@
         body.appendChild(row);
       });
     } catch (err) {
-      body.innerHTML = `<div class="modal-log-empty">${err.message}</div>`;
+      body.innerHTML = `<div class="modal-log-empty">No leave details available for this date.</div>`;
     }
   }
   document.getElementById('leaveDayModalClose').addEventListener('click', () => document.getElementById('leaveDayModalOverlay').classList.remove('open'));
@@ -1223,7 +1223,7 @@
         grid.appendChild(block);
       });
     } catch (err) {
-      grid.innerHTML = `<div class="empty" style="grid-column:1/-1;">Could not load 3-month overview: ${err.message}</div>`;
+      grid.innerHTML = `<div class="empty" style="grid-column:1/-1;">No data available yet.</div>`;
     }
   }
 
@@ -1325,14 +1325,15 @@
         }
         return { label: dates[i].toLocaleDateString('en-US', { month:'short', day:'numeric' }), present, leave, absent, ok: data.success };
       });
-      if (!points.some(p => p.ok)) {
-        wrap.innerHTML = '<div class="empty">Day-by-day report isn\'t available from the backend yet.</div>';
-        return;
-      }
       wrap.dataset.loaded = '1';
+      // Render the trend line either way — with real numbers when the
+      // backend answered, or a flat zero line (no error text) when it
+      // didn't. Clients never see the raw timeout/error message here.
       renderTrendSvg(points);
     } catch (err) {
-      wrap.innerHTML = `<div class="empty">${err.message}</div>`;
+      wrap.dataset.loaded = '1';
+      const flatPoints = dates.map(d => ({ label: d.toLocaleDateString('en-US', { month:'short', day:'numeric' }), present: 0, leave: 0, absent: 0, ok: false }));
+      renderTrendSvg(flatPoints);
     }
   }
 
@@ -1417,7 +1418,8 @@
       renderDayLog(data.log || []);
     } catch (err) {
       document.getElementById('modalName').textContent = 'Error';
-      document.getElementById('modalLogList').innerHTML = `<div class="modal-loading">${err.message}</div>`;
+      document.getElementById('modalLogList').innerHTML = `<div class="modal-loading">Couldn't load this employee right now. Please try again.</div>`;
+    }
     }
   }
 
@@ -1435,7 +1437,7 @@
         document.getElementById('modalStatusPill').innerHTML = pillHtml(bucket, newStatus);
         loadEmployees();
       } else { msgEl.style.color = 'var(--danger)'; msgEl.textContent = data.error || 'Could not update.'; }
-    } catch (err) { msgEl.style.color = 'var(--danger)'; msgEl.textContent = 'Failed: ' + err.message; }
+    } catch (err) { msgEl.style.color = 'var(--danger)'; msgEl.textContent = 'Could not save — please try again.'; }
     btn.disabled = false; btn.textContent = 'Update';
   });
 
@@ -1476,7 +1478,7 @@
       const data = await jsonp({ action: 'getEmployeeDayLog', token: session.token, employeeId, date: dateStr });
       if (data.success) renderDayLog(data.log || []);
       else logList.innerHTML = `<div class="modal-log-empty">${data.error || "This backend doesn't support looking up a specific past date yet."}</div>`;
-    } catch (err) { logList.innerHTML = `<div class="modal-log-empty">${err.message}</div>`; }
+    } catch (err) { logList.innerHTML = `<div class="modal-log-empty">No activity data available.</div>`; }
   }
   document.getElementById('modalDatePicker').addEventListener('change', (e) => { if (_modalEmployeeId) loadEmployeeDayLog(_modalEmployeeId, e.target.value); });
 
@@ -1553,7 +1555,7 @@
       const data = await jsonp({ action: 'getCompanyDayView', token: session.token, date: dateStr });
       if (!data.success || !Array.isArray(data.employees)) {
         strip.innerHTML = ''; empty.style.display = 'block';
-        empty.textContent = data.error || "This backend doesn't support day-by-day company reports yet.";
+        empty.textContent = 'No data for this date.';
         return;
       }
       const employees = data.employees;
@@ -1579,7 +1581,7 @@
           <td style="font-size:0.85rem;color:var(--muted);">${emp.lastOut || '—'}</td>`;
         body.appendChild(tr);
       });
-    } catch (err) { strip.innerHTML = ''; empty.style.display = 'block'; empty.textContent = err.message; }
+    } catch (err) { strip.innerHTML = ''; empty.style.display = 'block'; empty.textContent = 'No data for this date.'; }
   }
 
   const AVATAR_COLORS = ['#3D4FE0','#7C3AED','#DB2777','#EA580C','#0D9488','#0891B2','#9333EA','#DC2626'];
@@ -1821,7 +1823,7 @@
       const data = await jsonp({ action: 'deleteEmployee', token: session.token, employeeId: _deleteTarget.employeeId });
       document.getElementById('delModalOverlay').classList.remove('open'); _deleteTarget = null;
       if (data.success) loadEmployees(); else alert(data.error || 'Could not delete employee.');
-    } catch (err) { alert('Delete failed: ' + err.message); }
+    } catch (err) { alert('Delete failed. Please try again.'); }
     btn.disabled = false; btn.textContent = 'Delete Employee';
   });
 
@@ -1954,13 +1956,13 @@
     try {
       const data = await jsonp({ action: 'exportAttendance', token: session.token, startDate, endDate });
       if (!data.success || !Array.isArray(data.employees)) {
-        showMsg(msgEl, data.error || "Payroll export isn't set up on the backend yet.", 'error');
+        showMsg(msgEl, "No attendance data available for this range yet.", 'error');
         return;
       }
       renderPayrollReport(data.employees, { startDate, endDate, holidays });
       document.getElementById('payrollModalOverlay').classList.remove('open');
     } catch (err) {
-      showMsg(msgEl, err.message, 'error');
+      showMsg(msgEl, "No attendance data available for this range yet.", 'error');
     } finally {
       btn.disabled = false; btn.textContent = 'Generate Report';
     }
