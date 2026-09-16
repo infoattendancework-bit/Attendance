@@ -73,7 +73,7 @@
     background:linear-gradient(180deg, var(--sidebar-bg), var(--sidebar-bg-2)); z-index:100;
     display:flex; flex-direction:column; padding:20px 14px;
   }
-  .sidebar-brand { display:flex; align-items:center; gap:10px; padding:6px 8px 20px; border-radius:var(--r-sm); transition:background .15s var(--ease); }
+  .sidebar-brand { display:flex; align-items:center; gap:10px; padding:0 8px; height:var(--topbar-h); box-sizing:border-box; margin-bottom:20px; border-radius:var(--r-sm); transition:background .15s var(--ease); }
   .sidebar-brand:hover { background:rgba(255,255,255,0.06); }
   .sidebar-brand img { width:32px; height:32px; object-fit:contain; border-radius:8px; cursor:pointer; }
   .sidebar-brand-text { font-weight:700; font-size:1.02rem; color:#fff; line-height:1.15; }
@@ -386,7 +386,7 @@
 
   <div id="appShell">
     <aside class="sidebar" id="sidebar">
-      <div class="sidebar-brand" onclick="location.reload()" style="cursor:pointer;">
+      <div class="sidebar-brand" onclick="window.scrollTo({top:0, behavior:'smooth'})" style="cursor:pointer;">
         <img src="https://raw.githubusercontent.com/infoattendancework-bit/Attendance/main/logo%20(1).png" alt="logo">
         <div>
           <div class="sidebar-brand-text">Attendance</div>
