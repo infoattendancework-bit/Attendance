@@ -160,6 +160,7 @@
   <script>
     // Paste the Google Apps Script Web App URL here (see Code.gs)
     var BANNER_API_URL = 'https://script.google.com/macros/s/AKfycby56HpmJx2LxPzrT_RjaQ6zFmbT3YhIIiLm2uNA7-i7C8xJnypKPakzMtwGUwPhfaCRSA/exec';
+    var BANNER_CACHE_KEY = 'attendanceBannerCache';
 
     (function () {
       if (!BANNER_API_URL || BANNER_API_URL.indexOf('PASTE_YOUR') === 0) return;
@@ -170,37 +171,51 @@
       var linkEl = document.getElementById('bannerLink');
       var captionEl = document.getElementById('bannerCaption');
 
+      function render(data, fromCache) {
+        if (!data || !data.imageUrl) {
+          if (!fromCache) section.classList.remove('show');
+          return;
+        }
+
+        if (data.link) { linkEl.href = data.link; }
+        else { linkEl.removeAttribute('href'); linkEl.style.cursor = 'default'; }
+
+        if (data.caption) {
+          captionEl.textContent = data.caption;
+          captionEl.style.display = 'block';
+        } else {
+          captionEl.style.display = 'none';
+        }
+
+        section.classList.add('show');
+
+        if (imageEl.src === data.imageUrl && imageEl.classList.contains('loaded')) return;
+
+        imageEl.classList.remove('loaded');
+        media.classList.add('skeleton');
+        imageEl.onload = function () {
+          media.classList.remove('skeleton');
+          imageEl.classList.add('loaded');
+        };
+        imageEl.src = data.imageUrl;
+      }
+
+      // 1) Show the last-known banner INSTANTLY from cache, no network wait.
+      try {
+        var cachedRaw = localStorage.getItem(BANNER_CACHE_KEY);
+        if (cachedRaw) render(JSON.parse(cachedRaw), true);
+      } catch (e) { /* cache unavailable — fall through to network */ }
+
+      // 2) Always fetch fresh data in the background to keep it current,
+      // and silently update the cache + banner if anything changed.
       fetch(BANNER_API_URL)
         .then(function (res) { return res.json(); })
         .then(function (data) {
-          if (!data || !data.imageUrl) return; // no banner configured — stays hidden
-
-          if (data.link) {
-            linkEl.href = data.link;
-          } else {
-            linkEl.removeAttribute('href');
-            linkEl.style.cursor = 'default';
-          }
-          if (data.caption) {
-            captionEl.textContent = data.caption;
-            captionEl.style.display = 'block';
-          }
-
-          // Reveal the card frame immediately (skeleton shimmer shows
-          // right away) rather than waiting for the image bytes too —
-          // the fade-in below then swaps skeleton for the real photo
-          // the instant it's decoded, so the transition feels instant
-          // rather than a blank-to-full-image jump.
-          section.classList.add('show');
-
-          imageEl.onload = function () {
-            media.classList.remove('skeleton');
-            imageEl.classList.add('loaded');
-          };
-          imageEl.src = data.imageUrl;
+          render(data, false);
+          try { localStorage.setItem(BANNER_CACHE_KEY, JSON.stringify(data || {})); } catch (e) {}
         })
         .catch(function (err) { console.error('Banner load failed:', err); });
-    })();
+       })();
   </script>
 </body>
 </html>
