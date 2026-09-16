@@ -490,7 +490,7 @@
 
               <div class="card">
                 <div class="section-title">Attendance Trend</div>
-                <div class="section-sub">Present employees for the last 7 days.</div>
+                <div class="section-sub">Present employees for this month.</div>
                 <div class="trend-legend">
                   <div class="row"><span class="dot" style="background:var(--success);"></span>Present</div>
                   <div class="row"><span class="dot" style="background:var(--leave);"></span>Leave</div>
@@ -1311,7 +1311,9 @@
     if (wrap.dataset.loaded !== '1') wrap.innerHTML = '<div class="empty">Loading…</div>';
     const toISO = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     const dates = [];
-    for (let i = 6; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); dates.push(d); }
+    const today = new Date();
+    const daysSoFar = today.getDate(); // 1st of the month through today
+    for (let i = daysSoFar - 1; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); dates.push(d); }
     try {
       const results = await Promise.all(dates.map(d => jsonp({ action: 'getCompanyDayView', token: session.token, date: toISO(d) })));
       const points = results.map((data, i) => {
@@ -1340,7 +1342,7 @@
 
   function renderTrendSvg(points) {
     const wrap = document.getElementById('trendChartWrap');
-    const w = 560, h = 210, padL = 34, padB = 26, padT = 16, padR = 16;
+    const w = Math.max(560, points.length * 24), h = 210, padL = 34, padB = 26, padT = 16, padR = 16;
     const maxVal = Math.max(1, ...points.map(p => Math.max(p.present, p.leave, p.absent)));
     const niceMax = Math.ceil(maxVal / 5) * 5 || 5;
     const plotW = w - padL - padR, plotH = h - padT - padB;
