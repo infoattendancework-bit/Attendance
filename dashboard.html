@@ -131,7 +131,7 @@
   .stat-label { font-size:0.8rem; color:var(--muted); font-weight:600; }
   .stat-num { font-size:1.7rem; font-weight:800; color:var(--ink); margin-top:2px; }
 
-  .dash-grid-main { display:grid; grid-template-columns:1fr 380px; gap:20px; align-items:start; margin-bottom:20px; }
+  .dash-grid-main { display:grid; grid-template-columns:1fr 380px; gap:20px; align-items:stretch; margin-bottom:20px; }
   @media (max-width:1050px) { .dash-grid-main { grid-template-columns:1fr; } }
 
   .section-title { font-weight:700; font-size:1.02rem; color:var(--ink); margin:0 0 3px; }
@@ -515,6 +515,7 @@
             </div>
 
             <div>
+             <div style="display:flex; flex-direction:column;">
               <div class="card" style="margin-bottom:20px;">
                 <div class="section-title">Quick Actions</div>
                 <div class="quick-actions-grid">
@@ -545,7 +546,7 @@
                 </div>
               </div>
 
-              <div class="card">
+              <div class="card" style="flex:1;">
                 <div class="section-title">Calendar</div>
                 <div class="mini-cal" id="miniCal"></div>
                 <div class="help-box">
