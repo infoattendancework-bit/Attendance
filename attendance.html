@@ -468,9 +468,9 @@
         setTimeout(() => list.classList.remove('notices-flash'), 1400);
       }
     } catch (err) {
-      list.innerHTML = `<div class="log-empty">Couldn't load attendance — please try again.</div>`;
-    }
-    monthlyRequestInFlight = false;
+      list.innerHTML = `<div class="log-empty">Couldn't load notices — please try again.</div>`;
+    } finally {
+      noticesRequestInFlight = false;
     }
   }
 
@@ -496,7 +496,7 @@
       alert('Could not delete notice — please try again.');
       btn.disabled = false;
       btn.textContent = 'Delete';
-    }}
+    }
   }
 
   // Tapping/looking at the notices clears the "NEW" badge.
@@ -703,10 +703,11 @@
         list.innerHTML = `<div class="log-empty">${data.error || 'Could not load attendance.'}</div>`;
       }
     } catch (err) {
-      list.innerHTML = `<div class="log-empty">Loading…</div>`;
+      list.innerHTML = `<div class="log-empty">Could not load attendance. Please try again.</div>`;
     } finally {
-      noticesRequestInFlight = false;
+      monthlyRequestInFlight = false;
     }
+  }
 
   function renderMonthlyLog(days) {
     const list = document.getElementById('monthlyList');
