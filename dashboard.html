@@ -982,7 +982,7 @@
         loadEmployees();
       } else { showMsg(msg, data.error || 'Could not add employee.', 'error'); }
         } catch (err) { showMsg(msg, 'Still connecting — please try again.', 'error'); }
-    btn.disabled = false; btn.textContent = 'Add Employee & Email Credentials';;
+    btn.disabled = false; btn.textContent = 'Add Employee & Email Credentials';
   });
 
   document.getElementById('noticeSendBtn').addEventListener('click', async () => {
@@ -1420,8 +1420,8 @@
       document.getElementById('modalName').textContent = 'Error';
       document.getElementById('modalLogList').innerHTML = `<div class="modal-loading">Couldn't load this employee right now. Please try again.</div>`;
     }
-    }
   }
+  
 
   document.getElementById('modalStatusSaveBtn').addEventListener('click', async () => {
     if (!_modalEmployeeId) return;
