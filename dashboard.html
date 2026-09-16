@@ -152,6 +152,12 @@
   .summary-absent { background:var(--danger-light); } .summary-absent .num, .summary-absent .lbl { color:var(--danger); }
 
   .trend-svg-wrap { margin-top:10px; }
+  .dash-banner-media { width:100%; aspect-ratio: 40/9; border-radius:var(--r-md); overflow:hidden; position:relative; background:var(--bg); }
+  .dash-banner-media img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity .25s ease; }
+  .dash-banner-media img.loaded { opacity:1; }
+  .dash-banner-caption { margin-top:10px; font-size:0.85rem; color:var(--success); font-weight:600; }
+  .dash-banner-card { display:none; }
+  .dash-banner-card.show { display:block; }
   .trend-legend { display:flex; gap:16px; font-size:0.78rem; margin-bottom:6px; }
   .trend-legend .row { display:flex; align-items:center; gap:6px; }
   .trend-legend .dot { width:8px; height:8px; border-radius:50%; }
@@ -496,7 +502,15 @@
                   <div class="row"><span class="dot" style="background:var(--leave);"></span>Leave</div>
                   <div class="row"><span class="dot" style="background:var(--danger);"></span>Absent</div>
                 </div>
-                <div class="trend-svg-wrap" id="trendChartWrap"><div class="empty">Loading…</div></div>
+              <div class="trend-svg-wrap" id="trendChartWrap"><div class="empty">Loading…</div></div>
+              </div>
+              <div class="card dash-banner-card" id="dashBannerCard" style="margin-top:20px;">
+                <a id="dashBannerLink" href="#" target="_blank" rel="noopener">
+                  <div class="dash-banner-media">
+                    <img id="dashBannerImg" src="" alt="Announcement banner">
+                  </div>
+                </a>
+                <div class="dash-banner-caption" id="dashBannerCaption" style="display:none;"></div>
               </div>
             </div>
 
@@ -866,6 +880,7 @@
     loadMonthlyLeaveByDate();
     loadAttendanceTrend();
     startAutoRefresh();
+    loadDashboardBanner();
   }
 
   function updateGreeting() {
@@ -907,6 +922,41 @@
       loadThreeMonthOverview();
       loadMonthlyLeaveByDate();
     }, slowIntervalMs);
+  }
+
+    var BANNER_API_URL = 'https://script.google.com/macros/s/AKfycby56HpmJx2LxPzrT_RjaQ6zFmbT3YhIIiLm2uNA7-i7C8xJnypKPakzMtwGUwPhfaCRSA/exec';
+  var BANNER_CACHE_KEY = 'attendanceBannerCache';
+
+  function loadDashboardBanner() {
+    var card = document.getElementById('dashBannerCard');
+    var img = document.getElementById('dashBannerImg');
+    var link = document.getElementById('dashBannerLink');
+    var caption = document.getElementById('dashBannerCaption');
+    if (!card || !BANNER_API_URL) return;
+
+    function render(data) {
+      if (!data || !data.imageUrl) return;
+      if (data.link) link.href = data.link; else link.removeAttribute('href');
+      if (data.caption) { caption.textContent = data.caption; caption.style.display = 'block'; }
+      card.classList.add('show');
+      if (img.src === data.imageUrl && img.classList.contains('loaded')) return;
+      img.classList.remove('loaded');
+      img.onload = function () { img.classList.add('loaded'); };
+      img.src = data.imageUrl;
+    }
+
+    try {
+      var cached = localStorage.getItem(BANNER_CACHE_KEY);
+      if (cached) render(JSON.parse(cached));
+    } catch (e) {}
+
+    fetch(BANNER_API_URL)
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        render(data);
+        try { localStorage.setItem(BANNER_CACHE_KEY, JSON.stringify(data || {})); } catch (e) {}
+      })
+      .catch(function () {});
   }
 
   (async function initSession() {
