@@ -1514,10 +1514,12 @@
     if (name === 'leave') loadMonthlyLeaveByDate();
     document.getElementById('sidebar').classList.remove('open');
   }
-  document.querySelectorAll('.nav-item').forEach(btn => {
+document.querySelectorAll('.nav-item').forEach(btn => {
     btn.addEventListener('click', () => {
-      switchView(btn.dataset.view);
+      const alreadyOnThisView = document.getElementById('view' + btn.dataset.view.charAt(0).toUpperCase() + btn.dataset.view.slice(1)).classList.contains('active');
+      if (!alreadyOnThisView) switchView(btn.dataset.view);
       if (btn.dataset.export) setTimeout(openPayrollModal, 400);
+      document.getElementById('sidebar').classList.remove('open');
     });
   });
   document.getElementById('qaAddEmployee').addEventListener('click', () => { switchView('dashboard'); document.getElementById('empName').scrollIntoView({behavior:'smooth', block:'center'}); document.getElementById('empName').focus(); });
