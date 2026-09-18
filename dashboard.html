@@ -841,6 +841,23 @@
   const SESSION_KEY = 'attendanceDashboardSession';
   let session = null;
 
+  // Escapes user-supplied text before it's dropped into innerHTML template
+  // strings (employee name/email, notice content pulled through here, etc).
+  // Employee name/email is admin-entered at addEmployee time and then
+  // rendered back across the employee list, day view, leave view, stat
+  // drill-downs and the employee detail modal — every one of those uses
+  // innerHTML, so without this a name containing '<'/'>' would execute as
+  // live HTML anywhere it's displayed. Mirrors the same fix already applied
+  // to notices in the employee-facing index.html.
+  function escapeHtml(str) {
+    return String(str == null ? '' : str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   function showScreen(name) {
     document.getElementById('restoreScreen').style.display = name === 'restore' ? 'flex' : 'none';
     document.getElementById('loginScreen').style.display = name === 'login' ? 'flex' : 'none';
@@ -916,13 +933,13 @@
     // No password is ever persisted, so there's nothing to re-login with here.
     // We trust the cached token; any action call with an expired/invalid token
     // will fail server-side and should route the user back to login (see
-    // handleAuthFailure below — wire this into your backend's error contract).
+    // handleAuthFailure below — wired into jsonp() itself, see below).
     if (!saved.token) { clearSession(); showScreen('login'); return; }
     enterDashboard(saved);
   })();
 
   // Call this from any jsonp() action handler when the backend reports the
-  // token is invalid/expired, e.g.: if (data.error === 'invalid_session') handleAuthFailure();
+  // token is invalid/expired.
   function handleAuthFailure() {
     clearSession(); session = null; showScreen('login');
   }
@@ -932,7 +949,19 @@
       const cbName = 'cb_' + Math.random().toString(36).substring(2, 11);
       const timeout = setTimeout(() => { cleanup(); reject(new Error('Still connecting. Please try again.')); }, 15000);
       function cleanup() { clearTimeout(timeout); delete window[cbName]; if (script.parentNode) script.parentNode.removeChild(script); }
-      window[cbName] = (data) => { cleanup(); resolve(data); };
+      window[cbName] = (data) => {
+        cleanup();
+        // Every action that requires a logged-in company goes through
+        // requireApprovedCompany() on the backend, which returns
+        // sessionExpired:true once the 6-hour token has expired or is
+        // otherwise invalid. Catch that centrally here — in the one place
+        // every action response passes through — instead of relying on
+        // each individual caller to check for it (most don't).
+        if (data && data.sessionExpired && session) {
+          handleAuthFailure();
+        }
+        resolve(data);
+      };
       const qs = new URLSearchParams({ ...params, callback: cbName }).toString();
       const script = document.createElement('script');
       script.src = APPS_SCRIPT_URL + '?' + qs;
@@ -1019,7 +1048,7 @@
   };
   function pillHtml(bucket, rawStatus) {
     const meta = BUCKET_META[bucket] || BUCKET_META.offline;
-    return `<span class="pill ${meta.pillClass}">${rawStatus}</span>`;
+    return `<span class="pill ${meta.pillClass}">${escapeHtml(rawStatus)}</span>`;
   }
   function resolvedColor(cssVarName) { return getComputedStyle(document.documentElement).getPropertyValue(cssVarName).trim(); }
 
@@ -1098,8 +1127,8 @@
       const row = document.createElement('div');
       row.className = 'leave-name-row';
       row.style.cursor = 'pointer';
-      row.innerHTML = `<div class="emp-avatar" style="background:${avatarColor(emp.name)};width:30px;height:30px;font-size:0.72rem;">${initials(emp.name)}</div>
-        <div style="flex:1;"><div class="emp-name-text">${emp.name}</div><div class="emp-email-text">${emp.employeeId}</div></div>
+      row.innerHTML = `<div class="emp-avatar" style="background:${avatarColor(emp.name)};width:30px;height:30px;font-size:0.72rem;">${escapeHtml(initials(emp.name))}</div>
+        <div style="flex:1;"><div class="emp-name-text">${escapeHtml(emp.name)}</div><div class="emp-email-text">${escapeHtml(emp.employeeId)}</div></div>
         ${pillHtml(bucket, emp.status || (bucket === 'offline' ? 'Offline' : bucket))}`;
       row.addEventListener('click', () => { document.getElementById('statDetailModalOverlay').classList.remove('open'); openEmployeeModal(emp.employeeId); });
       body.appendChild(row);
@@ -1140,7 +1169,7 @@
         const dayLabel = new Date(d.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         const row = document.createElement('div');
         row.className = 'leave-date-row';
-        row.innerHTML = `<span class="leave-date-label">${dayLabel}</span>
+        row.innerHTML = `<span class="leave-date-label">${escapeHtml(dayLabel)}</span>
           <span class="leave-date-right"><span class="leave-date-count">${d.count}</span>
           <svg class="leave-date-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>`;
         row.addEventListener('click', () => openLeaveDayModal(d.date, dayLabel));
@@ -1172,8 +1201,8 @@
       onLeave.forEach(emp => {
         const row = document.createElement('div');
         row.className = 'leave-name-row';
-        row.innerHTML = `<div class="emp-avatar" style="background:${avatarColor(emp.name)};width:30px;height:30px;font-size:0.72rem;">${initials(emp.name)}</div>
-          <div><div class="emp-name-text">${emp.name}</div><div class="emp-email-text">${emp.employeeId}</div></div>`;
+        row.innerHTML = `<div class="emp-avatar" style="background:${avatarColor(emp.name)};width:30px;height:30px;font-size:0.72rem;">${escapeHtml(initials(emp.name))}</div>
+          <div><div class="emp-name-text">${escapeHtml(emp.name)}</div><div class="emp-email-text">${escapeHtml(emp.employeeId)}</div></div>`;
         body.appendChild(row);
       });
     } catch (err) {
@@ -1215,7 +1244,7 @@
         block.className = 'month-block';
         block.style.cursor = 'pointer';
         block.title = `View details for ${label}`;
-        block.innerHTML = `<div class="month-block-title">${label}</div><div class="month-block-stats">
+        block.innerHTML = `<div class="month-block-title">${escapeHtml(label)}</div><div class="month-block-stats">
           <div class="summary-card summary-online"><div class="num">${present}</div><div class="lbl">Present</div></div>
           <div class="summary-card summary-leave"><div class="num">${leave}</div><div class="lbl">Leave</div></div>
           <div class="summary-card summary-absent"><div class="num">${absent}</div><div class="lbl">Absent</div></div>
@@ -1267,7 +1296,7 @@
 
     data.employees.forEach(e => {
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${e.name || e.employeeId}</td>
+      tr.innerHTML = `<td>${escapeHtml(e.name || e.employeeId)}</td>
         <td style="color:var(--success);font-weight:700;">${e.present || 0}</td>
         <td style="color:var(--leave);font-weight:700;">${e.leave || 0}</td>
         <td style="color:var(--danger);font-weight:700;">${e.absent || 0}</td>
@@ -1291,8 +1320,11 @@
       const pW = (r.present||0) / maxVal * plotW;
       const lW = (r.leave||0) / maxVal * plotW;
       const aW = (r.absent||0) / maxVal * plotW;
-      const name = (r.name || r.employeeId || '').length > 14 ? (r.name || r.employeeId).slice(0,13) + '…' : (r.name || r.employeeId);
-      svg += `<text x="${padL - 10}" y="${y + barH/2 + 4}" font-size="11" fill="${resolvedColor('--text')}" text-anchor="end">${name}</text>`;
+      const rawName = (r.name || r.employeeId || '');
+      const name = rawName.length > 14 ? rawName.slice(0,13) + '…' : rawName;
+      // SVG text content — escaped the same as HTML since '<'/'>'/'&' are
+      // just as live inside an inline <svg><text> node as they are in HTML.
+      svg += `<text x="${padL - 10}" y="${y + barH/2 + 4}" font-size="11" fill="${resolvedColor('--text')}" text-anchor="end">${escapeHtml(name)}</text>`;
       let x = padL;
       if (pW > 0) { svg += `<rect x="${x}" y="${y}" width="${pW}" height="${barH}" rx="3" fill="${resolvedColor('--success')}"/>`; x += pW; }
       if (lW > 0) { svg += `<rect x="${x}" y="${y}" width="${lW}" height="${barH}" rx="3" fill="${resolvedColor('--leave')}"/>`; x += lW; }
@@ -1379,7 +1411,7 @@
     svg += seriesGroup('leave', resolvedColor('--leave'));
     svg += seriesGroup('present', resolvedColor('--success'));
     points.forEach((p, i) => {
-      svg += `<text x="${xAt(i)}" y="${h - 4}" font-size="10" fill="${resolvedColor('--muted')}" text-anchor="middle">${p.label}</text>`;
+      svg += `<text x="${xAt(i)}" y="${h - 4}" font-size="10" fill="${resolvedColor('--muted')}" text-anchor="middle">${escapeHtml(p.label)}</text>`;
     });
     svg += `</svg>`;
     wrap.innerHTML = svg;
@@ -1406,12 +1438,14 @@
       const data = await jsonp({ action: 'getEmployeeDetail', token: session.token, employeeId });
       if (!data.success) {
         document.getElementById('modalName').textContent = 'Error';
-        document.getElementById('modalLogList').innerHTML = `<div class="modal-loading">${data.error || 'Could not load employee.'}</div>`;
+        document.getElementById('modalLogList').innerHTML = `<div class="modal-loading">${escapeHtml(data.error || 'Could not load employee.')}</div>`;
         return;
       }
+      // textContent is safe by construction (no HTML parsing), so name/id
+      // stay as-is here; only the innerHTML assignment below needs escaping.
       document.getElementById('modalName').textContent = data.employee.name;
       document.getElementById('modalId').textContent = 'ID: ' + data.employee.employeeId;
-      document.getElementById('modalEmail').innerHTML = '<b>Email:</b> ' + data.employee.email;
+      document.getElementById('modalEmail').innerHTML = '<b>Email:</b> ' + escapeHtml(data.employee.email);
       const bucket = data.status === 'On Leave' ? 'leave' : data.status === 'Break' ? 'break' : (data.status === 'Online' || data.status === 'Back') ? 'online' : 'offline';
       document.getElementById('modalStatusPill').innerHTML = pillHtml(bucket, data.status);
       const statusSelect = document.getElementById('modalStatusSelect');
@@ -1467,7 +1501,7 @@
     if (!log.length) { logList.innerHTML = '<div class="modal-log-empty">No activity for this date.</div>'; return; }
     log.slice().reverse().forEach(entry => {
       const row = document.createElement('div'); row.className = 'modal-log-row';
-      row.innerHTML = `<span>${entry.status}${mapLink(entry.lat, entry.lng)}</span><span>${entry.time}</span>`;
+      row.innerHTML = `<span>${escapeHtml(entry.status)}${mapLink(entry.lat, entry.lng)}</span><span>${escapeHtml(entry.time)}</span>`;
       logList.appendChild(row);
     });
   }
@@ -1480,7 +1514,7 @@
     try {
       const data = await jsonp({ action: 'getEmployeeDayLog', token: session.token, employeeId, date: dateStr });
       if (data.success) renderDayLog(data.log || []);
-      else logList.innerHTML = `<div class="modal-log-empty">${data.error || "This backend doesn't support looking up a specific past date yet."}</div>`;
+      else logList.innerHTML = `<div class="modal-log-empty">${escapeHtml(data.error || "This backend doesn't support looking up a specific past date yet.")}</div>`;
     } catch (err) { logList.innerHTML = `<div class="modal-log-empty">No activity data available.</div>`; }
   }
   document.getElementById('modalDatePicker').addEventListener('change', (e) => { if (_modalEmployeeId) loadEmployeeDayLog(_modalEmployeeId, e.target.value); });
@@ -1579,11 +1613,11 @@ document.querySelectorAll('.nav-item').forEach(btn => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td style="color:var(--muted);font-size:0.88rem;">${idx + 1}</td>
-          <td style="font-size:0.85rem;color:var(--muted);font-family:monospace;">${emp.employeeId}</td>
-          <td><div class="emp-name-cell"><div class="emp-avatar" style="background:${avatarColor(emp.name)};">${initials(emp.name)}</div><div class="emp-name-text">${emp.name}</div></div></td>
+          <td style="font-size:0.85rem;color:var(--muted);font-family:monospace;">${escapeHtml(emp.employeeId)}</td>
+          <td><div class="emp-name-cell"><div class="emp-avatar" style="background:${avatarColor(emp.name)};">${escapeHtml(initials(emp.name))}</div><div class="emp-name-text">${escapeHtml(emp.name)}</div></div></td>
           <td>${pillHtml(bucket, emp.status || '—')}</td>
-          <td style="font-size:0.85rem;color:var(--muted);">${emp.firstIn || '—'}</td>
-          <td style="font-size:0.85rem;color:var(--muted);">${emp.lastOut || '—'}</td>`;
+          <td style="font-size:0.85rem;color:var(--muted);">${escapeHtml(emp.firstIn || '—')}</td>
+          <td style="font-size:0.85rem;color:var(--muted);">${escapeHtml(emp.lastOut || '—')}</td>`;
         body.appendChild(tr);
       });
     } catch (err) { strip.innerHTML = ''; empty.style.display = 'block'; empty.textContent = 'No data for this date.'; }
@@ -1735,11 +1769,11 @@ document.querySelectorAll('.nav-item').forEach(btn => {
     let totalWork = 0; let d = new Date(effectiveStart);
     while (d <= effectiveEnd) { if (d.getDay() !== 0) totalWork++; d.setDate(d.getDate() + 1); }
     let attended = 0;
-    if (emp.monthSummary && typeof emp.monthSummary.present === 'number') attended = emp.monthSummary.present;
-    else { const activeToday = ['online','break'].includes(emp.statusBucket) ? 1 : 0; attended = Math.max(activeToday, Math.round(totalWork * 0.75)); }
+    let hasData = false;
+    if (emp.monthSummary && typeof emp.monthSummary.present === 'number') { attended = emp.monthSummary.present; hasData = true; }
     attended = Math.min(attended, totalWork);
     const pct = totalWork > 0 ? Math.round((attended / totalWork) * 100) : 0;
-    return { attended, total: totalWork, pct, isNewJoiner };
+    return { attended, total: totalWork, pct, isNewJoiner, noData: !hasData };
   }
 
   function applyFilters() {
@@ -1779,13 +1813,13 @@ document.querySelectorAll('.nav-item').forEach(btn => {
     document.getElementById('empListCountText').textContent = `Showing ${start + 1} to ${Math.min(start + PAGE_SIZE, total)} of ${total} employee${total !== 1 ? 's' : ''}`;
     pageEmps.forEach((emp, idx) => {
       const isOnline = emp.statusBucket === 'online';
-      const pillHtmlStr = isOnline ? `<span class="status-pill-online"><span class="status-dot dot-green"></span>Online</span>` : `<span class="status-pill-offline"><span class="status-dot dot-gray"></span>${emp.status || 'Offline'}</span>`;
-      const emailPart = emp.email ? `<div class="emp-email-text">${emp.email}</div>` : '';
+      const pillHtmlStr = isOnline ? `<span class="status-pill-online"><span class="status-dot dot-green"></span>Online</span>` : `<span class="status-pill-offline"><span class="status-dot dot-gray"></span>${escapeHtml(emp.status || 'Offline')}</span>`;
+      const emailPart = emp.email ? `<div class="emp-email-text">${escapeHtml(emp.email)}</div>` : '';
       const bg = avatarColor(emp.name);
       const wd = calcWorkingDays(emp);
       let wdHtml = '';
       if (wd.notYetJoined) wdHtml = `<div class="working-days-cell"><span class="wd-joined">Not yet in cycle</span></div>`;
-      else if (wd.total === 0) wdHtml = `<div class="working-days-cell"><span class="wd-number">—</span><span class="wd-label">No data</span></div>`;
+      else if (wd.total === 0 || wd.noData) wdHtml = `<div class="working-days-cell"><span class="wd-number">—</span><span class="wd-label">No data</span></div>`;
       else {
         const barW = Math.min(100, wd.pct);
         const joinNote = wd.isNewJoiner ? `<span class="wd-joined">★ New joiner</span>` : '';
@@ -1795,15 +1829,15 @@ document.querySelectorAll('.nav-item').forEach(btn => {
       const tr = document.createElement('tr'); tr.style.cursor = 'pointer';
       tr.innerHTML = `
         <td style="color:var(--muted);font-size:0.88rem;">${start + idx + 1}</td>
-        <td style="font-size:0.85rem;color:var(--muted);font-family:monospace;">${emp.employeeId}</td>
-        <td><div class="emp-name-cell"><div class="emp-avatar" style="background:${bg};">${initials(emp.name)}</div><div><div class="emp-name-text">${emp.name}</div>${emailPart}</div></div></td>
+        <td style="font-size:0.85rem;color:var(--muted);font-family:monospace;">${escapeHtml(emp.employeeId)}</td>
+        <td><div class="emp-name-cell"><div class="emp-avatar" style="background:${bg};">${escapeHtml(initials(emp.name))}</div><div><div class="emp-name-text">${escapeHtml(emp.name)}</div>${emailPart}</div></div></td>
         <td>${pillHtmlStr}</td>
-        <td class="emp-location-cell" data-empid="${emp.employeeId}" style="font-size:0.82rem;color:var(--muted);max-width:150px;">
+        <td class="emp-location-cell" data-empid="${escapeHtml(emp.employeeId)}" style="font-size:0.82rem;color:var(--muted);max-width:150px;">
           <div style="display:flex;align-items:center;gap:5px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;color:var(--primary);"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          <span class="loc-text" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${emp.locationName || '—'}</span></div></td>
+          <span class="loc-text" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(emp.locationName || '—')}</span></div></td>
         <td>${wdHtml}</td>
-        <td style="font-size:0.85rem;color:var(--muted);white-space:nowrap;">${formatLastActivity(emp)}</td>
-        <td><button class="delete-emp-btn" data-id="${emp.employeeId}" data-name="${emp.name.replace(/"/g,'&quot;')}">Delete</button></td>`;
+        <td style="font-size:0.85rem;color:var(--muted);white-space:nowrap;">${escapeHtml(formatLastActivity(emp))}</td>
+        <td><button class="delete-emp-btn" data-id="${escapeHtml(emp.employeeId)}" data-name="${escapeHtml(emp.name)}">Delete</button></td>`;
       if (!emp.locationName && emp.lat && emp.lng) reverseGeocode(emp.lat, emp.lng).then(name => { const cell = tr.querySelector('.loc-text'); if (cell) cell.textContent = name; });
       tr.addEventListener('click', (e) => { if (e.target.closest('.delete-emp-btn')) return; openEmployeeModal(emp.employeeId); });
       body.appendChild(tr);
@@ -1815,7 +1849,9 @@ document.querySelectorAll('.nav-item').forEach(btn => {
   let _deleteTarget = null;
   function openDeleteModal(employeeId, name) {
     _deleteTarget = { employeeId, name };
-    document.getElementById('delModalDesc').innerHTML = `This will permanently remove <b>${name}</b> (${employeeId}) and all their attendance data. This action cannot be undone.`;
+    // employeeId/name here come from dataset (already HTML-decoded by the
+    // browser), so they're escaped again before going back into innerHTML.
+    document.getElementById('delModalDesc').innerHTML = `This will permanently remove <b>${escapeHtml(name)}</b> (${escapeHtml(employeeId)}) and all their attendance data. This action cannot be undone.`;
     document.getElementById('delModalOverlay').classList.add('open');
   }
   document.getElementById('delModalCancel').addEventListener('click', () => { document.getElementById('delModalOverlay').classList.remove('open'); _deleteTarget = null; });
@@ -1987,7 +2023,10 @@ document.querySelectorAll('.nav-item').forEach(btn => {
       const nameStyle = overLeave ? ` style="color:${brand};font-weight:700;"` : '';
       const flag = overLeave ? ` <span style="color:${brand};font-weight:700;font-size:11px;">&#9679; over holiday quota</span>` : '';
       const cellStyle = overLeave ? `color:${brand};font-weight:700;` : '';
-      return `<tr${rowStyle}><td>${r.employeeId}</td><td${nameStyle}>${r.name}${flag}</td><td>${emailById[r.employeeId] || ''}</td>
+      // This HTML is opened in a brand-new window via document.write — its own
+      // origin, but still a place employee-supplied name/email get rendered,
+      // so escape them the same as everywhere else.
+      return `<tr${rowStyle}><td>${escapeHtml(r.employeeId)}</td><td${nameStyle}>${escapeHtml(r.name)}${flag}</td><td>${escapeHtml(emailById[r.employeeId] || '')}</td>
         <td style="text-align:center;">${r.present || 0}</td><td style="text-align:center;${cellStyle}">${leave}</td>
         <td style="text-align:center;${cellStyle}">${absent}</td><td style="text-align:center;">${r.totalDays || 0}</td></tr>`;
     }).join('');
