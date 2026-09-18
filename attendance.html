@@ -226,6 +226,20 @@
   let session = null; // { employeeId, password }
   let monthlyLoaded = false; // tracks whether the monthly panel has fetched data yet
 
+  // Escapes user-supplied text before it's dropped into innerHTML template
+  // strings (notice subject/message). Notices are normally written by a
+  // trusted company admin, but without this, any '<'/'>' typed into a
+  // notice renders as live HTML in every employee's browser instead of
+  // plain text.
+  function escapeHtml(str) {
+    return String(str == null ? '' : str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   // ============ PWA install + service worker + OS notifications ============
   let swRegistration = null;
   let deferredInstallPrompt = null;
@@ -343,15 +357,16 @@
     // lazily the first time the user opens the "Monthly Attendance" panel.
   }
 
-  // ---- Notices: auto-poll every 1 second while logged in ----
-  // NOTE: 1 second is very aggressive — every tick hits the Apps Script
-  // backend (which opens the spreadsheet and reads the Notices sheet),
-  // and Apps Script's daily execution-time quota is shared across every
-  // user of this deployment. With several employees logged in at once
-  // this can burn through that quota quickly and start failing OTHER
-  // actions (status taps, admin dashboard, etc). Raise NOTICES_POLL_MS
-  // below (e.g. 20000-30000) if you see quota errors.
-  const NOTICES_POLL_MS = 1000;
+  // ---- Notices: auto-poll while logged in ----
+  // FIX: this was 1000ms (every second). Every tick hits the Apps Script
+  // backend (which opens the spreadsheet and reads the Notices sheet), and
+  // Apps Script's daily execution-time quota is shared across every user
+  // of this deployment. With 100+ companies x 30-100 employees each all
+  // polling once a second, that burns through the shared quota fast and
+  // starts failing OTHER actions (status taps, admin dashboard, etc).
+  // Raised to 25s, which still surfaces a new notice well within half a
+  // minute but cuts request volume by ~25x.
+  const NOTICES_POLL_MS = 25000;
   let noticesPollTimer = null;
   let noticesRequestInFlight = false; // guards against overlapping calls if a request runs long
 
@@ -434,7 +449,7 @@
       _suppressNextNoticeAlert = false;
 
       // Nothing changed since the last render — skip the rebuild so the
-      // list doesn't flicker on every 1-second poll tick.
+      // list doesn't flicker on every poll tick.
       const fingerprint = JSON.stringify(data.notices.map(n => n.id));
       if (fingerprint === _lastNoticesFingerprint) return;
       _lastNoticesFingerprint = fingerprint;
@@ -448,10 +463,13 @@
       data.notices.forEach(n => {
         const row = document.createElement('div');
         row.className = 'notice-item';
-        row.innerHTML = `<button class="notice-delete-btn" data-id="${n.id}">Delete</button>
-          <div class="notice-subject">${n.subject}</div>
-          <div class="notice-message">${n.message}</div>
-          <div class="notice-time">${n.timestamp}</div>`;
+        // FIX: subject/message are now escaped before being interpolated
+        // into innerHTML, so a notice containing '<'/'>' renders as plain
+        // text instead of being parsed as HTML.
+        row.innerHTML = `<button class="notice-delete-btn" data-id="${escapeHtml(n.id)}">Delete</button>
+          <div class="notice-subject">${escapeHtml(n.subject)}</div>
+          <div class="notice-message">${escapeHtml(n.message)}</div>
+          <div class="notice-time">${escapeHtml(n.timestamp)}</div>`;
         list.appendChild(row);
       });
 
@@ -603,7 +621,7 @@
       log.slice().reverse().forEach(entry => {
         const row = document.createElement('div');
         row.className = 'log-row';
-        row.innerHTML = `<span>${entry.status}${mapLink(entry.lat, entry.lng)}</span><span>${entry.time}</span>`;
+        row.innerHTML = `<span>${escapeHtml(entry.status)}${mapLink(entry.lat, entry.lng)}</span><span>${escapeHtml(entry.time)}</span>`;
         logList.appendChild(row);
       });
     }
@@ -700,7 +718,7 @@
       if (data.success) {
         renderMonthlyLog(data.days || []);
       } else {
-        list.innerHTML = `<div class="log-empty">${data.error || 'Could not load attendance.'}</div>`;
+        list.innerHTML = `<div class="log-empty">${escapeHtml(data.error || 'Could not load attendance.')}</div>`;
       }
     } catch (err) {
       list.innerHTML = `<div class="log-empty">Could not load attendance. Please try again.</div>`;
@@ -727,7 +745,7 @@
       row.className = 'log-row';
       const statusSlugged = statusSlug(d.status || 'Absent');
       const timeInfo = d.firstIn ? `${d.firstIn}${d.lastOut ? ' – ' + d.lastOut : ''}` : '';
-      row.innerHTML = `<span>${d.date}${timeInfo ? ' <span class="hint" style="display:inline;">(' + timeInfo + ')</span>' : ''}</span><span class="day-status day-status-${statusSlugged}">${d.status || '—'}</span>`;
+      row.innerHTML = `<span>${escapeHtml(d.date)}${timeInfo ? ' <span class="hint" style="display:inline;">(' + escapeHtml(timeInfo) + ')</span>' : ''}</span><span class="day-status day-status-${statusSlugged}">${escapeHtml(d.status || '—')}</span>`;
       list.appendChild(row);
     });
   }
