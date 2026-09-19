@@ -122,9 +122,18 @@
   .filter-chip .count { color:inherit; opacity:0.7; margin-left:5px; }
   .filter-chip:hover { background:var(--bg); }
   .filter-chip.active { background:var(--sidebar-active); border-color:var(--sidebar-active); color:#fff; }
-  .companies-search-row { display:flex; gap:8px; }
-  .companies-search-row input { margin-bottom:0; flex:1; }
+  .companies-search-row { display:flex; gap:8px; position:relative; }
+  .companies-search-row input { margin-bottom:0; flex:1; padding-right:34px; }
   .companies-search-row button { flex:none; width:auto; padding:11px 16px; }
+  .search-clear-btn {
+    position:absolute; right:8px; top:50%; transform:translateY(-50%); flex:none; width:22px; height:22px;
+    border-radius:50%; background:var(--bg); color:var(--muted); border:none; padding:0; font-size:0.85rem;
+    line-height:1; cursor:pointer; display:none; align-items:center; justify-content:center;
+  }
+  .search-clear-btn.visible { display:flex; }
+  .search-clear-btn:hover { background:var(--border); color:var(--text); }
+  .search-result-hint { font-size:0.78rem; color:var(--muted); margin:-4px 0 0; }
+  mark.search-hit { background:#fef08a; color:inherit; border-radius:3px; padding:0 1px; }
 
   /* ---- Company management: master (list) + detail layout ---- */
   .companies-layout { display:flex; align-items:flex-start; gap:20px; }
@@ -137,6 +146,7 @@
     background:#fff; cursor:pointer; transition:background 0.12s ease, border-color 0.12s ease;
   }
   .company-row:hover { background:var(--bg); }
+  .company-row:focus-visible { outline:2px solid var(--sidebar-active); outline-offset:1px; }
   .company-row.selected { background:#eef2ff; border-color:var(--sidebar-active); border-left-color:var(--sidebar-active); }
   .company-row.status-pending { border-left-color:var(--warn); }
   .company-row.status-approved { border-left-color:var(--success); }
@@ -178,6 +188,8 @@
   .stat-chip.billing-yearly { border-color:#ddd6fe; background:#f5f3ff; }
   .stat-chip.billing-yearly .stat-value { color:#6d28d9; }
   .company-empty { color:var(--muted); font-size:0.85rem; text-align:center; padding:14px 0; }
+  .company-empty .empty-clear-link { display:inline-block; margin-top:6px; color:var(--sidebar-active); cursor:pointer; font-weight:600; background:none; border:none; padding:0; font:inherit; }
+  .company-empty .empty-clear-link:hover { text-decoration:underline; }
 
   @media (max-width: 980px) {
     .companies-layout { flex-direction:column; }
@@ -418,8 +430,10 @@
           </div>
           <div class="companies-search-row">
             <input type="search" id="companiesSearchInput" placeholder="Search by name, code, or email...">
+            <button type="button" class="search-clear-btn" id="searchClearBtn" title="Clear search" aria-label="Clear search">&times;</button>
             <button class="btn-secondary" id="refreshCompaniesBtn" type="button">Refresh</button>
           </div>
+          <div class="search-result-hint" id="searchResultHint" style="display:none;"></div>
         </div>
 
         <div class="companies-layout">
@@ -706,13 +720,6 @@
   });
 
   // ---- Banner "Forgot password?" flow ----
-  // NOTE: this calls action 'requestPasswordReset' / 'resetBannerPassword'
-  // on BANNER_API_URL. That backend is a separate Apps Script project not
-  // covered by this update — add matching handlers there (mirroring the
-  // requestSuperAdminReset/resetSuperAdminKey pattern used below for
-  // APPS_SCRIPT_URL) before this will actually work end-to-end. Until then
-  // this will show whatever error that backend returns for an unknown
-  // action, or "Could not reach the server" if it 404s.
   var bannerForgotLink = document.getElementById('bannerForgotLink');
   var bannerResetPanel = document.getElementById('bannerResetPanel');
   var bannerRequestResetBtn = document.getElementById('bannerRequestResetBtn');
@@ -928,8 +935,6 @@
   }
 
   function tierRangesOverlapOrGap(tiers) {
-    // Sort a copy by min and check that ranges are contiguous and ordered,
-    // catching a mistake before it's sent to the server.
     var sorted = tiers.slice().sort(function (a, b) { return a.min - b.min; });
     for (var i = 0; i < sorted.length; i++) {
       var t = sorted[i];
@@ -970,8 +975,6 @@
   }
 
   function loadPricingForEditing() {
-    // getPricingConfig is public (no key needed) — used here just to
-    // pre-fill the form with whatever is currently live.
     pricingCall({ action: 'getPricingConfig' })
       .then(function (data) {
         if (data && data.success) {
@@ -995,9 +998,6 @@
       pricingLoginStatus.className = 'status error';
       return;
     }
-    // There's no separate "check key" action — the key is verified for
-    // real the first time you Save. Unlocking just reveals the editor
-    // and loads current pricing so you can review before saving.
     sessionAdminKey = key;
     pricingLoginCard.style.display = 'none';
     pricingCard.style.display = 'block';
@@ -1062,8 +1062,6 @@
           pricingStatus.textContent = 'Save failed: ' + (data && data.error ? data.error : 'unknown error');
           pricingStatus.className = 'status error';
           if (data && data.error === 'Not authorized.') {
-            // Wrong/missing key — send them back to unlock so they don't
-            // keep hammering Save with a bad key.
             sessionAdminKey = null;
             pricingCard.style.display = 'none';
             pricingLoginCard.style.display = 'block';
@@ -1094,6 +1092,8 @@
   var companiesStatus = document.getElementById('companiesStatus');
   var companiesSearchInput = document.getElementById('companiesSearchInput');
   var companiesFilters = document.getElementById('companiesFilters');
+  var searchClearBtn = document.getElementById('searchClearBtn');
+  var searchResultHint = document.getElementById('searchResultHint');
 
   var sessionCompaniesKey = null; // kept in memory only for this page load, never stored
   var allCompanies = [];          // last full list fetched from the server
@@ -1125,6 +1125,23 @@
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
+  // Escapes regex special characters in a raw search token before it's
+  // used to build a RegExp for highlighting.
+  function escapeRegExp(s) {
+    return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  // Wraps every case-insensitive occurrence of any given token in <mark>,
+  // used to visually highlight what matched inside a list row.
+  function highlightTokens(text, tokens) {
+    var safe = escapeHtml(text);
+    if (!tokens || !tokens.length) return safe;
+    var pattern = tokens.map(escapeRegExp).join('|');
+    if (!pattern) return safe;
+    var re = new RegExp('(' + pattern + ')', 'ig');
+    return safe.replace(re, '<mark class="search-hit">$1</mark>');
+  }
+
   function updateFilterCounts(companies) {
     var counts = { all: companies.length, pending: 0, approved: 0, rejected: 0 };
     companies.forEach(function (c) {
@@ -1139,15 +1156,34 @@
   // Applies the active status filter + search text on top of the last
   // fetched list, then renders — so filtering/searching never needs a
   // fresh server round-trip.
+  //
+  // The search box is matched a few different ways so that copying the
+  // exact label shown in a row (e.g. "Kaazi (KAA5254)") always works,
+  // not just a search on one field at a time:
+  //   1. Split the query into whitespace-separated tokens.
+  //   2. A company matches if EVERY token is found somewhere in its
+  //      name, code, email, OR the combined "Name (CODE)" label —
+  //      so "kaazi kaa5254", "kaazi (kaa5254)", or just "kaa52" all work.
   function applyFiltersAndRender() {
-    var query = companiesSearchInput.value.trim().toLowerCase();
+    var rawQuery = companiesSearchInput.value.trim();
+    searchClearBtn.classList.toggle('visible', rawQuery.length > 0);
+
+    var tokens = rawQuery.toLowerCase().split(/\s+/).filter(Boolean);
+
     var filtered = allCompanies.filter(function (c) {
       if (activeStatusFilter !== 'all' && c.status !== activeStatusFilter) return false;
-      if (!query) return true;
-      return (c.companyName || '').toLowerCase().indexOf(query) !== -1 ||
-             (c.companyCode || '').toLowerCase().indexOf(query) !== -1 ||
-             (c.adminEmail || '').toLowerCase().indexOf(query) !== -1;
+      if (!tokens.length) return true;
+
+      var haystack = [
+        c.companyName || '',
+        c.companyCode || '',
+        c.adminEmail || '',
+        (c.companyName || '') + ' (' + (c.companyCode || '') + ')'
+      ].join(' \u2022 ').toLowerCase();
+
+      return tokens.every(function (tok) { return haystack.indexOf(tok) !== -1; });
     });
+
     // Pending companies need attention first; within a group, newest first.
     filtered.sort(function (a, b) {
       var pendingA = a.status === 'pending' ? 0 : 1;
@@ -1155,7 +1191,28 @@
       if (pendingA !== pendingB) return pendingA - pendingB;
       return new Date(b.registeredDate || 0) - new Date(a.registeredDate || 0);
     });
-    renderCompanies(filtered);
+
+    if (rawQuery) {
+      searchResultHint.style.display = 'block';
+      searchResultHint.textContent = filtered.length === 0
+        ? 'No matches for "' + rawQuery + '".'
+        : filtered.length + ' of ' + allCompanies.length + ' companies match "' + rawQuery + '".';
+    } else {
+      searchResultHint.style.display = 'none';
+      searchResultHint.textContent = '';
+    }
+
+    renderCompanies(filtered, tokens);
+
+    // If the company currently open in the detail panel got filtered out,
+    // don't leave a stale/mismatched detail panel showing — go back to
+    // the empty state so the list and detail panel never disagree.
+    if (selectedCompanyCode && !filtered.some(function (c) { return c.companyCode === selectedCompanyCode; })) {
+      selectedCompanyCode = null;
+      companyDetailEmpty.style.display = 'block';
+      companyDetailBody.style.display = 'none';
+      companyDetailBody.innerHTML = '';
+    }
   }
 
   companiesFilters.addEventListener('click', function (e) {
@@ -1167,18 +1224,42 @@
     applyFiltersAndRender();
   });
 
-  companiesSearchInput.addEventListener('input', function () {
+  // Listen on 'input' (covers typing, cutting, and most paste/autofill
+  // cases) AND 'change' (a safety net for paste/autofill flows in some
+  // browsers/extensions that set the value without firing 'input') so
+  // the list can never get stuck showing stale, unfiltered results.
+  companiesSearchInput.addEventListener('input', applyFiltersAndRender);
+  companiesSearchInput.addEventListener('change', applyFiltersAndRender);
+  companiesSearchInput.addEventListener('search', applyFiltersAndRender);
+
+  searchClearBtn.addEventListener('click', function () {
+    companiesSearchInput.value = '';
     applyFiltersAndRender();
+    companiesSearchInput.focus();
   });
 
   // Compact, clickable list rows — the master side of the master/detail
   // layout. Clicking a row shows that company's full details on the right.
-  function renderCompanies(companies) {
+  function renderCompanies(companies, searchTokens) {
     companiesListEl.innerHTML = '';
     if (!companies || !companies.length) {
-      companiesListEl.innerHTML = allCompanies.length
-        ? '<div class="company-empty">No companies match this filter.</div>'
-        : '<div class="company-empty">No companies registered yet.</div>';
+      if (allCompanies.length) {
+        var wrap = document.createElement('div');
+        wrap.className = 'company-empty';
+        wrap.innerHTML = 'No companies match this filter.<br>' +
+          '<button type="button" class="empty-clear-link" id="emptyClearFilters">Clear search &amp; filters</button>';
+        companiesListEl.appendChild(wrap);
+        document.getElementById('emptyClearFilters').addEventListener('click', function () {
+          companiesSearchInput.value = '';
+          activeStatusFilter = 'all';
+          companiesFilters.querySelectorAll('.filter-chip').forEach(function (c) {
+            c.classList.toggle('active', c.getAttribute('data-status') === 'all');
+          });
+          applyFiltersAndRender();
+        });
+      } else {
+        companiesListEl.innerHTML = '<div class="company-empty">No companies registered yet.</div>';
+      }
       return;
     }
 
@@ -1186,13 +1267,18 @@
       var row = document.createElement('div');
       row.className = 'company-row status-' + c.status + (c.companyCode === selectedCompanyCode ? ' selected' : '');
       row.setAttribute('data-code', c.companyCode);
+      row.setAttribute('tabindex', '0');
+      row.setAttribute('role', 'button');
       row.innerHTML =
         '<div class="row-title">' +
-          '<span class="row-name">' + escapeHtml(c.companyName) + ' (' + escapeHtml(c.companyCode) + ')</span>' +
+          '<span class="row-name">' + highlightTokens(c.companyName + ' (' + c.companyCode + ')', searchTokens) + '</span>' +
           '<span class="badge status-' + c.status + '">' + escapeHtml(c.status) + '</span>' +
         '</div>' +
-        '<div class="row-meta">' + escapeHtml(c.adminEmail) + '</div>';
+        '<div class="row-meta">' + highlightTokens(c.adminEmail || '', searchTokens) + '</div>';
       row.addEventListener('click', function () { selectCompany(c.companyCode); });
+      row.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectCompany(c.companyCode); }
+      });
       companiesListEl.appendChild(row);
     });
 
@@ -1424,8 +1510,6 @@
       companiesLoginStatus.className = 'status error';
       return;
     }
-    // Same as Pricing: no separate "check key" action — the key is
-    // verified for real on the first listCompanies call below.
     sessionCompaniesKey = key;
     companiesLoginCard.style.display = 'none';
     companiesCard.style.display = 'block';
@@ -1444,9 +1528,11 @@
   // Auto-refresh: while the Company Management panel is open and
   // unlocked, quietly re-check every 3s so newly registered companies
   // show up on their own, without needing a manual refresh. Skipped
-  // while an approve/reject call is in flight to avoid clobbering it.
+  // while an approve/reject call is in flight, or while the search box
+  // has focus, so a background refresh can never interrupt someone
+  // mid-search or move the list under their cursor while typing.
   setInterval(function () {
-    if (activePanelTarget() === 'companies' && sessionCompaniesKey) {
+    if (activePanelTarget() === 'companies' && sessionCompaniesKey && document.activeElement !== companiesSearchInput) {
       loadCompanies(true);
     }
   }, 3000);
@@ -1625,8 +1711,6 @@
   }
 
   function loadPopupForEditing() {
-    // getPopupConfig is public — used here just to pre-fill the form
-    // with whatever is currently live.
     popupCall({ action: 'getPopupConfig' })
       .then(function (data) {
         if (data && data.success) fillPopupForm(data.popup);
@@ -1653,7 +1737,6 @@
       popupLoginStatus.className = 'status error';
       return;
     }
-    // Same as Pricing: the key is verified for real on the first Save.
     sessionPopupKey = key;
     popupLoginCard.style.display = 'none';
     popupCard.style.display = 'block';
@@ -1719,7 +1802,6 @@
         } else {
           setPopupStatus('Save failed: ' + (data && data.error ? data.error : 'unknown error'), 'error');
           if (data && data.error === 'Not authorized.') {
-            // Wrong/missing key — send them back to unlock.
             sessionPopupKey = null;
             popupCard.style.display = 'none';
             popupLoginCard.style.display = 'block';
