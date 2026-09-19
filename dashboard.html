@@ -104,6 +104,11 @@
   .admin-role { font-size:0.68rem; color:var(--muted); }
   .logout-btn { background:#fff; border:1px solid var(--border); border-radius:var(--r-xs); padding:7px 14px; font-size:0.8rem; font-weight:600; cursor:pointer; color:var(--text); transition:all .15s var(--ease); }
   .logout-btn:hover { background:var(--danger-light); border-color:#F3B4B4; color:var(--danger); transform:translateY(-1px); }
+  .refresh-btn { display:inline-flex; align-items:center; gap:6px; background:#fff; border:1px solid var(--border); border-radius:var(--r-xs); padding:7px 12px; font-size:0.8rem; font-weight:600; cursor:pointer; color:var(--text); transition:all .15s var(--ease); }
+  .refresh-btn:hover { background:var(--primary-light); border-color:var(--primary); color:var(--primary-dark); transform:translateY(-1px); }
+  .refresh-btn:disabled { opacity:.6; cursor:not-allowed; transform:none; }
+  .refresh-btn.spinning svg { animation:spin .7s linear infinite; }
+  @media (max-width:600px) { .refresh-btn span { display:none; } }
 
   .content { padding:24px 26px 60px; max-width:1600px; }
   .view { display:none; }
@@ -437,6 +442,10 @@
             <div>
               <div class="admin-name" id="adminNameLabel">Admin</div>
               <div class="admin-role">Admin</div>
+              <button class="refresh-btn" id="refreshBtn" title="Refresh data" aria-label="Refresh data">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+  <span>Refresh</span>
+</button>
             </div>
           </div>
           <button class="logout-btn" id="logoutBtn">Log out</button>
@@ -915,7 +924,7 @@
 
     let _autoRefreshTimer = null;
   let _slowRefreshTimer = null;
-  function startAutoRefresh(intervalMs = 2000, slowIntervalMs = 8000) {
+  function startAutoRefresh(intervalMs = 5000, slowIntervalMs = 60000) {
     if (_autoRefreshTimer) clearInterval(_autoRefreshTimer);
     if (_slowRefreshTimer) clearInterval(_slowRefreshTimer);
     _autoRefreshTimer = setInterval(() => { if (!document.hidden) loadEmployees(); }, intervalMs);
@@ -1534,6 +1543,20 @@
 
   document.getElementById('modalClose').addEventListener('click', () => document.getElementById('modalOverlay').classList.remove('open'));
   document.getElementById('modalOverlay').addEventListener('click', (e) => { if (e.target.id === 'modalOverlay') document.getElementById('modalOverlay').classList.remove('open'); });
+  document.getElementById('refreshBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('refreshBtn');
+  if (!session || btn.disabled) return;
+  btn.disabled = true; btn.classList.add('spinning');
+  try {
+    const tasks = [loadEmployees(), loadThreeMonthOverview(), loadMonthlyLeaveByDate(), loadAttendanceTrend()];
+    if (document.getElementById('viewAttendance').classList.contains('active')) {
+      tasks.push(loadDayView(document.getElementById('dayViewDatePicker').value || toISODate(new Date())));
+    }
+    await Promise.all(tasks);
+  } finally {
+    btn.disabled = false; btn.classList.remove('spinning');
+  }
+});
 
   // ---- Sidebar / view switching ----
   function switchView(name) {
