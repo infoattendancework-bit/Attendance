@@ -66,7 +66,8 @@
   }
   .lock-btn:hover { background:var(--bg); color:var(--text); }
 
-  .content { max-width:760px; margin:0 auto; padding:32px 28px 64px; }
+  .content { max-width:760px; margin:0 auto; padding:32px 28px 64px; transition:max-width 0.15s ease; }
+  .content.wide { max-width:1180px; }
   .panel { display:none; }
   .panel.active { display:block; animation: panel-in 0.18s ease; }
   @keyframes panel-in { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
@@ -125,35 +126,65 @@
   .companies-search-row input { margin-bottom:0; flex:1; }
   .companies-search-row button { flex:none; width:auto; padding:11px 16px; }
 
-  #companiesList { display:flex; flex-direction:column; gap:14px; margin-bottom:14px; }
-  .company-card { border:1px solid var(--border); border-radius:10px; padding:14px 16px; background:var(--bg); transition:opacity 0.15s ease; }
-  .company-card.status-pending { border-color:var(--warn); background:#fff8e1; }
-  .company-card.status-approved { border-color:var(--success); background:#eef7ee; }
-  .company-card.status-rejected { border-color:var(--danger); background:#fdecea; opacity:0.8; }
-  .company-card .company-title { font-weight:700; font-size:0.95rem; display:flex; align-items:center; flex-wrap:wrap; gap:2px; }
-  .company-card .badge { font-size:0.72rem; font-weight:600; padding:2px 9px; border-radius:999px; background:#fff; margin-left:6px; text-transform:capitalize; }
-  .company-card .company-meta { font-size:0.8rem; color:var(--muted); margin-top:4px; line-height:1.5; }
-  .company-card .company-meta a { color:var(--sidebar-active); text-decoration:none; }
-  .company-card .company-meta a:hover { text-decoration:underline; }
-  .company-card .btn-row { margin-top:10px; }
-  .company-card .btn-approve { background:var(--success); color:#fff; }
-  .company-card .btn-reject { background:#fff; color:var(--danger); border:1px solid var(--danger); }
+  /* ---- Company management: master (list) + detail layout ---- */
+  .companies-layout { display:flex; align-items:flex-start; gap:20px; }
+  .companies-list-col { flex:0 0 320px; min-width:0; }
+  .companies-detail-col { flex:1; min-width:0; position:sticky; top:96px; }
+
+  #companiesList { display:flex; flex-direction:column; gap:6px; margin-bottom:14px; max-height:calc(100vh - 300px); overflow-y:auto; padding-right:2px; }
+  .company-row {
+    border:1px solid var(--border); border-left:3px solid var(--border); border-radius:8px; padding:10px 12px;
+    background:#fff; cursor:pointer; transition:background 0.12s ease, border-color 0.12s ease;
+  }
+  .company-row:hover { background:var(--bg); }
+  .company-row.selected { background:#eef2ff; border-color:var(--sidebar-active); border-left-color:var(--sidebar-active); }
+  .company-row.status-pending { border-left-color:var(--warn); }
+  .company-row.status-approved { border-left-color:var(--success); }
+  .company-row.status-rejected { border-left-color:var(--danger); opacity:0.75; }
+  .company-row .row-title { font-weight:700; font-size:0.88rem; display:flex; align-items:center; justify-content:space-between; gap:6px; }
+  .company-row .row-title .row-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .company-row .row-meta { font-size:0.76rem; color:var(--muted); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .badge { font-size:0.68rem; font-weight:600; padding:2px 8px; border-radius:999px; background:var(--bg); border:1px solid var(--border); text-transform:capitalize; flex:none; }
+  .badge.status-pending { color:var(--warn); border-color:#fde3b8; background:#fff8e1; }
+  .badge.status-approved { color:var(--success); border-color:#bfe3c6; background:#eef7ee; }
+  .badge.status-rejected { color:var(--danger); border-color:#f5c2bd; background:#fdecea; }
+
+  .company-detail-card { border:1px solid var(--border); border-radius:12px; padding:24px 26px; background:#fff; box-shadow:0 1px 3px rgba(16,26,46,0.05); }
+  .company-detail-empty { color:var(--muted); font-size:0.9rem; text-align:center; padding:60px 20px; }
+  .detail-header { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:4px; }
+  .detail-header h2 { font-size:1.15rem; margin:0; }
+  .detail-code { color:var(--muted); font-size:0.85rem; margin-top:2px; }
+  .detail-section { margin-top:20px; padding-top:18px; border-top:1px solid var(--border); }
+  .detail-section:first-of-type { margin-top:16px; }
+  .detail-section-title { font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); margin-bottom:10px; }
+  .detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px 20px; }
+  .detail-field .detail-field-label { font-size:0.76rem; color:var(--muted); }
+  .detail-field .detail-field-value { font-size:0.92rem; font-weight:600; margin-top:2px; }
+  .detail-field .detail-field-value a { color:var(--sidebar-active); text-decoration:none; }
+  .detail-field .detail-field-value a:hover { text-decoration:underline; }
 
   /* ---- Company management: employee count / subscription stat chips ---- */
-  .company-stats { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .company-stats { display:flex; flex-wrap:wrap; gap:10px; }
   .stat-chip {
-    display:flex; flex-direction:column; gap:1px; background:#fff; border:1px solid var(--border);
-    border-radius:8px; padding:6px 11px; min-width:96px;
+    display:flex; flex-direction:column; gap:1px; background:var(--bg); border:1px solid var(--border);
+    border-radius:8px; padding:10px 14px; min-width:120px; flex:1;
   }
-  .stat-chip .stat-label { font-size:0.64rem; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); }
-  .stat-chip .stat-value { font-size:0.85rem; font-weight:700; color:var(--text); margin-top:1px; }
+  .stat-chip .stat-label { font-size:0.66rem; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); }
+  .stat-chip .stat-value { font-size:1rem; font-weight:700; color:var(--text); margin-top:2px; }
   .stat-chip.stat-active .stat-value { color:var(--success); }
-  .stat-chip.stat-active.stat-unsynced .stat-value { color:var(--muted); font-weight:600; font-style:italic; }
+  .stat-chip.stat-active.stat-unsynced .stat-value { color:var(--muted); font-weight:600; font-style:italic; font-size:0.85rem; }
   .stat-chip.billing-monthly { border-color:#bfdbfe; background:#eff6ff; }
   .stat-chip.billing-monthly .stat-value { color:#1d4ed8; }
   .stat-chip.billing-yearly { border-color:#ddd6fe; background:#f5f3ff; }
   .stat-chip.billing-yearly .stat-value { color:#6d28d9; }
   .company-empty { color:var(--muted); font-size:0.85rem; text-align:center; padding:14px 0; }
+
+  @media (max-width: 980px) {
+    .companies-layout { flex-direction:column; }
+    .companies-list-col { flex:none; width:100%; }
+    .companies-detail-col { position:static; width:100%; }
+    #companiesList { max-height:none; overflow-y:visible; }
+  }
 
   /* ---- Confirm dialog ---- */
   .confirm-overlay {
@@ -228,7 +259,7 @@
     <button class="lock-btn" id="lockBtn" type="button">Lock</button>
   </div>
 
-  <div class="content">
+  <div class="content" id="mainContent">
 
     <!-- ================= Banner Settings ================= -->
     <section class="panel active" id="panel-banner">
@@ -377,10 +408,7 @@
         </div>
       </div>
 
-      <div class="card" id="companiesCard" style="display:none;">
-        <span class="field-label">Company Management</span>
-        <div class="hint">Pending companies show Approve/Reject actions. Approving or rejecting emails the company automatically.</div>
-
+      <div id="companiesCard" style="display:none;">
         <div class="companies-toolbar">
           <div class="companies-filters" id="companiesFilters">
             <button class="filter-chip active" data-status="all" type="button">All <span class="count" id="countAll">0</span></button>
@@ -394,8 +422,18 @@
           </div>
         </div>
 
-        <div id="companiesList"><div class="company-empty">Loading...</div></div>
-        <div class="status" id="companiesStatus"></div>
+        <div class="companies-layout">
+          <div class="companies-list-col">
+            <div id="companiesList"><div class="company-empty">Loading...</div></div>
+            <div class="status" id="companiesStatus"></div>
+          </div>
+          <div class="companies-detail-col">
+            <div class="company-detail-card" id="companyDetailCard">
+              <div class="company-detail-empty" id="companyDetailEmpty">Select a company from the list to view its details.</div>
+              <div id="companyDetailBody" style="display:none;"></div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -469,6 +507,7 @@
   var pageTitleEl = document.getElementById('pageTitle');
   var pageSubtitleEl = document.getElementById('pageSubtitle');
   var lockBtn = document.getElementById('lockBtn');
+  var mainContentEl = document.getElementById('mainContent');
 
   navItems.forEach(function (item) {
     item.addEventListener('click', function () {
@@ -483,6 +522,10 @@
       pageTitleEl.textContent = pageMeta[target].title;
       pageSubtitleEl.textContent = pageMeta[target].subtitle;
       updateLockButton(target);
+
+      // Company Management needs a master + detail layout, so it gets
+      // a wider content column than the single-form panels.
+      mainContentEl.classList.toggle('wide', target === 'companies');
 
       // Lazy-load company list the first time that panel is opened
       if (target === 'companies' && sessionCompaniesKey) {
@@ -1056,6 +1099,9 @@
   var allCompanies = [];          // last full list fetched from the server
   var activeStatusFilter = 'all';
   var actionInFlight = false;     // pauses silent auto-refresh mid approve/reject
+  var selectedCompanyCode = null; // company currently shown in the detail panel
+  var companyDetailEmpty = document.getElementById('companyDetailEmpty');
+  var companyDetailBody = document.getElementById('companyDetailBody');
 
   function companiesApiConfigured() {
     if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('PASTE_YOUR') === 0) {
@@ -1125,6 +1171,8 @@
     applyFiltersAndRender();
   });
 
+  // Compact, clickable list rows — the master side of the master/detail
+  // layout. Clicking a row shows that company's full details on the right.
   function renderCompanies(companies) {
     companiesListEl.innerHTML = '';
     if (!companies || !companies.length) {
@@ -1135,92 +1183,129 @@
     }
 
     companies.forEach(function (c) {
-      var card = document.createElement('div');
-      card.className = 'company-card status-' + c.status;
-
-      var title = document.createElement('div');
-      title.className = 'company-title';
-      title.textContent = c.companyName + ' (' + c.companyCode + ')';
-      var badge = document.createElement('span');
-      badge.className = 'badge';
-      badge.textContent = c.status;
-      title.appendChild(badge);
-      card.appendChild(title);
-
-      var meta = document.createElement('div');
-      meta.className = 'company-meta';
-      meta.innerHTML =
-        'Admin: <a href="mailto:' + escapeHtml(c.adminEmail) + '">' + escapeHtml(c.adminEmail) + '</a><br>' +
-        'Phone: ' + escapeHtml(c.phoneNumber) + '<br>' +
-        'Registered: ' + (c.registeredDate ? new Date(c.registeredDate).toLocaleString() : '—');
-      card.appendChild(meta);
-
-      // Employee counts (at signup vs. currently active) + subscription stats.
-      // activeEmployeeCount isn't in the payload yet — listCompanies needs a
-      // backend addition to count real employees per company. Until then this
-      // chip shows "Not synced yet" instead of a wrong/fake number.
-      var stats = document.createElement('div');
-      stats.className = 'company-stats';
-      var hasActiveCount = c.activeEmployeeCount !== undefined && c.activeEmployeeCount !== null && c.activeEmployeeCount !== '';
-      var billingCycleRaw = (c.billingCycle || '').toLowerCase();
-      var billingLabel = billingCycleRaw ? (billingCycleRaw.charAt(0).toUpperCase() + billingCycleRaw.slice(1)) : '—';
-      var billingClass = billingCycleRaw === 'yearly' ? 'billing-yearly' : 'billing-monthly';
-
-      stats.innerHTML =
-        '<div class="stat-chip">' +
-          '<span class="stat-label">Signed up as</span>' +
-          '<span class="stat-value">' + escapeHtml(String(c.employeeCount)) + ' employees</span>' +
+      var row = document.createElement('div');
+      row.className = 'company-row status-' + c.status + (c.companyCode === selectedCompanyCode ? ' selected' : '');
+      row.setAttribute('data-code', c.companyCode);
+      row.innerHTML =
+        '<div class="row-title">' +
+          '<span class="row-name">' + escapeHtml(c.companyName) + ' (' + escapeHtml(c.companyCode) + ')</span>' +
+          '<span class="badge status-' + c.status + '">' + escapeHtml(c.status) + '</span>' +
         '</div>' +
-        '<div class="stat-chip stat-active' + (hasActiveCount ? '' : ' stat-unsynced') + '" title="' +
-          (hasActiveCount ? '' : 'Not available yet — the backend needs to return this per company.') + '">' +
-          '<span class="stat-label">Active now</span>' +
-          '<span class="stat-value">' + (hasActiveCount ? escapeHtml(String(c.activeEmployeeCount)) + ' employees' : 'Not synced yet') + '</span>' +
-        '</div>' +
-        '<div class="stat-chip ' + billingClass + '">' +
-          '<span class="stat-label">Subscription</span>' +
-          '<span class="stat-value">' + escapeHtml(billingLabel) + '</span>' +
-        '</div>' +
-        '<div class="stat-chip">' +
-          '<span class="stat-label">Est. cost</span>' +
-          '<span class="stat-value">' + escapeHtml(String(c.estimatedCost)) + '</span>' +
-        '</div>';
-      card.appendChild(stats);
-
-      if (c.status === 'pending') {
-        var actions = document.createElement('div');
-        actions.className = 'btn-row';
-
-        var approveBtn = document.createElement('button');
-        approveBtn.className = 'btn-approve';
-        approveBtn.type = 'button';
-        approveBtn.textContent = 'Approve';
-        approveBtn.addEventListener('click', function () {
-          confirmAction(
-            'Approve ' + c.companyName + '? This will email the company right away.',
-            'Approve',
-            function () { setCompanyStatus(c.companyCode, 'approved', approveBtn, rejectBtn); }
-          );
-        });
-
-        var rejectBtn = document.createElement('button');
-        rejectBtn.className = 'btn-reject';
-        rejectBtn.type = 'button';
-        rejectBtn.textContent = 'Reject';
-        rejectBtn.addEventListener('click', function () {
-          confirmAction(
-            'Reject ' + c.companyName + '? This will email the company right away and can\'t be undone from here.',
-            'Reject',
-            function () { setCompanyStatus(c.companyCode, 'rejected', approveBtn, rejectBtn); }
-          );
-        });
-
-        actions.appendChild(approveBtn);
-        actions.appendChild(rejectBtn);
-        card.appendChild(actions);
-      }
-
-      companiesListEl.appendChild(card);
+        '<div class="row-meta">' + escapeHtml(c.adminEmail) + '</div>';
+      row.addEventListener('click', function () { selectCompany(c.companyCode); });
+      companiesListEl.appendChild(row);
     });
+
+    // Keep the detail panel in sync if the selected company is still around
+    // (e.g. after a background refresh) — just re-render with fresh data.
+    if (selectedCompanyCode) {
+      var stillThere = allCompanies.filter(function (c) { return c.companyCode === selectedCompanyCode; })[0];
+      if (stillThere) renderCompanyDetail(stillThere);
+    }
+  }
+
+  function selectCompany(companyCode) {
+    selectedCompanyCode = companyCode;
+    companiesListEl.querySelectorAll('.company-row').forEach(function (row) {
+      row.classList.toggle('selected', row.getAttribute('data-code') === companyCode);
+    });
+    var company = allCompanies.filter(function (c) { return c.companyCode === companyCode; })[0];
+    if (company) renderCompanyDetail(company);
+  }
+
+  // Renders the full detail panel on the right for one company, including
+  // Approve/Reject actions when it's still pending.
+  function renderCompanyDetail(c) {
+    companyDetailEmpty.style.display = 'none';
+    companyDetailBody.style.display = 'block';
+
+    var hasActiveCount = c.activeEmployeeCount !== undefined && c.activeEmployeeCount !== null && c.activeEmployeeCount !== '';
+    var billingCycleRaw = (c.billingCycle || '').toLowerCase();
+    var billingLabel = billingCycleRaw ? (billingCycleRaw.charAt(0).toUpperCase() + billingCycleRaw.slice(1)) : '—';
+    var billingClass = billingCycleRaw === 'yearly' ? 'billing-yearly' : 'billing-monthly';
+
+    companyDetailBody.innerHTML =
+      '<div class="detail-header">' +
+        '<div>' +
+          '<h2>' + escapeHtml(c.companyName) + '</h2>' +
+          '<div class="detail-code">' + escapeHtml(c.companyCode) + '</div>' +
+        '</div>' +
+        '<span class="badge status-' + c.status + '">' + escapeHtml(c.status) + '</span>' +
+      '</div>' +
+
+      '<div class="detail-section">' +
+        '<div class="detail-section-title">Contact</div>' +
+        '<div class="detail-grid">' +
+          '<div class="detail-field"><div class="detail-field-label">Admin email</div>' +
+            '<div class="detail-field-value"><a href="mailto:' + escapeHtml(c.adminEmail) + '">' + escapeHtml(c.adminEmail) + '</a></div></div>' +
+          '<div class="detail-field"><div class="detail-field-label">Phone</div>' +
+            '<div class="detail-field-value">' + escapeHtml(c.phoneNumber) + '</div></div>' +
+          '<div class="detail-field"><div class="detail-field-label">Registered</div>' +
+            '<div class="detail-field-value">' + (c.registeredDate ? new Date(c.registeredDate).toLocaleString() : '—') + '</div></div>' +
+        '</div>' +
+      '</div>' +
+
+      '<div class="detail-section">' +
+        '<div class="detail-section-title">Subscription</div>' +
+        '<div class="company-stats">' +
+          '<div class="stat-chip">' +
+            '<span class="stat-label">Signed up as</span>' +
+            '<span class="stat-value">' + escapeHtml(String(c.employeeCount)) + ' employees</span>' +
+          '</div>' +
+          '<div class="stat-chip stat-active' + (hasActiveCount ? '' : ' stat-unsynced') + '" title="' +
+            (hasActiveCount ? '' : 'Not available yet — the backend needs to return this per company.') + '">' +
+            '<span class="stat-label">Active now</span>' +
+            '<span class="stat-value">' + (hasActiveCount ? escapeHtml(String(c.activeEmployeeCount)) + ' employees' : 'Not synced yet') + '</span>' +
+          '</div>' +
+          '<div class="stat-chip ' + billingClass + '">' +
+            '<span class="stat-label">Billing cycle</span>' +
+            '<span class="stat-value">' + escapeHtml(billingLabel) + '</span>' +
+          '</div>' +
+          '<div class="stat-chip">' +
+            '<span class="stat-label">Est. cost</span>' +
+            '<span class="stat-value">' + escapeHtml(String(c.estimatedCost)) + '</span>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+    if (c.status === 'pending') {
+      var actionsSection = document.createElement('div');
+      actionsSection.className = 'detail-section';
+      actionsSection.innerHTML = '<div class="detail-section-title">Actions</div>';
+
+      var actions = document.createElement('div');
+      actions.className = 'btn-row';
+
+      var approveBtn = document.createElement('button');
+      approveBtn.className = 'btn-approve';
+      approveBtn.type = 'button';
+      approveBtn.textContent = 'Approve';
+
+      var rejectBtn = document.createElement('button');
+      rejectBtn.className = 'btn-reject';
+      rejectBtn.type = 'button';
+      rejectBtn.textContent = 'Reject';
+
+      approveBtn.addEventListener('click', function () {
+        confirmAction(
+          'Approve ' + c.companyName + '? This will email the company right away.',
+          'Approve',
+          function () { setCompanyStatus(c.companyCode, 'approved', approveBtn, rejectBtn); }
+        );
+      });
+      rejectBtn.addEventListener('click', function () {
+        confirmAction(
+          'Reject ' + c.companyName + '? This will email the company right away and can\'t be undone from here.',
+          'Reject',
+          function () { setCompanyStatus(c.companyCode, 'rejected', approveBtn, rejectBtn); }
+        );
+      });
+
+      actions.appendChild(approveBtn);
+      actions.appendChild(rejectBtn);
+      actionsSection.appendChild(actions);
+      companyDetailBody.appendChild(actionsSection);
+    }
   }
 
   // Lightweight confirm dialog for the two destructive/notifying actions
