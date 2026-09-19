@@ -138,6 +138,21 @@
   .company-card .btn-row { margin-top:10px; }
   .company-card .btn-approve { background:var(--success); color:#fff; }
   .company-card .btn-reject { background:#fff; color:var(--danger); border:1px solid var(--danger); }
+
+  /* ---- Company management: employee count / subscription stat chips ---- */
+  .company-stats { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .stat-chip {
+    display:flex; flex-direction:column; gap:1px; background:#fff; border:1px solid var(--border);
+    border-radius:8px; padding:6px 11px; min-width:96px;
+  }
+  .stat-chip .stat-label { font-size:0.64rem; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); }
+  .stat-chip .stat-value { font-size:0.85rem; font-weight:700; color:var(--text); margin-top:1px; }
+  .stat-chip.stat-active .stat-value { color:var(--success); }
+  .stat-chip.stat-active.stat-unsynced .stat-value { color:var(--muted); font-weight:600; font-style:italic; }
+  .stat-chip.billing-monthly { border-color:#bfdbfe; background:#eff6ff; }
+  .stat-chip.billing-monthly .stat-value { color:#1d4ed8; }
+  .stat-chip.billing-yearly { border-color:#ddd6fe; background:#f5f3ff; }
+  .stat-chip.billing-yearly .stat-value { color:#6d28d9; }
   .company-empty { color:var(--muted); font-size:0.85rem; text-align:center; padding:14px 0; }
 
   /* ---- Confirm dialog ---- */
@@ -160,6 +175,22 @@
   .reset-panel:not(.step-2) .reset-step-2 { display:none; }
   .reset-panel .hint { margin-top:-2px; }
 
+  /* ---- Popup Message panel ---- */
+  textarea {
+    width:100%; padding:11px 13px; border:1px solid var(--border); border-radius:8px; font-size:0.92rem;
+    margin-bottom:6px; font-family:inherit; resize:vertical; min-height:110px; transition:border-color 0.15s ease;
+  }
+  textarea:focus { outline:none; border-color:var(--sidebar-active); }
+  .check-row {
+    display:flex; align-items:center; gap:10px; padding:11px 13px; border:1px solid var(--border);
+    border-radius:8px; margin-bottom:8px; cursor:pointer; font-size:0.92rem; font-weight:600; user-select:none;
+  }
+  .check-row:hover { background:var(--bg); }
+  .check-row input[type="checkbox"] { width:18px; height:18px; margin:0; flex:none; accent-color:var(--sidebar-active); cursor:pointer; }
+  .check-row.master { background:var(--bg); margin-bottom:18px; }
+  .check-row.master.is-on { background:#eef7ee; border-color:var(--success); color:var(--success); }
+  .link-grid { display:grid; grid-template-columns:1fr 2fr; gap:8px; }
+
   @media (max-width: 780px) {
     :root { --sidebar-w: 0px; }
     .sidebar { transform:translateX(-100%); }
@@ -181,6 +212,7 @@
   <div class="nav-item active" data-target="banner"><span class="dot"></span>Banner Settings</div>
   <div class="nav-item" data-target="pricing"><span class="dot"></span>Subscription Pricing</div>
   <div class="nav-item" data-target="companies"><span class="dot"></span>Company Management</div>
+  <div class="nav-item" data-target="popup"><span class="dot"></span>Popup Message</div>
 
   <div class="sidebar-foot">
     <a href="index.html">&larr; Back to home</a>
@@ -367,9 +399,61 @@
       </div>
     </section>
 
+    <!-- ================= Popup Message ================= -->
+    <section class="panel" id="panel-popup">
+      <div class="card" id="popupLoginCard">
+        <span class="field-label">Popup Message</span>
+        <div class="hint">Show a message popup on the Attendance, Register and/or Dashboard pages. Requires the platform's SUPER_ADMIN_KEY, same as Pricing.</div>
+        <input type="password" id="popupKeyInput" placeholder="Enter SUPER_ADMIN_KEY" autocomplete="off">
+        <div class="btn-row" style="margin-top:10px;">
+          <button class="btn-primary" id="popupUnlockBtn" style="flex:none; width:100%;">Unlock Popup</button>
+        </div>
+        <div class="status" id="popupLoginStatus"></div>
+      </div>
+
+      <div class="card" id="popupCard" style="display:none;">
+        <label class="check-row master" id="popupEnabledRow">
+          <input type="checkbox" id="popupEnabled">
+          <span id="popupEnabledLabel">Popup is OFF</span>
+        </label>
+
+        <span class="field-label">Show popup on</span>
+        <label class="check-row"><input type="checkbox" class="popup-page-check" value="attendance"> Attendance page</label>
+        <label class="check-row"><input type="checkbox" class="popup-page-check" value="register"> Register page</label>
+        <label class="check-row"><input type="checkbox" class="popup-page-check" value="dashboard"> Dashboard page</label>
+        <div class="hint" style="margin-top:6px;">Tick one, two, or all three.</div>
+
+        <span class="field-label">Title (optional)</span>
+        <input type="text" id="popupTitleInput" maxlength="80" placeholder="e.g. Important notice">
+
+        <span class="field-label" style="margin-top:8px;">Message</span>
+        <textarea id="popupMessageInput" maxlength="600" placeholder="Type the message people will see..."></textarea>
+        <div class="hint"><span id="popupMsgCount">0</span>/600</div>
+
+        <span class="field-label">Button link (optional)</span>
+        <div class="link-grid">
+          <input type="text" id="popupLinkLabelInput" maxlength="30" placeholder="Button text">
+          <input type="url" id="popupLinkUrlInput" placeholder="https://example.com">
+        </div>
+        <div class="hint">Adds a button under the message. Leave blank for a plain message.</div>
+
+        <label class="check-row" style="margin-top:4px;">
+          <input type="checkbox" id="popupShowOnce"> Show only once per device
+        </label>
+        <div class="hint">Off = shows every time the page opens. On = each person sees it once, until you save again.</div>
+
+        <div class="btn-row" style="margin-top:14px;">
+          <button class="btn-secondary" id="popupPreviewBtn" type="button">Preview</button>
+          <button class="btn-primary" id="popupSaveBtn" type="button">Save Popup</button>
+        </div>
+        <div class="status" id="popupStatus"></div>
+      </div>
+    </section>
+
   </div>
 </div>
 
+<script src="popup-notice.js" data-page="admin" data-manual></script>
 <script>
   // ---------------------------------------------------------------
   // Sidebar navigation — three topics, click to open that panel only
@@ -377,7 +461,8 @@
   var pageMeta = {
     banner:    { title: 'Banner Settings',       subtitle: "Upload an image to show on the homepage banner." },
     pricing:   { title: 'Subscription Pricing',  subtitle: "Set per-employee rates used on the registration page." },
-    companies: { title: 'Company Management',    subtitle: "Review, approve, or reject registered companies." }
+    companies: { title: 'Company Management',    subtitle: "Review, approve, or reject registered companies." },
+    popup:     { title: 'Popup Message',         subtitle: "Show a message popup on the attendance, register and dashboard pages." }
   };
   var navItems = document.querySelectorAll('.nav-item');
   var panels = document.querySelectorAll('.panel');
@@ -417,7 +502,8 @@
     var unlocked =
       (target === 'banner' && !!sessionPassword) ||
       (target === 'pricing' && !!sessionAdminKey) ||
-      (target === 'companies' && !!sessionCompaniesKey);
+      (target === 'companies' && !!sessionCompaniesKey) ||
+      (target === 'popup' && !!sessionPopupKey);
     lockBtn.style.display = unlocked ? 'inline-block' : 'none';
   }
 
@@ -438,6 +524,11 @@
       companiesCard.style.display = 'none';
       companiesLoginCard.style.display = 'block';
       companiesKeyInput.value = '';
+    } else if (target === 'popup') {
+      sessionPopupKey = null;
+      popupCard.style.display = 'none';
+      popupLoginCard.style.display = 'block';
+      popupKeyInput.value = '';
     }
     updateLockButton(target);
   });
@@ -452,6 +543,8 @@
       if (sessionAdminKey) loadPricingForEditing();
     } else if (target === 'companies') {
       if (sessionCompaniesKey) loadCompanies();
+    } else if (target === 'popup') {
+      if (sessionPopupKey) loadPopupForEditing();
     }
   }
 
@@ -1059,10 +1152,39 @@
       meta.innerHTML =
         'Admin: <a href="mailto:' + escapeHtml(c.adminEmail) + '">' + escapeHtml(c.adminEmail) + '</a><br>' +
         'Phone: ' + escapeHtml(c.phoneNumber) + '<br>' +
-        'Employees: ' + c.employeeCount + ' &middot; ' + escapeHtml(c.billingCycle) +
-        ' &middot; Est. cost: ' + c.estimatedCost + '<br>' +
         'Registered: ' + (c.registeredDate ? new Date(c.registeredDate).toLocaleString() : '—');
       card.appendChild(meta);
+
+      // Employee counts (at signup vs. currently active) + subscription stats.
+      // activeEmployeeCount isn't in the payload yet — listCompanies needs a
+      // backend addition to count real employees per company. Until then this
+      // chip shows "Not synced yet" instead of a wrong/fake number.
+      var stats = document.createElement('div');
+      stats.className = 'company-stats';
+      var hasActiveCount = c.activeEmployeeCount !== undefined && c.activeEmployeeCount !== null && c.activeEmployeeCount !== '';
+      var billingCycleRaw = (c.billingCycle || '').toLowerCase();
+      var billingLabel = billingCycleRaw ? (billingCycleRaw.charAt(0).toUpperCase() + billingCycleRaw.slice(1)) : '—';
+      var billingClass = billingCycleRaw === 'yearly' ? 'billing-yearly' : 'billing-monthly';
+
+      stats.innerHTML =
+        '<div class="stat-chip">' +
+          '<span class="stat-label">Signed up as</span>' +
+          '<span class="stat-value">' + escapeHtml(String(c.employeeCount)) + ' employees</span>' +
+        '</div>' +
+        '<div class="stat-chip stat-active' + (hasActiveCount ? '' : ' stat-unsynced') + '" title="' +
+          (hasActiveCount ? '' : 'Not available yet — the backend needs to return this per company.') + '">' +
+          '<span class="stat-label">Active now</span>' +
+          '<span class="stat-value">' + (hasActiveCount ? escapeHtml(String(c.activeEmployeeCount)) + ' employees' : 'Not synced yet') + '</span>' +
+        '</div>' +
+        '<div class="stat-chip ' + billingClass + '">' +
+          '<span class="stat-label">Subscription</span>' +
+          '<span class="stat-value">' + escapeHtml(billingLabel) + '</span>' +
+        '</div>' +
+        '<div class="stat-chip">' +
+          '<span class="stat-label">Est. cost</span>' +
+          '<span class="stat-value">' + escapeHtml(String(c.estimatedCost)) + '</span>' +
+        '</div>';
+      card.appendChild(stats);
 
       if (c.status === 'pending') {
         var actions = document.createElement('div');
@@ -1343,6 +1465,190 @@
           statusEl.className = 'status superadmin-reset-status error';
         });
     });
+  });
+
+  // ---------------------------------------------------------------
+  // Popup Message (talks to APPS_SCRIPT_URL, same backend and key as
+  // Subscription Pricing). This panel decides WHAT the popup says and
+  // WHICH pages show it; the pages themselves load popup-notice.js.
+  // ---------------------------------------------------------------
+  var popupLoginCard = document.getElementById('popupLoginCard');
+  var popupCard = document.getElementById('popupCard');
+  var popupKeyInput = document.getElementById('popupKeyInput');
+  var popupUnlockBtn = document.getElementById('popupUnlockBtn');
+  var popupLoginStatus = document.getElementById('popupLoginStatus');
+  var popupEnabled = document.getElementById('popupEnabled');
+  var popupEnabledRow = document.getElementById('popupEnabledRow');
+  var popupEnabledLabel = document.getElementById('popupEnabledLabel');
+  var popupTitleInput = document.getElementById('popupTitleInput');
+  var popupMessageInput = document.getElementById('popupMessageInput');
+  var popupMsgCount = document.getElementById('popupMsgCount');
+  var popupLinkLabelInput = document.getElementById('popupLinkLabelInput');
+  var popupLinkUrlInput = document.getElementById('popupLinkUrlInput');
+  var popupShowOnce = document.getElementById('popupShowOnce');
+  var popupPreviewBtn = document.getElementById('popupPreviewBtn');
+  var popupSaveBtn = document.getElementById('popupSaveBtn');
+  var popupStatus = document.getElementById('popupStatus');
+
+  var sessionPopupKey = null; // kept in memory only for this page load, never stored
+  var POPUP_PAGE_LABELS = { attendance: 'Attendance', register: 'Register', dashboard: 'Dashboard' };
+
+  function popupCall(payload) {
+    return fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // avoids CORS preflight on Apps Script
+      body: JSON.stringify(payload)
+    }).then(function (res) { return res.json(); });
+  }
+
+  function setPopupStatus(msg, type) {
+    popupStatus.textContent = msg;
+    popupStatus.className = 'status' + (type ? ' ' + type : '');
+  }
+
+  function selectedPopupPages() {
+    var pages = [];
+    document.querySelectorAll('.popup-page-check').forEach(function (cb) {
+      if (cb.checked) pages.push(cb.value);
+    });
+    return pages;
+  }
+
+  function updatePopupEnabledLabel() {
+    popupEnabledLabel.textContent = popupEnabled.checked ? 'Popup is ON' : 'Popup is OFF';
+    popupEnabledRow.classList.toggle('is-on', popupEnabled.checked);
+  }
+
+  function updatePopupCounter() {
+    popupMsgCount.textContent = popupMessageInput.value.length;
+  }
+
+  function fillPopupForm(p) {
+    p = p || {};
+    popupEnabled.checked = !!p.enabled;
+    popupTitleInput.value = p.title || '';
+    popupMessageInput.value = p.message || '';
+    popupLinkLabelInput.value = p.linkLabel || '';
+    popupLinkUrlInput.value = p.linkUrl || '';
+    popupShowOnce.checked = !!p.showOnce;
+    var pages = p.pages || [];
+    document.querySelectorAll('.popup-page-check').forEach(function (cb) {
+      cb.checked = pages.indexOf(cb.value) !== -1;
+    });
+    updatePopupEnabledLabel();
+    updatePopupCounter();
+  }
+
+  function loadPopupForEditing() {
+    // getPopupConfig is public — used here just to pre-fill the form
+    // with whatever is currently live.
+    popupCall({ action: 'getPopupConfig' })
+      .then(function (data) {
+        if (data && data.success) fillPopupForm(data.popup);
+        else fillPopupForm({});
+      })
+      .catch(function () {
+        setPopupStatus('Could not load the current popup.', 'error');
+        fillPopupForm({});
+      });
+  }
+
+  popupEnabled.addEventListener('change', updatePopupEnabledLabel);
+  popupMessageInput.addEventListener('input', updatePopupCounter);
+
+  popupUnlockBtn.addEventListener('click', function () {
+    if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('PASTE_YOUR') === 0) {
+      popupLoginStatus.textContent = 'Set APPS_SCRIPT_URL in the code first (the attendance system deployment, not the banner one).';
+      popupLoginStatus.className = 'status error';
+      return;
+    }
+    var key = popupKeyInput.value;
+    if (!key) {
+      popupLoginStatus.textContent = 'Enter the SUPER_ADMIN_KEY.';
+      popupLoginStatus.className = 'status error';
+      return;
+    }
+    // Same as Pricing: the key is verified for real on the first Save.
+    sessionPopupKey = key;
+    popupLoginCard.style.display = 'none';
+    popupCard.style.display = 'block';
+    setPopupStatus('', '');
+    updateLockButton('popup');
+    loadPopupForEditing();
+  });
+
+  popupKeyInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') popupUnlockBtn.click();
+  });
+
+  popupPreviewBtn.addEventListener('click', function () {
+    var message = popupMessageInput.value.trim();
+    if (!message) { setPopupStatus('Write a message to preview it.', 'error'); return; }
+    if (!window.PopupNotice) {
+      setPopupStatus('Preview needs popup-notice.js uploaded next to this page.', 'error');
+      return;
+    }
+    setPopupStatus('', '');
+    window.PopupNotice.show({
+      title: popupTitleInput.value.trim(),
+      message: message,
+      linkUrl: popupLinkUrlInput.value.trim(),
+      linkLabel: popupLinkLabelInput.value.trim()
+    });
+  });
+
+  popupSaveBtn.addEventListener('click', function () {
+    var enabled = popupEnabled.checked;
+    var pages = selectedPopupPages();
+    var message = popupMessageInput.value.trim();
+    var linkUrl = popupLinkUrlInput.value.trim();
+
+    if (enabled && !pages.length) { setPopupStatus('Tick at least one page to show the popup on.', 'error'); return; }
+    if (enabled && !message) { setPopupStatus('Write a message before turning the popup on.', 'error'); return; }
+    if (linkUrl && !/^https?:\/\//i.test(linkUrl)) { setPopupStatus('The link must start with http:// or https://', 'error'); return; }
+
+    popupSaveBtn.disabled = true;
+    setPopupStatus('Saving...', '');
+
+    popupCall({
+      action: 'savePopupConfig',
+      adminKey: sessionPopupKey,
+      enabled: enabled,
+      pages: pages,
+      title: popupTitleInput.value.trim(),
+      message: message,
+      linkUrl: linkUrl,
+      linkLabel: popupLinkLabelInput.value.trim(),
+      showOnce: popupShowOnce.checked
+    })
+      .then(function (data) {
+        popupSaveBtn.disabled = false;
+        if (data && data.success) {
+          fillPopupForm(data.popup);
+          if (data.popup.enabled) {
+            var names = data.popup.pages.map(function (p) { return POPUP_PAGE_LABELS[p] || p; });
+            setPopupStatus('Saved. Popup is live on: ' + names.join(', ') + '.', 'success');
+          } else {
+            setPopupStatus('Saved. Popup is OFF, so nothing will show.', 'success');
+          }
+        } else {
+          setPopupStatus('Save failed: ' + (data && data.error ? data.error : 'unknown error'), 'error');
+          if (data && data.error === 'Not authorized.') {
+            // Wrong/missing key — send them back to unlock.
+            sessionPopupKey = null;
+            popupCard.style.display = 'none';
+            popupLoginCard.style.display = 'block';
+            popupKeyInput.value = '';
+            popupLoginStatus.textContent = 'That key was not accepted. Try again.';
+            popupLoginStatus.className = 'status error';
+            updateLockButton('popup');
+          }
+        }
+      })
+      .catch(function () {
+        popupSaveBtn.disabled = false;
+        setPopupStatus('Save failed. Check your connection.', 'error');
+      });
   });
 
 </script>
