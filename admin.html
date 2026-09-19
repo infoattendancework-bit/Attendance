@@ -453,7 +453,7 @@
   </div>
 </div>
 
-<script src="popup-notice.js" data-page="admin" data-manual></script>
+<script src="popup.js" data-page="admin" data-manual></script>
 <script>
   // ---------------------------------------------------------------
   // Sidebar navigation — three topics, click to open that panel only
@@ -1470,7 +1470,7 @@
   // ---------------------------------------------------------------
   // Popup Message (talks to APPS_SCRIPT_URL, same backend and key as
   // Subscription Pricing). This panel decides WHAT the popup says and
-  // WHICH pages show it; the pages themselves load popup-notice.js.
+  // WHICH pages show it; the pages themselves load popup.js.
   // ---------------------------------------------------------------
   var popupLoginCard = document.getElementById('popupLoginCard');
   var popupCard = document.getElementById('popupCard');
@@ -1585,7 +1585,7 @@
     var message = popupMessageInput.value.trim();
     if (!message) { setPopupStatus('Write a message to preview it.', 'error'); return; }
     if (!window.PopupNotice) {
-      setPopupStatus('Preview needs popup-notice.js uploaded next to this page.', 'error');
+      setPopupStatus('Preview needs popup.js uploaded next to this page.', 'error');
       return;
     }
     setPopupStatus('', '');
